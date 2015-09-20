@@ -17,6 +17,10 @@ function Terrain:load(terrain_file)
    print('loading terrain ' .. path)
    local parser = Parser.create(path)
    self.parser = parser
+   self.hex_width = tonumber(parser:get_value('hex_width'))
+   self.hex_height = tonumber(parser:get_value('hex_height'))
+   self.hex_x_offset = tonumber(parser:get_value('hex_x_offset'))
+   self.hex_y_offset = tonumber(parser:get_value('hex_y_offset'))
 end
 
 function Terrain:get_type(name)

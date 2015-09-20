@@ -12,7 +12,7 @@ local terrain = Terrain.create(engine)
 ok(terrain)
 terrain:load('pg.tdb')
 
-local clear = terrain:get_type('c');
+local clear = terrain:get_type('c')
 ok(clear)
 is(clear.move_cost.air.I, "1")
 

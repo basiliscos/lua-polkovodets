@@ -22,7 +22,7 @@ function Map:load(map_file)
    self.height = tonumber(parser:get_value('height'))
    assert(self.width > 3, "map width must me > 3")
    assert(self.height > 3, "map height must me > 3")
-   
+
    local terrain_file = parser:get_value('terrain_db')
    assert(terrain_file)
 
@@ -54,8 +54,9 @@ function Map:load(map_file)
 	  end
 	  tiles[y] = row
    end
-   print(inspect(tiles[1][1]))
-   
+   self.tiles = tiles
+   -- print(inspect(tiles[1][1]))
+
 end
 
 return Map
