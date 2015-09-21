@@ -26,7 +26,8 @@ function Map:load(map_file)
    local terrain_file = parser:get_value('terrain_db')
    assert(terrain_file)
 
-   local terrain = Terrain.create(self.engine)
+   local engine = self.engine
+   local terrain = Terrain.create(engine)
    terrain:load(terrain_file)
    self.terrain = terrain
 
@@ -50,7 +51,7 @@ function Map:load(map_file)
 			image_idx = image_idx,
 			terrain_type = terrain_type,
 		 }
-		 row[ #row + 1] = Tile.create(tile_data)
+		 row[ x ] = Tile.create(engine, tile_data)
 	  end
 	  tiles[y] = row
    end

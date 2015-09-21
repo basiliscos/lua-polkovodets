@@ -14,6 +14,10 @@ function Engine.create()
 		 -- position where to draw first tile
 		 map_sx = 0,
 		 map_sy = 0,
+
+	  },
+	  options = {
+		 show_grid = true,
 	  }
    }
    setmetatable(e,Engine)
@@ -49,14 +53,14 @@ function Engine:set_map(map)
 end
 
 
-function  Engine:get_maps_dir()
-   return 'data/maps/pg'
-end
+function Engine:get_map() return self.map end
 
 
-function  Engine:get_terrains_dir()
-   return 'data/maps'
-end
+function  Engine:get_maps_dir() return 'data/maps/pg' end
+
+function  Engine:get_terrains_dir() return 'data/maps' end
+
+function  Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer

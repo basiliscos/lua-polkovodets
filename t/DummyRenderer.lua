@@ -14,4 +14,8 @@ function DummyRenderer:get_size()
    return self.w, self.h
 end
 
+function DummyRenderer:load_texture(path)
+   return "dummy-texture[" .. path .. "]"
+end
+
 return DummyRenderer

@@ -9,6 +9,7 @@ local Engine = require 'polkovodets.Engine'
 local DummyRenderer = require 't.DummyRenderer'
 
 local engine = Engine.create()
+engine:set_renderer(DummyRenderer.create(640, 480))
 local map = Map.create(engine)
 ok(map)
 
@@ -19,14 +20,13 @@ is(#map.tiles[1], 10)
 local first_tile = map.tiles[1][1]
 ok(first_tile)
 
-is(first_tile.x, 1)
-is(first_tile.y, 1)
-is(first_tile.y, 1)
-is(first_tile.image_idx, 14)
-is(first_tile.name, 'Clear')
-is(first_tile.terrain_type.move_cost.air.I, '1')
+is(first_tile.data.x, 1)
+is(first_tile.data.y, 1)
+is(first_tile.data.y, 1)
+is(first_tile.data.image_idx, 14)
+is(first_tile.data.name, 'Clear')
+is(first_tile.data.terrain_type.move_cost.air.I, '1')
 
-engine:set_renderer(DummyRenderer.create(640, 480))
 engine:set_map(map)
 is(engine.gui.map_sw, 16)
 is(engine.gui.map_sh, 11)
