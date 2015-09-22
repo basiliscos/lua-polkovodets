@@ -55,7 +55,7 @@ local gui_renderer = Renderer.create(engine, window, renderer)
 engine:set_renderer(gui_renderer)
 
 local scenario = Scenario.create(engine)
-scenario:load('pg/Test')
+scenario:load('pg/Poland')
 
 gui_renderer:draw_map()
 renderer:present()

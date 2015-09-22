@@ -53,7 +53,7 @@ function Renderer:draw_map()
    local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
 
    for i = 1,map_sw do
-	  local y_shift = (i % 2 == 1) and  hex_y_offset or 0
+	  local y_shift = (i % 2 == 0) and  hex_y_offset or 0
 	  for j = 1,map_sh do
 		 local tile = map.tiles[i][j]
 		 tile:draw(sdl_renderer, x, y + y_shift)
