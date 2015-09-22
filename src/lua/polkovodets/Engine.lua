@@ -4,7 +4,7 @@ Engine.__index = Engine
 
 function Engine.create()
    local e = {
-	  map = map,
+	  turn = 0,
 	  gui = {
 		 map_x = 0,
 		 map_y = 0,
@@ -49,6 +49,7 @@ function Engine:set_map(map)
    end
    self.gui.map_sh = step
 
+   map:prepare_tiles()
    print("visible tiles area: " .. self.gui.map_sw .. "x" .. self.gui.map_sh)
 end
 
@@ -56,17 +57,22 @@ end
 function Engine:get_map() return self.map end
 
 
-function  Engine:get_scenarios_dir() return 'data/scenarios' end
-function  Engine:get_maps_dir() return 'data/maps' end
-function  Engine:get_terrains_dir() return 'data/maps' end
-function  Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
+function Engine:get_scenarios_dir() return 'data/scenarios' end
+function Engine:get_maps_dir() return 'data/maps' end
+function Engine:get_terrains_dir() return 'data/maps' end
+function Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer
 end
 
-function Engine:set_scenario(scenario) self.scenario = scenario end
+function Engine:set_scenario(scenario)
+   self.turn = 1
+   self.scenario = scenario
+end
 function Engine:get_scenario(scenario) return self.scenario end
+
+function Engine:current_turn() return self.turn end
 
 function Engine:draw_map()
    local map = self.map

@@ -60,7 +60,7 @@ scenario:load('pg/Test')
 gui_renderer:draw_map()
 renderer:present()
 
-unistd.sleep(2)
+unistd.sleep(15)
 
 SDL.quit()
 print("normal exit from main.lua")
