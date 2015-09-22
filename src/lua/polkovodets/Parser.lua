@@ -15,16 +15,33 @@ function Parser.create(path)
 
 	  if (string.find(line, '<', 1, true) == 1) then  -- section start
 		 local section_name = string.sub(line, 2, -1)
-		 local section = { parent = data }
+		 local section = {["--section_name--"] = section_name, parent = data }
 		 depth = depth + 1
-		 data[section_name] = section
+		 local prev_data = data[section_name]
+
+		 -- pack as array if we alreay met such a key (section_name)
+		 if (prev_data) then
+			local container = prev_data["--container--"]
+			   and prev_data
+			   or { ["--container--"] = { prev_data }}
+			data[section_name] = container
+			table.insert(container["--container--"], section)
+		 else
+			data[section_name] = section
+		 end
 		 data = section
 	  elseif (string.find(line, '>', 1, true) == 1) then  -- section end
 	     depth = depth - 10
 		 assert(depth)
 		 local child = data
+		 local section_name = child["--section_name--"]
 		 data = child.parent
 		 child.parent = nil
+		 -- unpack array
+		 if (data[section_name]["--container--"]) then
+			data[section_name] = data[section_name]["--container--"]
+		 end
+		 child["--section_name--"] = nil
 	  elseif (string.find(line,'»', 1, true)) then  -- property
 		 local separator_idx = string.find(line,'»', 1, true)
 		 if (not separator_idx) then error("cannot find separator in line " .. line_idx) end

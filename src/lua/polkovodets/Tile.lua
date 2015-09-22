@@ -12,7 +12,7 @@ function Tile.create(engine, data)
    return o
 end
 
-function Tile:precalculate()
+function Tile:prepare()
    local engine = self.engine
    local map = engine:get_map()
    local scenario = engine:get_scenario()
@@ -50,9 +50,23 @@ function Tile:draw(sdl_renderer, x, y)
    local icon_path = icons_dir .. '/' .. joint_weather_image
    local joint_texture = engine.renderer:load_texture(icon_path)
 
+   -- draw terrain
    assert(sdl_renderer:copy(joint_texture, self.image_rectange, dst))
    local show_grid = engine.options.show_grid
-   local src = {x = 0, y = 0, w = hex_w, h = hex_h}
+
+   -- draw nation flag
+   local nation = self.data.nation
+   if (nation) then
+	  -- print("flag for " .. nation.data.name)
+	  local nation_flag_width = nation.shared_data.icon_width
+	  local nation_flag_height = nation.shared_data.icon_height
+	  local flag_x = x  + (hex_w - nation_flag_width) / 2
+	  local flag_y = y + hex_h - nation_flag_height - 2
+	  local objective = self.data.objective
+	  nation:draw_flag(sdl_renderer, flag_x, flag_y, objective)
+   end
+
+   -- draw grid
    if (show_grid) then
 	  local icon_texture = terrain:get_icon('grid')
 	  assert(sdl_renderer:copy(icon_texture, self.grid_rectange, dst))

@@ -24,7 +24,7 @@ function Renderer:load_texture(path)
    if (textures_cache[path] ) then
 	  return textures_cache[path]
    end
-   print("loading image  " .. path)
+   print("loading image " .. path)
    local surface = assert(image.load(path))
    assert(surface:setColorKey(1, 0x0))
    local texture = assert(self.sdl_renderer:createTextureFromSurface(surface))

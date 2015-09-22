@@ -59,10 +59,10 @@ function Map:load(map_file)
    -- print(inspect(tiles[1][1]))
 end
 
-function Map:prepare_tiles()
+function Map:prepare()
    for y = 1,self.height do
 	  for x = 1,self.width do
-		 self.tiles[x][y]:precalculate()
+		 self.tiles[x][y]:prepare()
 	  end
    end
 end

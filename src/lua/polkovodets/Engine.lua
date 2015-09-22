@@ -49,7 +49,7 @@ function Engine:set_map(map)
    end
    self.gui.map_sh = step
 
-   map:prepare_tiles()
+   map:prepare()
    print("visible tiles area: " .. self.gui.map_sw .. "x" .. self.gui.map_sh)
 end
 
@@ -61,6 +61,8 @@ function Engine:get_scenarios_dir() return 'data/scenarios' end
 function Engine:get_maps_dir() return 'data/maps' end
 function Engine:get_terrains_dir() return 'data/maps' end
 function Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
+function Engine:get_nations_icons_dir() return 'data/gfx/flags' end
+function Engine:get_nations_dir() return 'data/nations' end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer
@@ -72,15 +74,20 @@ function Engine:set_scenario(scenario)
 end
 function Engine:get_scenario(scenario) return self.scenario end
 
-function Engine:current_turn() return self.turn end
-
-function Engine:draw_map()
-   local map = self.map
-   print("draw_map: " .. map.width .. "x" .. map.height)
-   for x = 1,map.width do
-   	  for y = 1,map.height do
-   	  end
+function Engine:set_nations(nations)
+   self.nations = nations
+   -- nations hash
+   local nation_for = {}
+   for _,nation in pairs(nations) do
+	  local key = nation.data.key
+	  nation_for[key] = nation
    end
+   self.nation_for = nation_for
 end
+
+function Engine:set_flags(flags) self.flags = flags end
+
+
+function Engine:current_turn() return self.turn end
 
 return Engine
