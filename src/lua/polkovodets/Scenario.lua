@@ -41,6 +41,7 @@ function Scenario:load(file)
 	  icons_image = assert(nations_parser:get_value('icons')),
    }
    local nation_definitions = assert(nations_parser:get_value('nations'))
+   -- print(inspect(nation_definitions))
 
    local nations = {}
    for key, nation_data in pairs(nation_definitions) do
@@ -63,12 +64,11 @@ function Scenario:load(file)
    -- print(inspect(flags_data))
    for key, flag in pairs(flags_data) do
 	  local nation = assert(engine.nation_for[flag.nation])
-	  -- tiles are indexed from 1 in lua, and from 0 in db-files
-	  local x = tonumber(flag.x)+1
-	  local y = tonumber(flag.y)+1
+	  local x = tonumber(flag.x) + 1
+	  local y = tonumber(flag.y) + 1
 	  local objective = tonumber(flag.objective)
-	  local tile = map.tiles[y][x]
-	  -- print(inspect(tile.data))
+	  local tile = map.tiles[x][y]
+	  --- print(inspect(tile.data.name))
 	  tile.data.nation = nation
 	  tile.data.objective = objective
 	  table.insert(flags, {x = x, y = y, objective = objective})

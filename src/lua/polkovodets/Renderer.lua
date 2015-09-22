@@ -51,15 +51,16 @@ function Renderer:draw_map()
 
    local map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
    local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
+
    for i = 1,map_sw do
+	  local y_shift = (i % 2 == 1) and  hex_y_offset or 0
 	  for j = 1,map_sh do
 		 local tile = map.tiles[i][j]
-		 local abs_y = (j % 2 == 1) and y + hex_y_offset or y
-		 tile:draw(sdl_renderer, x, abs_y)
-		 x = x + hex_x_offset
+		 tile:draw(sdl_renderer, x, y + y_shift)
+		 y = y + hex_h
 	  end
-	  y = y + hex_h
-	  x = engine.gui.map_sx - ( start_map_x - engine.gui.map_x ) * hex_x_offset
+	  x = x + hex_x_offset
+	  y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
    end
 
 end

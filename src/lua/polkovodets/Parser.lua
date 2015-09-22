@@ -8,6 +8,7 @@ function Parser.create(path)
    local signature = file:read('*l')
    if (signature ~= '@') then error("Map file " .. path .. " has wrong signature") end
    local data = {}
+   local top_data = data;
    local line = file:read('*l')
    local line_idx = 2
    local depth = 1
@@ -25,6 +26,8 @@ function Parser.create(path)
 			   and prev_data
 			   or { ["--container--"] = { prev_data }}
 			data[section_name] = container
+			if (not data["--containers--"]) then data["--containers--"] = {} end
+			data["--containers--"][section_name] = true
 			table.insert(container["--container--"], section)
 		 else
 			data[section_name] = section
@@ -35,19 +38,22 @@ function Parser.create(path)
 		 assert(depth)
 		 local child = data
 		 local section_name = child["--section_name--"]
+
 		 data = child.parent
 		 child.parent = nil
-		 -- unpack array
-		 if (data[section_name]["--container--"]) then
-			data[section_name] = data[section_name]["--container--"]
-		 end
 		 child["--section_name--"] = nil
+		 -- unpack containers
+		 if (child["--containers--"]) then
+			for container_name,v in pairs(child["--containers--"]) do
+			   child[container_name] = child[container_name]["--container--"]
+			end
+			child["--containers--"] = nil
+		 end
 	  elseif (string.find(line,'»', 1, true)) then  -- property
 		 local separator_idx = string.find(line,'»', 1, true)
 		 if (not separator_idx) then error("cannot find separator in line " .. line_idx) end
 		 local key = string.sub(line, 1, separator_idx-1)
 		 local value = string.sub(line, separator_idx+1, -1)
-		 -- print( key .. ':' .. value)
 		 data[key] = value
 	  else
 		 error("line " .. line_idx .. " is wrong")
