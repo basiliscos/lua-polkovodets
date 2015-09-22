@@ -44,7 +44,6 @@ local f,a,w,h = title:query()
 print("w = " .. w .. ", h = " .. h)
 
 window:setSize(w,h)
-renderer:setLogicalSize(w,h)
 
 renderer:clear()
 -- renderer:copy(title)
@@ -58,9 +57,8 @@ local scenario = Scenario.create(engine)
 scenario:load('pg/Poland')
 
 gui_renderer:draw_map()
-renderer:present()
 
-unistd.sleep(15)
+gui_renderer:main_loop()
 
 SDL.quit()
 print("normal exit from main.lua")

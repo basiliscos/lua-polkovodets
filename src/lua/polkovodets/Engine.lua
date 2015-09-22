@@ -27,7 +27,15 @@ end
 
 function Engine:set_map(map)
    assert(self.renderer)
+   assert(map)
    self.map = map
+
+   self:update_shown_map()
+   map:prepare()
+end
+
+function Engine:update_shown_map()
+   local map = self.map
    self.gui.map_sx = -map.terrain.hex_x_offset
    self.gui.map_sy = -map.terrain.hex_height
 
@@ -48,8 +56,6 @@ function Engine:set_map(map)
 	  ptr = ptr + map.terrain.hex_height
    end
    self.gui.map_sh = step
-
-   map:prepare()
    print("visible tiles area: " .. self.gui.map_sw .. "x" .. self.gui.map_sh)
 end
 
