@@ -13,7 +13,7 @@ engine:set_renderer(DummyRenderer.create(640, 480))
 local map = Map.create(engine)
 ok(map)
 
-map:load('map01')
+map:load('pg/map01')
 
 is(#map.tiles, 10)
 is(#map.tiles[1], 10)
@@ -33,4 +33,4 @@ is(engine.gui.map_sh, 11)
 is(engine.gui.map_sx, -45)
 is(engine.gui.map_sy, -50)
 
-done_testing();	
+done_testing()

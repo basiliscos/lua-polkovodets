@@ -7,6 +7,7 @@ local image = require "SDL.image"
 local Engine = require 'polkovodets.Engine'
 local Map = require 'polkovodets.Map'
 local Renderer = require 'polkovodets.Renderer'
+local Scenario = require 'polkovodets.Scenario'
 
 assert(SDL.init({
 			 SDL.flags.Video,
@@ -53,14 +54,13 @@ local engine = Engine.create()
 local gui_renderer = Renderer.create(engine, window, renderer)
 engine:set_renderer(gui_renderer)
 
-local map = Map.create(engine)
-map:load('map01')
+local scenario = Scenario.create(engine)
+scenario:load('pg/Test')
 
-engine:set_map(map)
 gui_renderer:draw_map()
 renderer:present()
 
-unistd.sleep(10)
+unistd.sleep(2)
 
 SDL.quit()
 print("normal exit from main.lua")

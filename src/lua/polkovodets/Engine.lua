@@ -56,15 +56,17 @@ end
 function Engine:get_map() return self.map end
 
 
-function  Engine:get_maps_dir() return 'data/maps/pg' end
-
+function  Engine:get_scenarios_dir() return 'data/scenarios' end
+function  Engine:get_maps_dir() return 'data/maps' end
 function  Engine:get_terrains_dir() return 'data/maps' end
-
 function  Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer
 end
+
+function Engine:set_scenario(scenario) self.scenario = scenario end
+function Engine:get_scenario(scenario) return self.scenario end
 
 function Engine:draw_map()
    local map = self.map

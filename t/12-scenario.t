@@ -4,19 +4,18 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 
 local t = require 'Test.More'
 
-local Terrain = require 'polkovodets.Terrain'
+local Scenario = require 'polkovodets.Scenario'
 local Engine = require 'polkovodets.Engine'
 local DummyRenderer = require 't.DummyRenderer'
 
 local engine = Engine.create()
 engine:set_renderer(DummyRenderer.create(640, 480))
 
-local terrain = Terrain.create(engine)
-ok(terrain)
-terrain:load('pg.tdb')
+local scenario = Scenario.create(engine)
+scenario:load('pg/Test')
+ok(engine:get_scenario())
+ok(engine:get_map())
 
-local clear = terrain:get_type('c')
-ok(clear)
-is(clear.move_cost.air.I, "1")
+is(scenario.turns, 10)
 
 done_testing()
