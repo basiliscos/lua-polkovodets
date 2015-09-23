@@ -69,8 +69,9 @@ function Parser.create(path)
 end
 
 function Parser:get_value(key)
+   assert(key)
    local v = self.data[key]
-   if (not v) then error(key .. " not found in " .. self.path) end
+   assert(v, key .. " not found in " .. self.path)
    return v
 end
 

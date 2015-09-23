@@ -6,7 +6,11 @@ local Parser = require 'polkovodets.Parser'
 
 
 function Terrain.create(engine)
-   local o = { engine = engine }
+   local o = {
+      engine = engine,
+      icons = {
+      }
+   }
    setmetatable(o, Terrain)
    return o
 end
@@ -25,18 +29,31 @@ function Terrain:load(terrain_file)
    self.hex_x_offset = tonumber(parser:get_value('hex_x_offset'))
    self.hex_y_offset = tonumber(parser:get_value('hex_y_offset'))
 
-   local icons = {}
+   -- load icons
    local icons_dir = self.engine:get_terrain_icons_dir()
    local load_icon = function(key)
-	  local icon_file = parser:get_value(key)
-	  assert(icon_file, "cannot find icon for '" .. key .. "' in " .. path)
-	  local path = icons_dir .. '/' .. icon_file
-	  local texture = engine.renderer:load_texture(path)
-	  icons[key] = texture
+      local icon_file = parser:get_value(key)
+      assert(icon_file, "cannot find icon for '" .. key .. "' in " .. path)
+      local path = icons_dir .. '/' .. icon_file
+      self.icons[key] = path
+      engine.renderer:load_texture(path)
    end
    load_icon('grid')
 
-   self.icons = icons
+   -- load terrain hexes
+   local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
+   local terrains_for = self.parser:get_value('terrain')
+   for key,terrain_data in pairs(terrains_for) do
+      local images_for = assert(terrain_data.image)
+      local weather_images = {}
+      for weather, image_file in pairs(images_for) do
+         local path = icons_dir .. '/' .. image_file
+         engine.renderer:load_joint_texture(path, {self.hex_width, 0})
+         weather_images[weather] = path
+      end
+      terrain_images[key] = weather_images
+   end
+   self.terrain_images = terrain_images
 end
 
 function Terrain:get_type(name)
@@ -49,9 +66,17 @@ function Terrain:get_type(name)
    return terrain_type
 end
 
+
+function Terrain:get_hex_image(terrain_key, weather, index)
+   local weather_images = assert(self.terrain_images[terrain_key], "no terrain for " .. terrain_key)
+   local texture_path = assert(weather_images[weather])
+   return self.engine.renderer:get_joint_texture(texture_path, index+1)
+end
+
+
 function Terrain:get_icon(name)
-   local surface = assert(self.icons[name])
-   return surface
+   local icon_path = assert(self.icons[name], "no terrain icon for " .. name)
+   return self.engine.renderer:load_texture(icon_path)
 end
 
 return Terrain

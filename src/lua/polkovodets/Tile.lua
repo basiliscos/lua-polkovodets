@@ -4,26 +4,18 @@ Tile.__index = Tile
 local inspect = require('inspect')
 
 function Tile.create(engine, data)
+   assert(data.image_idx)
+   assert(data.x)
+   assert(data.y)
+   assert(data.terrain_type)
+   assert(data.terrain_name)
+
    local o = {
 	  engine = engine,
 	  data = data,
    }
    setmetatable(o, Tile)
    return o
-end
-
-function Tile:prepare()
-   local engine = self.engine
-   local map = engine:get_map()
-   local scenario = engine:get_scenario()
-   local terrain = map.terrain
-   local hex_h = terrain.hex_height
-   local hex_w = terrain.hex_width
-
-
-   local image_offset = self.data.image_idx * hex_w
-   self.image_rectange = {x = image_offset, y = 0, w = hex_w, h = hex_h}
-   self.grid_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
 end
 
 
@@ -46,12 +38,10 @@ function Tile:draw(sdl_renderer, x, y)
    local hex_w = terrain.hex_width
 
    local dst = {x = x, y = y, w = hex_w, h = hex_h}
-   local icons_dir = engine:get_terrain_icons_dir()
-   local icon_path = icons_dir .. '/' .. joint_weather_image
-   local joint_texture = engine.renderer:load_texture(icon_path)
+   local texture = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
    -- draw terrain
-   assert(sdl_renderer:copy(joint_texture, self.image_rectange, dst))
+   assert(sdl_renderer:copy(texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
    local show_grid = engine.options.show_grid
 
    -- draw nation flag
@@ -68,8 +58,8 @@ function Tile:draw(sdl_renderer, x, y)
 
    -- draw grid
    if (show_grid) then
-	  local icon_texture = terrain:get_icon('grid')
-	  assert(sdl_renderer:copy(icon_texture, self.grid_rectange, dst))
+      local icon_texture = terrain:get_icon('grid')
+      assert(sdl_renderer:copy(icon_texture, self.grid_rectange, dst))
    end
 end
 

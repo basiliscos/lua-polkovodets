@@ -6,7 +6,7 @@ function Engine.create()
    local e = {
 	  turn = 0,
 	  gui = {
-		 map_x = 0,
+		 map_x = 1,
 		 map_y = 0,
 		 -- number of tiles drawn to screen
 		 map_sw = 0,
@@ -31,7 +31,6 @@ function Engine:set_map(map)
    self.map = map
 
    self:update_shown_map()
-   map:prepare()
 end
 
 function Engine:update_shown_map()
@@ -56,7 +55,7 @@ function Engine:update_shown_map()
 	  ptr = ptr + map.terrain.hex_height
    end
    self.gui.map_sh = step
-   print("visible tiles area: " .. self.gui.map_sw .. "x" .. self.gui.map_sh)
+   print("visible tiles window: " .. self.gui.map_sw .. "x" .. self.gui.map_sh)
 end
 
 
