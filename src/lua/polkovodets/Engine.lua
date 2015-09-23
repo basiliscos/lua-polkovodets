@@ -69,6 +69,7 @@ function Engine:get_terrains_dir() return 'data/maps' end
 function Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
 function Engine:get_nations_icons_dir() return 'data/gfx/flags' end
 function Engine:get_nations_dir() return 'data/nations' end
+function Engine:get_theme_dir() return 'data/themes/default' end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer

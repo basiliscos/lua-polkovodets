@@ -56,8 +56,6 @@ engine:set_renderer(gui_renderer)
 local scenario = Scenario.create(engine)
 scenario:load('pg/Poland')
 
-gui_renderer:draw_map()
-
 gui_renderer:main_loop()
 
 SDL.quit()

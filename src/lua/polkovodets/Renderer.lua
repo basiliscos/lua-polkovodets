@@ -4,22 +4,40 @@ Renderer.__index = Renderer
 local SDL	= require "SDL"
 local image = require "SDL.image"
 
+local CURSOR_SIZE = 22
+
 
 function Renderer.create(engine, window, sdl_renderer)
    local o = {
 	  size = table.pack(window:getSize()),
+      current_cursor = 0,
 	  engine = engine,
 	  window = window,
 	  sdl_renderer = sdl_renderer,
 	  textures_cache = {},
+      resources = {},
    }
+   -- hide system mouse pointer
+   assert(SDL.showCursor(false))
    setmetatable(o, Renderer)
+   o:_load_theme();
    return o
 end
+
 
 function Renderer:get_size()
    return table.unpack(self.size)
 end
+
+
+function Renderer:_load_theme()
+   local dir = self.engine:get_theme_dir()
+   local cursors_file = 'cursors.bmp'
+   local cursors_path = dir .. '/' .. cursors_file
+   self.resources.cursors = cursors_path
+   self:load_texture(cursors_path)
+end
+
 
 function Renderer:load_texture(path)
    local textures_cache = self.textures_cache
@@ -35,7 +53,7 @@ function Renderer:load_texture(path)
 end
 
 
-function Renderer:draw_map()
+function Renderer:_draw_map()
    local engine = self.engine
    local map = engine:get_map()
    local sdl_renderer = self.sdl_renderer
@@ -66,6 +84,23 @@ function Renderer:draw_map()
    end
 end
 
+
+function Renderer:_draw_cursor()
+   local state, x, y = SDL.getMouseState()
+   -- print("x = " .. x .. ", y = " .. y)
+   local joint_cursors_texture = self:load_texture(self.resources.cursors)
+   local src = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = (self.current_cursor * CURSOR_SIZE), y = 0}
+   local dst = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = x, y = y }
+   assert(self.sdl_renderer:copy(joint_cursors_texture, src, dst))
+end
+
+
+function Renderer:_draw_world()
+   self:_draw_map()
+   self:_draw_cursor()
+end
+
+
 function Renderer:main_loop()
    local engine = self.engine
    local running = true
@@ -84,7 +119,7 @@ function Renderer:main_loop()
 		 end
 	  end
 	  sdl_renderer:clear()
-	  self:draw_map()
+	  self:_draw_world()
 	  sdl_renderer:present()
    end
 end
