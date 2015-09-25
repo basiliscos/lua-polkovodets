@@ -20,10 +20,12 @@ print(string.format("SDL %d.%d.%d",
     SDL.VERSION_PATCH
 ))
 
+local w,h = 640, 480
+
 local window, err = SDL.createWindow {
    title   = "Полководец",
-   width   = 640,
-   height  = 480,
+   width   = w,
+   height  = h,
    flags   = { SDL.window.Resizable },
 }
 
@@ -34,16 +36,16 @@ local renderer, err = SDL.createRenderer(window, -1)
 assert(renderer, err)
 --renderer:setDrawColor(0xFFFFFF)
 
--- Load the image as a surface
-local image, err = image.load("data/gfx/title.png")
-assert(image, err)
+-- -- Load the image as a surface
+-- local image, err = image.load("data/gfx/title.png")
+-- assert(image, err)
 
-local title, err = renderer:createTextureFromSurface(image)
+-- local title, err = renderer:createTextureFromSurface(image)
 
-local f,a,w,h = title:query()
-print("w = " .. w .. ", h = " .. h)
+-- local f,a,w,h = title:query()
+-- print("w = " .. w .. ", h = " .. h)
 
-window:setSize(w,h)
+-- window:setSize(w,h)
 
 renderer:clear()
 -- renderer:copy(title)

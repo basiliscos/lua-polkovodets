@@ -1,11 +1,12 @@
 AC_INIT([polkovodets], [1.0], [bug-report@polkovodets.su])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_PROG_CC
-PKG_CHECK_MODULES(LUA, lua >= 5.1, [ ],[
-		       PKG_CHECK_MODULES(LUA51, lua-5.1 >= 5.1, [ ],[
-		       				PKG_CHECK_MODULES(LUA51, lua5.1 >= 5.1)
-		       ])
-		 ])
+
+dnl LUA
+AX_PROG_LUA(5.3)
+AX_LUA_LIBS
+AX_LUA_HEADERS
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile src/c/Makefile])
 AC_OUTPUT
