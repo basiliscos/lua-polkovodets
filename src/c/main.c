@@ -55,19 +55,18 @@ int main(int argc, char** argv) {
     snprintf(lua_path, sizeof(lua_path), "%s/?.lua;%s/?/init.lua", argv[1], argv[1]);
     lua_path_env = getenv("LUA_PATH");
 
-    /* +2: path_separator + zero at the end*/
-    lua_path_env_new = (char*) malloc(strlen(lua_path_env) + (lua_path ? strlen(lua_path) + 1 : 0) + 1);
+    /* +2: path_separator + zero at the end + LUA_PATH=*/
+    lua_path_env_new = (char*) malloc(strlen(lua_path_env) + (lua_path ? strlen(lua_path) + 1 : 0) + 10);
     if (!lua_path_env_new) {
 	fprintf(stderr, "allocating new LUA_PATH value failed\n");
 	return -1;
     }
     if (lua_path_env) {
-	sprintf(lua_path_env_new, "%s;%s", lua_path_env, lua_path);
+	sprintf(lua_path_env_new, "LUA_PATH=%s;%s", lua_path_env, lua_path);
     } else {
-	free(lua_path_env_new);
-	lua_path_env_new = lua_path;
+	sprintf(lua_path_env_new, "LUA_PATH=%s", lua_path);
     }
-    setenv("LUA_PATH", lua_path_env_new, 1);
+    putenv(lua_path_env_new);
 
     L = luaL_newstate();
     if (!L) {

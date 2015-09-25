@@ -7,6 +7,8 @@ AX_PROG_LUA(5.3)
 AX_LUA_LIBS
 AX_LUA_HEADERS
 
+AC_CHECK_FUNC(putenv)
+
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile src/c/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/c/Makefile src/lua/Makefile])
 AC_OUTPUT

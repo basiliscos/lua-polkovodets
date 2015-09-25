@@ -1,6 +1,3 @@
-local stdlib = require 'posix.stdlib'
-local unistd = require 'posix.unistd'
-
 local SDL = require "SDL"
 local image = require "SDL.image"
 
@@ -34,22 +31,6 @@ assert(window, err)
 -- Create the renderer
 local renderer, err = SDL.createRenderer(window, -1)
 assert(renderer, err)
---renderer:setDrawColor(0xFFFFFF)
-
--- -- Load the image as a surface
--- local image, err = image.load("data/gfx/title.png")
--- assert(image, err)
-
--- local title, err = renderer:createTextureFromSurface(image)
-
--- local f,a,w,h = title:query()
--- print("w = " .. w .. ", h = " .. h)
-
--- window:setSize(w,h)
-
-renderer:clear()
--- renderer:copy(title)
-renderer:present()
 
 local engine = Engine.create()
 local gui_renderer = Renderer.create(engine, window, renderer)
