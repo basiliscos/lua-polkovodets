@@ -26,6 +26,7 @@ function Tile.create(engine, data)
    assert(data.image_idx)
    assert(data.x)
    assert(data.y)
+   assert(data.name)
    assert(data.terrain_type)
    assert(data.terrain_name)
 

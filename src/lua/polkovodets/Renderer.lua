@@ -22,13 +22,16 @@ Renderer.__index = Renderer
 local SDL	= require "SDL"
 local image = require "SDL.image"
 local inspect = require('inspect')
+local ttf = require "SDL.ttf"
 
 local CURSOR_SIZE = 22
 local SCROLL_TOLERANCE = 5
 local EVENT_DELAY = 50
 
 function Renderer.create(engine, window, sdl_renderer)
+   assert(ttf.init())
    local o = {
+      active_tile = {0, 0},
 	  size = table.pack(window:getSize()),
       current_cursor = 0,
 	  engine = engine,
@@ -36,6 +39,7 @@ function Renderer.create(engine, window, sdl_renderer)
 	  sdl_renderer = sdl_renderer,
 	  textures_cache = {},
       resources = {},
+      fonts = {},
    }
    -- hide system mouse pointer
    assert(SDL.showCursor(false))
@@ -51,11 +55,15 @@ end
 
 
 function Renderer:_load_theme()
-   local dir = self.engine:get_theme_dir()
+   local engine = self.engine
+   local dir = engine:get_theme_dir()
    local cursors_file = 'cursors.bmp'
    local cursors_path = dir .. '/' .. cursors_file
    self.resources.cursors = cursors_path
    self:load_texture(cursors_path)
+   local active_hex_font = dir .. '/' .. engine.theme.active_hex.font
+   local active_hex_size = engine.theme.active_hex.font_size
+   self.fonts.active_tile = assert(ttf.open(active_hex_font, active_hex_size))
 end
 
 
@@ -153,9 +161,12 @@ function Renderer:_draw_map()
    local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
 
    for i = 1,map_sw do
-	  local y_shift = ((i + start_map_x) % 2 == 0) and  hex_y_offset or 0
+      local tx = i + start_map_x
+	  local y_shift = (tx % 2 == 0) and  hex_y_offset or 0
 	  for j = 1,map_sh do
-		 local tile = map.tiles[i + start_map_x][j + start_map_y]
+         local ty = j + start_map_y
+         -- print(string.format("tx:ty = (%d:%d), start_map_x = %d", tx, ty, start_map_x))
+		 local tile = map.tiles[tx][ty]
 		 tile:draw(sdl_renderer, x, y + y_shift)
 		 y = y + hex_h
 	  end
@@ -229,7 +240,8 @@ function Renderer:_recalc_active_tile()
          map_y = map_y + fix[2]
       end
    end
-   -- print(string.format("final tile = %d:%d", map_x, map_y))
+   self.active_tile = {map_x + engine.gui.map_x + 1, map_y + engine.gui.map_y + 1}
+   -- print(string.format("active tile = %d:%d", map_x, map_y))
 end
 
 
@@ -243,9 +255,39 @@ function Renderer:_draw_cursor()
 end
 
 
+function Renderer:_draw_active_hex_info()
+   local engine = self.engine
+   local map = engine.map
+   local sdl_renderer = self.sdl_renderer
+   local x, y = table.unpack(self.active_tile)
+   local w,h = self.window:getSize()
+
+   local render_label = function(surface)
+      assert(surface)
+      local texture = assert(self.sdl_renderer:createTextureFromSurface(surface))
+      local sw, sh = surface:getSize()
+      local label_x = math.modf(w/2 - sw/2)
+      local label_y = 25 - (sh/2)
+      assert(sdl_renderer:copy(texture, nil , {x = label_x, y = label_y, w = sw, h = sh}))
+   end
+   if (x > 0 and x <= map.width and y > 0 and y <= map.height) then
+      local tile = map.tiles[x][y]
+      local str = string.format('%s (%d:%d)', tile.data.name, x, y)
+      local font = self.fonts.active_tile
+      local outline_color = self.engine.theme.active_hex.outline_color
+      local color = self.engine.theme.active_hex.color
+      font:setOutline(self.engine.theme.active_hex.outline_width)
+      render_label(font:renderUtf8(str, "solid", outline_color))
+      font:setOutline(0)
+      render_label(font:renderUtf8(str, "solid", color))
+   end
+end
+
+
 function Renderer:_draw_world()
    self:_check_scroll()
    self:_draw_map()
+   self:_draw_active_hex_info()
    self:_draw_cursor()
 end
 
@@ -267,7 +309,7 @@ function Renderer:main_loop()
 			engine:update_shown_map()
 		 end
       elseif (t == SDL.event.MouseMotion) then
-         --self:_recalc_active_tile()
+         self:_recalc_active_tile()
 	  end
 	  sdl_renderer:clear()
 	  self:_draw_world()

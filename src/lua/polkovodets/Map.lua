@@ -63,10 +63,11 @@ function Map:load(map_file)
 		 local terrain_name = string.sub(datum,1,1)
 		 local image_idx = tonumber(string.sub(datum,2, -1))
 		 local terrain_type = terrain:get_type(terrain_name)
+         local name = tile_names[idx] or terrain_name
 		 local tile_data = {
 			x = x,
 			y = y,
-			name = tile_names[idx],
+			name = name,
 			terrain_name = terrain_name,
 			image_idx = image_idx,
 			terrain_type = terrain_type,
