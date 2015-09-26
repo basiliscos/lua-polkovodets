@@ -89,7 +89,7 @@ function Renderer:load_joint_texture(path, iterator_factory)
       local texture = assert(self.sdl_renderer:createTextureFromSurface(sub_surface))
       table.insert(cache, texture)
    end
-   print(path .. " .. " .. #cache .. " textures")
+   print(path .. ": " .. #cache .. " textures")
    textures_cache[path] = cache
 end
 
