@@ -32,7 +32,9 @@ function Nation.create(engine, shared_data, nation_data)
 
    local w, h = shared_data.icon_width, shared_data.icon_height
    local image_path = engine:get_nations_icons_dir() .. '/' .. shared_data.icons_image
-   engine.renderer:load_joint_texture(image_path, {0, h} )
+   local renderer = engine.renderer
+   local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, 0, h) end
+   renderer:load_joint_texture(image_path, iterator_factory)
 
    local o = {
 	  engine = engine,

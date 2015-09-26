@@ -68,51 +68,54 @@ end
 
 
 function Renderer:_load_image(path)
-   print("loading image " .. path)
-   local surface = assert(image.load(path))
+   local surface = assert(image.load(path), "error loading image " .. path)
    assert(surface:setColorKey(1, 0x0))
    return surface
 end
 
 
-function Renderer:load_joint_texture(path, frame)
+function Renderer:load_joint_texture(path, iterator_factory)
    local textures_cache = self.textures_cache
    if (textures_cache[path]) then return end
 
    local surface = self:_load_image(path)
-   local w,h = surface:getSize()
-   local frame_w, frame_h
-   if (frame[1] > 0) then
-      assert( w % frame[1] == 0)
-      frame_w = frame[1]
-      frame_h = h
-   else
-      assert( h % frame[2] == 0)
-      frame_w = w
-      frame_h = frame[2]
-   end
-   local x, y = 0, 0
-   local cache = {}
-   while (x ~= w and y ~= h) do
-      local dst = { x = 0, y = 0, w = frame_w, h = frame_h}
-      local sub_surface = assert(SDL.createRGBSurface(frame_w, frame_h))
-      local src = { x = x, y = y, w = frame_w, h = frame_h }
-      -- print("src:  " .. inspect(src) .. " -> dst: " .. inspect(dst))
-      assert(surface:blit(sub_surface, src));
-      local texture = assert(self.sdl_renderer:createTextureFromSurface(sub_surface))
-      -- self.sdl_renderer:clear()
-      -- self.sdl_renderer:copy(texture, dst, src)
-      -- self.sdl_renderer:present()
-      -- local unistd = require 'posix.unistd'
-      -- unistd.sleep(1)
 
+   local cache = {}
+   local iterator = iterator_factory(surface)
+   for rectangle in iterator() do
+      -- print("rectangle: " .. inspect(rectangle))
+      local sub_surface = assert(SDL.createRGBSurface(rectangle.w, rectangle.h))
+      assert(surface:blit(sub_surface, rectangle));
+      local texture = assert(self.sdl_renderer:createTextureFromSurface(sub_surface))
       table.insert(cache, texture)
-      x = x + frame[1]
-      y = y + frame[2]
    end
+   print(path .. " .. " .. #cache .. " textures")
    textures_cache[path] = cache
 end
 
+
+function Renderer:create_simple_iterator(surface, x_advance, y_advance)
+   local w,h = surface:getSize()
+   local frame_w, frame_h
+   if (x_advance > 0) then
+      assert( w % x_advance == 0, "surface width " .. w .. " must be divisable to " .. x_advance)
+      frame_w = x_advance
+      frame_h = h
+   else
+      assert( h % y_advance == 0, "surface height " .. h .. " must be divisable to " .. y_advance)
+      frame_w = w
+      frame_h = y_advance
+   end
+   local frame = {x = -x_advance, y = -y_advance, w = frame_w, h = frame_h}
+   local iterator = function(state, value) -- all values are unused
+      if (frame.x < w and frame.y < h) then
+         frame.x = frame.x + x_advance
+         frame.y = frame.y + y_advance
+         return frame
+      end
+   end
+   return function() return iterator, nil, frame end
+end
 
 function Renderer:get_joint_texture(path, index)
    assert(index, "texture index should be defined")
@@ -199,7 +202,7 @@ function Renderer:_check_scroll()
    end
 
    if (direction) then
-       print("scrolling " .. direction .. " " .. engine.gui.map_x .. ":" .. engine.gui.map_y)
+      -- print("scrolling " .. direction .. " " .. engine.gui.map_x .. ":" .. engine.gui.map_y)
       engine:update_shown_map()
    end
 end

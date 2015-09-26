@@ -64,27 +64,28 @@ end
 
 function Engine:update_shown_map()
    local map = self.map
-   self.gui.map_sx = -map.terrain.hex_x_offset
-   self.gui.map_sy = -map.terrain.hex_height
+   local gui = self.gui
+   gui.map_sx = -map.terrain.hex_x_offset
+   gui.map_sy = -map.terrain.hex_height
 
    -- calculate drawn number of tiles
    local w, h = self.renderer:get_size()
    local step = 0
-   local ptr = self.gui.map_sx
+   local ptr = gui.map_sx
    while(ptr < w) do
 	  step = step + 1
 	  ptr = ptr + map.terrain.hex_x_offset
    end
-   self.gui.map_sw = step
+   gui.map_sw = step
 
    step = 0
-   ptr = self.gui.map_sy
+   ptr = gui.map_sy
    while(ptr < h) do
 	  step = step + 1
 	  ptr = ptr + map.terrain.hex_height
    end
-   self.gui.map_sh = step
-   print("visible tiles window: " .. self.gui.map_sw .. "x" .. self.gui.map_sh)
+   gui.map_sh = step
+   print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
 end
 
 
@@ -93,6 +94,8 @@ function Engine:get_map() return self.map end
 
 function Engine:get_scenarios_dir() return 'data/scenarios' end
 function Engine:get_maps_dir() return 'data/maps' end
+function Engine:get_units_dir() return 'data/units' end
+function Engine:get_unit_icons_dir() return 'data/gfx/units' end
 function Engine:get_terrains_dir() return 'data/maps' end
 function Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
 function Engine:get_nations_icons_dir() return 'data/gfx/flags' end

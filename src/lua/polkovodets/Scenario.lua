@@ -22,6 +22,7 @@ Scenario.__index = Scenario
 local inspect = require('inspect')
 local Map = require 'polkovodets.Map'
 local Nation = require 'polkovodets.Nation'
+local UnitLib = require 'polkovodets.UnitLib'
 local Parser = require 'polkovodets.Parser'
 
 function Scenario.create(engine)
@@ -92,6 +93,15 @@ function Scenario:load(file)
 	  table.insert(flags, {x = x, y = y, objective = objective})
    end
    engine:set_flags(flags)
+
+   -- load units db
+   local unit_db = assert(parser:get_value('unit_db'))
+   local unit_files = {}
+   for k, file in pairs(unit_db) do
+      table.insert(unit_files, file)
+   end
+   local unit_lib = UnitLib.create(engine)
+   unit_lib:load(unit_files[1]) -- hard-code, support only 1 unit file for now
 
    engine:set_scenario(self)
 end

@@ -60,12 +60,15 @@ function Terrain:load(terrain_file)
    -- load terrain hexes
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
    local terrains_for = self.parser:get_value('terrain')
+   local renderer = engine.renderer
+   local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, self.hex_width, 0) end
+
    for key,terrain_data in pairs(terrains_for) do
       local images_for = assert(terrain_data.image)
       local weather_images = {}
       for weather, image_file in pairs(images_for) do
          local path = icons_dir .. '/' .. image_file
-         engine.renderer:load_joint_texture(path, {self.hex_width, 0})
+         renderer:load_joint_texture(path, iterator_factory)
          weather_images[weather] = path
       end
       terrain_images[key] = weather_images
@@ -87,7 +90,7 @@ end
 function Terrain:get_hex_image(terrain_key, weather, index)
    local weather_images = assert(self.terrain_images[terrain_key], "no terrain for " .. terrain_key)
    local texture_path = assert(weather_images[weather])
-   return self.engine.renderer:get_joint_texture(texture_path, index+1)
+   return self.engine.renderer:get_joint_texture(texture_path, index + 1)
 end
 
 
