@@ -24,4 +24,8 @@ local berlin = map.tiles[2+1][4+1]
 ok(berlin.data.nation)
 is(berlin.data.nation.data.name, "Germany")
 
+ok(engine.unit_lib)
+ok(engine.unit_lib.unit_definitions)
+
+
 done_testing()

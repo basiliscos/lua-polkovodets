@@ -20,7 +20,7 @@ local UnitLib = {}
 UnitLib.__index = UnitLib
 
 local Parser = require 'polkovodets.Parser'
-
+local UnitDefinition = require 'polkovodets.UnitDefinition'
 
 function UnitLib.create(engine)
    local o = {
@@ -80,6 +80,61 @@ function UnitLib:load(unit_file)
    end
 
    engine.renderer:load_joint_texture(icon_path, iterator_factory)
+
+   -- target types
+   local target_types_data = assert(parser:get_value('target_types'))
+   local target_types = {}
+   for id, data in pairs(target_types_data) do
+      target_types[id] = {
+         id   = id,
+         name = assert(data.name)
+      }
+   end
+   self.target_types = target_types
+
+   -- unit classes
+   local classes_data = assert(parser:get_value('unit_classes'))
+   local classes_list = {} -- keep order as in database
+   local classes = {}
+   for id, data in pairs(classes_data) do
+      data.id = id
+      assert(data.name)
+      assert(data.purchase)
+      table.insert(classes_list, data)
+      classes[id] = data
+   end
+   self.classes_list = classes_list
+   self.classes = classes
+
+   -- unit movement types
+   local move_types_data = assert(parser:get_value('move_types'))
+   local move_types = {}
+   for id, data in pairs(move_types_data) do
+      data.id = id
+      assert(data.name)
+      assert(data.sound)
+      move_types[id] = data
+   end
+   self.move_types = move_types
+
+   -- make unit_lib available via engine
+   engine.unit_lib = self
+
+   local units_data = assert(parser:get_value('unit_lib'))
+   local unit_definitions = {}
+   for id, data in pairs(units_data) do
+      data.id = id
+      data.initiative = tonumber(data.initiative)
+      data.spotting = tonumber(data.spotting)
+      data.movement = tonumber(data.movement)
+      data.fuel = tonumber(data.fuel)
+      data.range = tonumber(data.range)
+      data.ammo = tonumber(data.ammo)
+      data.attack.count = tonumber(data.attack.count)
+      local unit_def = UnitDefinition.create(engine, data)
+      table.insert(unit_definitions, unit_def)
+   end
+   self.unit_definitions = unit_definitions
 end
 
 return UnitLib
