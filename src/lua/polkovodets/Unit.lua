@@ -31,7 +31,7 @@ function Unit.create(engine, data)
    local definition = assert(engine.unit_lib.unit_definitions[data.id])
    local nation = assert(engine.nation_for[data.nation])
    local x,y = tonumber(data.x), tonumber(data.y)
-   local tile = assert(engine.map.tiles[x][y])
+   local tile = assert(engine.map.tiles[x + 1][y + 1])
    
    local o = {
       engine = engine,
@@ -47,6 +47,22 @@ function Unit.create(engine, data)
    setmetatable(o, Unit)
    tile.unit = o
    return o
+end
+
+function Unit:draw(sdl_renderer, x, y)
+   local terrain = self.engine.map.terrain
+   local hex_h = terrain.hex_height
+   local hex_w = terrain.hex_width
+
+   local texture = self.definition:get_icon()
+   local format, access, w, h = texture:query()
+   local dst = {
+      x = x + math.modf((hex_w - w)/2),
+      y = y + math.modf((hex_h - h)/2),
+      w = w,
+      h = h,
+   }
+   assert(sdl_renderer:copy(texture, {x = o , y = 0, w = w, h = h} , dst))
 end
 
 return Unit

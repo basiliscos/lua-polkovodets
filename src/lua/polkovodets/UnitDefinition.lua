@@ -65,4 +65,8 @@ function UnitDefinition.create(engine, data)
    return o
 end
 
+function UnitDefinition:get_icon()
+   return self.engine.unit_lib:get_unit_icon(self.data.icon_id)
+end
+
 return UnitDefinition

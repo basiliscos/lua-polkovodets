@@ -128,6 +128,7 @@ function UnitLib:load(unit_file)
       data.spotting = tonumber(data.spotting)
       data.movement = tonumber(data.movement)
       data.fuel = tonumber(data.fuel)
+      data.icon_id = tonumber(data.icon_id)
       data.range = tonumber(data.range)
       data.ammo = tonumber(data.ammo)
       data.attack.count = tonumber(data.attack.count)
@@ -135,6 +136,10 @@ function UnitLib:load(unit_file)
       unit_definitions[id] = unit_def
    end
    self.unit_definitions = unit_definitions
+end
+
+function UnitLib:get_unit_icon(id)
+   return self.engine.renderer:get_joint_texture(self.icons.units, id)
 end
 
 return UnitLib

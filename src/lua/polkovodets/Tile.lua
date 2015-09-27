@@ -81,6 +81,11 @@ function Tile:draw(sdl_renderer, x, y)
       local icon_texture = terrain:get_icon('grid')
       assert(sdl_renderer:copy(icon_texture, self.grid_rectange, dst))
    end
+
+   -- draw unit
+   if (self.unit) then
+      self.unit:draw(sdl_renderer, x, y)
+   end
 end
 
 return Tile
