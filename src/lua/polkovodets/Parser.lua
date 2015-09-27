@@ -93,14 +93,17 @@ function Parser:get_value(key)
    return v
 end
 
-function Parser:get_list_value(key)
-   local v = self:get_value(key)
+function Parser.split_list(value)
+   assert(value)
    local list = {}
-   -- %.+°?
-   for item in string.gmatch(v, '[^°]+') do
+   for item in string.gmatch(value, '[^°]+') do
 	  list[ #list + 1] = item
    end
    return list
+end
+
+function Parser:get_list_value(key)
+   return Parser.split_list(self:get_value(key))
 end
 
 function Parser:get_raw_data()

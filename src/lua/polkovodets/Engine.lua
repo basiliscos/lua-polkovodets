@@ -125,6 +125,16 @@ end
 
 function Engine:set_flags(flags) self.flags = flags end
 
+function Engine:set_players(players)
+   self.players = players
+   local player_for = {}
+
+   for i, p in pairs(players) do
+      player_for[p.id] = p
+   end
+   self.player_for = player_for
+end
+
 
 function Engine:current_turn() return self.turn end
 

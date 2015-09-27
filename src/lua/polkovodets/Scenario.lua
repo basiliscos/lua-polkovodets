@@ -22,6 +22,7 @@ Scenario.__index = Scenario
 local inspect = require('inspect')
 local Map = require 'polkovodets.Map'
 local Nation = require 'polkovodets.Nation'
+local Player = require 'polkovodets.Player'
 local UnitLib = require 'polkovodets.UnitLib'
 local Parser = require 'polkovodets.Parser'
 
@@ -102,6 +103,17 @@ function Scenario:load(file)
    end
    local unit_lib = UnitLib.create(engine)
    unit_lib:load(unit_files[1]) -- hard-code, support only 1 unit file for now
+
+   -- load players
+   local players_data = assert(parser:get_value('players'))
+   local players = {}
+   for player_id, data in pairs(players_data) do
+      data.id = player_id
+      data.nations = Parser.split_list(data.nations)
+      local player = Player.create(engine, data)
+      table.insert(players, player)
+   end
+   engine:set_players(players)
 
    engine:set_scenario(self)
 end

@@ -19,9 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local UnitDefinition = {}
 UnitDefinition.__index = UnitDefinition
 
-local Parser = require 'polkovodets.Parser'
-
-
 function UnitDefinition.create(engine, data)
    local unit_lib = engine.unit_lib
 
