@@ -16,26 +16,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
-local Player = {}
-Player.__index = Player
+local Unit = {}
+Unit.__index = Unit
 
-function Player.create(engine, data)
+function Unit.create(engine, data)
    assert(data.id)
-   assert(data.name)
-   assert(data.nations)
+   assert(data.nation)
+   assert(data.x)
+   assert(data.y)
+   assert(data.str)
+   assert(data.entr)
+   assert(data.exp)
 
-   for k,nation_id in pairs(data.nations) do
-      assert(engine.nation_for[nation_id], "no nation '" .. nation_id .. "' present in scenario")
-   end
+   local definition = assert(engine.unit_lib.unit_definitions[data.id])
+   local nation = assert(engine.nation_for[data.nation])
+   local x,y = tonumber(data.x), tonumber(data.y)
+   local tile = assert(engine.map.tiles[x][y])
    
    local o = {
-      id = data.id,
       engine = engine,
-      data   = data,
-      units = {},
+      nation = nation,
+      tile = tile,
+      definition = definition,
+      data = {
+         streight      = data.str,
+         entrenchment = data.entr,
+         experience   = data.exp,
+      }
    }
-   setmetatable(o, Player)
+   setmetatable(o, Unit)
+   tile.unit = o
    return o
 end
 
-return Player
+return Unit

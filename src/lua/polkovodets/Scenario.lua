@@ -23,6 +23,7 @@ local inspect = require('inspect')
 local Map = require 'polkovodets.Map'
 local Nation = require 'polkovodets.Nation'
 local Player = require 'polkovodets.Player'
+local Unit = require 'polkovodets.Unit'
 local UnitLib = require 'polkovodets.UnitLib'
 local Parser = require 'polkovodets.Parser'
 
@@ -64,8 +65,8 @@ function Scenario:load(file)
    -- print(inspect(nation_definitions))
 
    local nations = {}
-   for key, nation_data in pairs(nation_definitions) do
-	  nation_data.key = key
+   for id, nation_data in pairs(nation_definitions) do
+	  nation_data.id = id
 	  local nation = Nation.create(engine, nations_shared_data, nation_data)
 	  nations[ #nations +1 ] = nation
    end
@@ -107,13 +108,33 @@ function Scenario:load(file)
    -- load players
    local players_data = assert(parser:get_value('players'))
    local players = {}
+   local nation_for_player = {} -- used for lookup player
    for player_id, data in pairs(players_data) do
       data.id = player_id
       data.nations = Parser.split_list(data.nations)
       local player = Player.create(engine, data)
       table.insert(players, player)
+      -- print(inspect(data.nations))
+      for k,nation_id in pairs(data.nations) do
+         nation_for_player[nation_id] = player
+      end
    end
    engine:set_players(players)
+
+   -- load units
+   local units_data = assert(parser:get_value('units'))
+   local all_units = {}
+   for k, data in pairs(units_data.unit) do
+      data.x = tonumber(data.x)
+      data.y = tonumber(data.y)
+      data.str = tonumber(data.str)
+      data.exp = tonumber(data.exp)
+      data.entr = tonumber(data.entr)
+      local unit = Unit.create(engine, data)
+      table.insert(all_units, unit)
+      local player = nation_for_player[unit.nation.data.id]
+      table.insert(player.units, unit)
+   end
 
    engine:set_scenario(self)
 end

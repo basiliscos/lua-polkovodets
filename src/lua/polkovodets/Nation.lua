@@ -22,9 +22,9 @@ Nation.__index = Nation
 local Parser = require 'polkovodets.Parser'
 
 function Nation.create(engine, shared_data, nation_data)
+   assert(nation_data.id)
    assert(nation_data.icon_id)
    assert(nation_data.name)
-   assert(nation_data.key)
 
    assert(shared_data.icon_width)
    assert(shared_data.icon_height)

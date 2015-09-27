@@ -117,8 +117,8 @@ function Engine:set_nations(nations)
    -- nations hash
    local nation_for = {}
    for _,nation in pairs(nations) do
-	  local key = nation.data.key
-	  nation_for[key] = nation
+	  local id = nation.data.id
+	  nation_for[id] = nation
    end
    self.nation_for = nation_for
 end

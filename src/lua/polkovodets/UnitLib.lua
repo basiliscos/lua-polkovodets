@@ -132,7 +132,7 @@ function UnitLib:load(unit_file)
       data.ammo = tonumber(data.ammo)
       data.attack.count = tonumber(data.attack.count)
       local unit_def = UnitDefinition.create(engine, data)
-      table.insert(unit_definitions, unit_def)
+      unit_definitions[id] = unit_def
    end
    self.unit_definitions = unit_definitions
 end
