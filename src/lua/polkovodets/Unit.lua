@@ -19,6 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Unit = {}
 Unit.__index = Unit
 
+local inspect = require('inspect')
+local SDL = require "SDL"
+
+
 function Unit.create(engine, data)
    assert(data.id)
    assert(data.nation)
@@ -27,21 +31,23 @@ function Unit.create(engine, data)
    assert(data.str)
    assert(data.entr)
    assert(data.exp)
+   assert(data.orientation)
 
    local definition = assert(engine.unit_lib.unit_definitions[data.id])
    local nation = assert(engine.nation_for[data.nation])
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
-   
+
    local o = {
       engine = engine,
       nation = nation,
       tile = tile,
       definition = definition,
       data = {
-         streight      = data.str,
+         streight     = data.str,
          entrenchment = data.entr,
          experience   = data.exp,
+         orientation  = data.orientation,
       }
    }
    setmetatable(o, Unit)
@@ -62,7 +68,19 @@ function Unit:draw(sdl_renderer, x, y)
       w = w,
       h = h,
    }
-   assert(sdl_renderer:copy(texture, {x = o , y = 0, w = w, h = h} , dst))
+   local orientation = self.data.orientation
+   assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
+   local flip = (orientation == 'right') and SDL.rendererFlip.none or
+                 (orientation == 'left') and SDL.rendererFlip.Horizontal
+
+   assert(sdl_renderer:copyEx(
+             texture,
+             {x = 0 , y = 0, w = w, h = h}, -- src
+             dst,
+             nil,                           -- no angle
+             nil,                           -- no center
+             flip
+   ))
 end
 
 return Unit

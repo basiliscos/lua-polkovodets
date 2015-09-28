@@ -22,6 +22,7 @@ Player.__index = Player
 function Player.create(engine, data)
    assert(data.id)
    assert(data.name)
+   assert(data.orientation)
    assert(data.nations)
 
    for k,nation_id in pairs(data.nations) do

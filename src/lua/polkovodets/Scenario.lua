@@ -125,14 +125,16 @@ function Scenario:load(file)
    local units_data = assert(parser:get_value('units'))
    local all_units = {}
    for k, data in pairs(units_data.unit) do
+      local player = nation_for_player[data.nation]
+
       data.x = tonumber(data.x)
       data.y = tonumber(data.y)
       data.str = tonumber(data.str)
       data.exp = tonumber(data.exp)
       data.entr = tonumber(data.entr)
+      data.orientation = player.data.orientation
       local unit = Unit.create(engine, data)
       table.insert(all_units, unit)
-      local player = nation_for_player[unit.nation.data.id]
       table.insert(player.units, unit)
    end
 
