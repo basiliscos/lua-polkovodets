@@ -311,6 +311,10 @@ function Renderer:main_loop()
 			self.size = table.pack(self.window:getSize())
 			engine:update_shown_map()
 		 end
+      elseif (t == SDL.event.KeyUp) then
+         if (e.keysym.sym == SDL.key.e) then
+            engine:end_turn()
+         end
       elseif (t == SDL.event.MouseMotion) then
          self:_recalc_active_tile()
 	  end

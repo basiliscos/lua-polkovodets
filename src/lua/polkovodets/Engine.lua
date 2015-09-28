@@ -137,5 +137,9 @@ end
 
 
 function Engine:current_turn() return self.turn end
+function Engine:end_turn()
+   self.turn = self.turn + 1
+   print("current turm: " .. self.turn)
+end
 
 return Engine
