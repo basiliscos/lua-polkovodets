@@ -23,6 +23,7 @@ local inspect = require('inspect')
 function Parser.create(path)
    print("opening " .. path)
    local file = io.open(path , "r")
+   assert(file, "error opening file at " .. path)
    local signature = file:read('*l')
    if (signature ~= '@') then error("Map file " .. path .. " has wrong signature") end
    local data = {}
