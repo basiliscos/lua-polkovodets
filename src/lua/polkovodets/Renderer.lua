@@ -179,7 +179,7 @@ function Renderer:_draw_map()
 end
 
 
-function Renderer:_check_scroll()
+function Renderer:_check_scroll(scroll_dx, scroll_dy)
    local engine = self.engine
    local map_x, map_y = engine.gui.map_x, engine.gui.map_y
    local map_w, map_h = engine.map.width, engine.map.height
@@ -187,16 +187,16 @@ function Renderer:_check_scroll()
    local state, x, y = SDL.getMouseState()
 
    local direction
-   if (y < SCROLL_TOLERANCE and map_y > 0) then
+   if ((y < SCROLL_TOLERANCE or scroll_dy > 0) and map_y > 0) then
       engine.gui.map_y = engine.gui.map_y - 1
       direction = "up"
-   elseif ((y > self.size[2] - SCROLL_TOLERANCE) and map_y < map_h - map_sh) then
+   elseif (((y > self.size[2] - SCROLL_TOLERANCE) or scroll_dy < 0) and map_y < map_h - map_sh) then
       engine.gui.map_y = engine.gui.map_y + 1
       direction = "down"
-   elseif (x < SCROLL_TOLERANCE and map_x > 0) then
+   elseif ((x < SCROLL_TOLERANCE or scroll_dx < 0)  and map_x > 0) then
       engine.gui.map_x = engine.gui.map_x - 1
       direction = "left"
-   elseif ((x > self.size[1] - SCROLL_TOLERANCE) and map_x < map_w - map_sw) then
+   elseif (((x > self.size[1] - SCROLL_TOLERANCE) or scroll_dx > 0) and map_x < map_w - map_sw) then
       engine.gui.map_x = engine.gui.map_x + 1
       direction = "right"
    end
@@ -288,7 +288,7 @@ end
 
 
 function Renderer:_draw_world()
-   self:_check_scroll()
+   self:_check_scroll(0, 0) -- check scroll by mouse position
    self:_draw_map()
    self:_draw_active_hex_info()
    self:_draw_cursor()
@@ -317,6 +317,8 @@ function Renderer:main_loop()
          end
       elseif (t == SDL.event.MouseMotion) then
          self:_recalc_active_tile()
+      elseif (t == SDL.event.MouseWheel) then
+         self:_check_scroll(e.x, e.y) -- check scroll by mouse wheel
 	  end
 	  sdl_renderer:clear()
 	  self:_draw_world()
