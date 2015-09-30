@@ -32,6 +32,7 @@ function Renderer.create(engine, window, sdl_renderer)
    assert(ttf.init())
    local o = {
       active_tile = {0, 0},
+      selected_unit = nil,
 	  size = table.pack(window:getSize()),
       current_cursor = 0,
 	  engine = engine,
@@ -317,6 +318,15 @@ function Renderer:main_loop()
          end
       elseif (t == SDL.event.MouseMotion) then
          self:_recalc_active_tile()
+      elseif (t == SDL.event.MouseButtonUp) then
+         self:_recalc_active_tile()
+         local x, y = table.unpack(self.active_tile)
+         local tile = engine.map.tiles[x][y]
+         if (tile.unit) then
+            if (self.selected_unit) then self.selected_unit.data.selected = false end
+            tile.unit.data.selected = true
+            self.selected_unit = tile.unit
+         end
       elseif (t == SDL.event.MouseWheel) then
          self:_check_scroll(e.x, e.y) -- check scroll by mouse wheel
 	  end

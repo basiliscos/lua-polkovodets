@@ -56,6 +56,7 @@ function Terrain:load(terrain_file)
       engine.renderer:load_texture(path)
    end
    load_icon('grid')
+   load_icon('frame')
 
    -- load terrain hexes
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]

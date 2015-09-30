@@ -44,6 +44,7 @@ function Unit.create(engine, data)
       tile = tile,
       definition = definition,
       data = {
+         selected     = false,
          streight     = data.str,
          entrenchment = data.entr,
          experience   = data.exp,
@@ -72,6 +73,11 @@ function Unit:draw(sdl_renderer, x, y)
    assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
    local flip = (orientation == 'right') and SDL.rendererFlip.none or
                  (orientation == 'left') and SDL.rendererFlip.Horizontal
+
+   if (self.data.selected) then
+      local frame_icon = terrain:get_icon('frame')
+      assert(sdl_renderer:copy(frame_icon, nil, {x = x, y = y, w = hex_w, h = hex_h}))
+   end
 
    assert(sdl_renderer:copyEx(
              texture,
