@@ -33,4 +33,30 @@ is(engine.gui.map_sh, 11)
 is(engine.gui.map_sx, -45)
 is(engine.gui.map_sy, -50)
 
+local adj_tiles_33 = {}
+for t in engine:get_adjastent_tiles(map.tiles[3][3]) do
+   table.insert(adj_tiles_33, t.uniq_id)
+end
+is_deeply(adj_tiles_33, {
+             "tile[2:2]",
+             "tile[3:2]",
+             "tile[4:2]",
+             "tile[4:3]",
+             "tile[3:4]",
+             "tile[2:3]",
+})
+
+local adj_tiles_43 = {}
+for t in engine:get_adjastent_tiles(map.tiles[4][3]) do
+   table.insert(adj_tiles_43, t.uniq_id)
+end
+is_deeply(adj_tiles_43, {
+             "tile[3:3]",
+             "tile[4:2]",
+             "tile[5:3]",
+             "tile[5:4]",
+             "tile[4:4]",
+             "tile[3:4]",
+})
+
 done_testing()

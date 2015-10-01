@@ -38,6 +38,8 @@ function Unit.create(engine, data)
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
+   local fuel = data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
+
    local o = {
       engine = engine,
       nation = nation,
@@ -48,6 +50,7 @@ function Unit.create(engine, data)
          streight     = data.str,
          entrenchment = data.entr,
          experience   = data.exp,
+         fuel         = fuel,
          orientation  = data.orientation,
       }
    }
@@ -87,6 +90,18 @@ function Unit:draw(sdl_renderer, x, y)
              nil,                           -- no center
              flip
    ))
+end
+
+function Unit:move_cost(tile)
+   local move_type = self.definition.data.move_type
+   local weather = self.engine:current_weather()
+   local cost_for = tile.data.terrain_type.move_cost
+   local value = cost_for[move_type][weather]
+   -- all movement cost
+   if (value == 'A') then return self.definition.data.movement
+   -- impassable
+   elseif (value == 'X') then return math.maxinteger
+   else return tonumber(value) end
 end
 
 return Unit

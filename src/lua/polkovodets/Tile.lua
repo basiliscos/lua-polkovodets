@@ -31,11 +31,16 @@ function Tile.create(engine, data)
    assert(data.terrain_name)
 
    local o = {
+      uniq_id = Tile.uniq_id(data.x, data.y),
 	  engine = engine,
 	  data = data,
    }
    setmetatable(o, Tile)
    return o
+end
+
+function Tile.uniq_id(x,y)
+   return string.format("tile[%d:%d]", x, y)
 end
 
 
@@ -47,10 +52,8 @@ function Tile:draw(sdl_renderer, x, y)
 
    local engine = self.engine
    local map = engine:get_map()
-   local scenario = engine:get_scenario()
    local terrain = map.terrain
-   local turn = engine:current_turn()
-   local weather = assert(scenario.weather[turn])
+   local weather = engine:current_weather()
 
    local joint_weather_image = assert(self.data.terrain_type.image[weather])
 

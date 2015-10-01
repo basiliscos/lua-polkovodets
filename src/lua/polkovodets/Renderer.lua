@@ -323,8 +323,8 @@ function Renderer:main_loop()
          local x, y = table.unpack(self.active_tile)
          local tile = engine.map.tiles[x][y]
          if (tile.unit) then
-            if (self.selected_unit) then self.selected_unit.data.selected = false end
-            tile.unit.data.selected = true
+            if (self.selected_unit) then engine:unselect_unit(self.selected_unit) end
+            engine:select_unit(tile.unit)
             self.selected_unit = tile.unit
          end
       elseif (t == SDL.event.MouseWheel) then
