@@ -1,6 +1,11 @@
 local DummyRenderer = {}
 DummyRenderer.__index = DummyRenderer
 
+local _DummyTexture = {}
+_DummyTexture.__index = _DummyTexture
+
+function _DummyTexture:setAlphaMod() return true end
+
 function DummyRenderer.create(width, height)
    local o = {
 	  w = width,
@@ -20,7 +25,9 @@ function DummyRenderer:load_joint_texture(path, frame)
 end
 
 function DummyRenderer:load_texture(path)
-   return "dummy-texture[" .. path .. "]"
+   local o = { path = path }
+   setmetatable(o, _DummyTexture)
+   return o
 end
 
 return DummyRenderer

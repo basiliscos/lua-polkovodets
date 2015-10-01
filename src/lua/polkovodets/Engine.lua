@@ -151,8 +151,9 @@ function Engine:current_weather()
    return self.scenario.weather[turn]
 end
 
-function Engine:get_adjastent_tiles(tile)
+function Engine:get_adjastent_tiles(tile, skip_tiles)
    local map = self.map
+   local visited_tiles = skip_tiles or {}
    local x, y = tile.data.x, tile.data.y
    local corrections = (x % 2) == 0
       and {
@@ -184,10 +185,11 @@ function Engine:get_adjastent_tiles(tile)
          found = (near_tile <= 6)
             and (nx > 1 and nx < map.width)
             and (ny > 1 and ny < map.height)
+            and not visited_tiles[Tile.uniq_id(nx, ny)]
       end
       if (found) then
          local tile = map.tiles[nx][ny]
-         -- print("found: " .. tile.uniq_id .. " ( " .. near_tile .. " ) ")
+         print("found: " .. tile.uniq_id .. " ( " .. near_tile .. " ) ")
          found = false -- allow further iterations
          return tile
       end
@@ -207,7 +209,6 @@ function Engine:select_unit(u)
    local map_sw = (self.gui.map_sw > map.width) and map.width or self.gui.map_sw
    local map_sh = (self.gui.map_sh > map.height) and map.height or self.gui.map_sh
 
-   local fuel_at = {};
    local inspect_queue = {}
    local add_reachability_tile = function(src_tile, dst_tile, cost)
       table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
@@ -234,10 +235,11 @@ function Engine:select_unit(u)
 
    -- initialize reachability with tile, on which unit is already located
    add_reachability_tile(u.tile, u.tile, 0)
+   local fuel_at = {};
    local fuel_limit = u.definition.data.fuel == 0 and u.definition.data.movement or u.data.fuel
    for src_tile, dst_tile, cost in get_nearest_tile() do
       fuel_at[dst_tile.uniq_id] = cost
-      for adj_tile in self:get_adjastent_tiles(dst_tile) do
+      for adj_tile in self:get_adjastent_tiles(dst_tile, fuel_at) do
          local adj_cost = u:move_cost(adj_tile)
          local total_cost = cost + adj_cost
          if (total_cost <= fuel_limit) then
