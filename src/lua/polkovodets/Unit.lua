@@ -92,6 +92,15 @@ function Unit:draw(sdl_renderer, x, y)
    ))
 end
 
+function Unit:available_movement()
+   local movement = self.definition.data.movement
+   if (self.definition.data.fuel == 0) then
+      return movement
+   else
+      return math.min(self.data.fuel, movement)
+   end
+end
+
 function Unit:move_cost(tile)
    local move_type = self.definition.data.move_type
    local weather = self.engine:current_weather()

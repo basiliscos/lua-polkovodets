@@ -27,4 +27,16 @@ is(berlin.data.nation.data.name, "Germany")
 ok(engine.unit_lib)
 ok(engine.unit_lib.unit_definitions)
 
+local unit_rus_art = map.tiles[7][5].unit
+ok(unit_rus_art)
+is(unit_rus_art:available_movement(), 1)
+
+local unit_rus_inf = map.tiles[8][5].unit
+ok(unit_rus_inf)
+is(unit_rus_inf:available_movement(), 3)
+
+local unit_rus_tank = map.tiles[8][4].unit
+ok(unit_rus_tank)
+is(unit_rus_tank:available_movement(), 6)
+
 done_testing()

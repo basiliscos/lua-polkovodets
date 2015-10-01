@@ -236,7 +236,7 @@ function Engine:select_unit(u)
    -- initialize reachability with tile, on which unit is already located
    add_reachability_tile(u.tile, u.tile, 0)
    local fuel_at = {};
-   local fuel_limit = u.definition.data.fuel == 0 and u.definition.data.movement or u.data.fuel
+   local fuel_limit = u:available_movement()
    for src_tile, dst_tile, cost in get_nearest_tile() do
       fuel_at[dst_tile.uniq_id] = cost
       for adj_tile in self:get_adjastent_tiles(dst_tile, fuel_at) do
