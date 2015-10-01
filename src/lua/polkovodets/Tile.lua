@@ -65,6 +65,15 @@ function Tile:draw(sdl_renderer, x, y)
 
    -- draw terrain
    assert(sdl_renderer:copy(texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+   if (engine:get_selected_unit()) then
+      local u = engine:get_selected_unit()
+      local movement_area = u.data.actions_map.move
+      if (not movement_area[self.uniq_id]) then
+         local fog_texture = terrain:get_icon('fog')
+         assert(sdl_renderer:copy(fog_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+      end
+   end
+
    local show_grid = engine.options.show_grid
 
    -- draw nation flag

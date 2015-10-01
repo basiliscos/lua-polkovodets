@@ -27,6 +27,7 @@ local Tile = require 'polkovodets.Tile'
 function Engine.create()
    local e = {
 	  turn = 0,
+      selected_unit = nil,
       theme = {
          name = 'default',
          active_hex = {
@@ -248,11 +249,20 @@ function Engine:select_unit(u)
 
    u.data.actions_map = actions_map
    print(inspect(actions_map))
+   self.selected_unit = u
 end
 
-function Engine:unselect_unit(u)
-   u.data.selected = false
-   u.data.actions_map = nil
+
+function Engine:unselect_unit()
+   if (self.selected_unit) then
+      self.selected_unit.data.selected = false
+   end
+   self.selected_unit = nil
 end
+
+function Engine:get_selected_unit()
+   return self.selected_unit
+end
+
 
 return Engine

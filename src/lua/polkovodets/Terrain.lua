@@ -57,6 +57,9 @@ function Terrain:load(terrain_file)
    end
    load_icon('grid')
    load_icon('frame')
+   load_icon('fog')
+   local fog_texture = self:get_icon('fog')
+   assert(fog_texture:setAlphaMod(40))
 
    -- load terrain hexes
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
