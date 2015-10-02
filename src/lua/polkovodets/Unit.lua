@@ -23,7 +23,8 @@ local inspect = require('inspect')
 local SDL = require "SDL"
 
 
-function Unit.create(engine, data)
+function Unit.create(engine, data, player)
+   assert(player, "unit should have player assigned")
    assert(data.id)
    assert(data.nation)
    assert(data.x)
@@ -44,6 +45,7 @@ function Unit.create(engine, data)
    local o = {
       engine = engine,
       nation = nation,
+      player = player,
       tile = tile,
       definition = definition,
       data = {
@@ -58,6 +60,7 @@ function Unit.create(engine, data)
    }
    setmetatable(o, Unit)
    tile.unit = o
+   table.insert(player.units, o)
    return o
 end
 
@@ -162,22 +165,32 @@ function Unit:update_actions_map()
    -- initialize reachability with tile, on which the unit is already located
    add_reachability_tile(self.tile, self.tile, 0)
    local fuel_at = {};
+   local attack_map = {};
    local fuel_limit = self:available_movement()
    for src_tile, dst_tile, cost in get_nearest_tile() do
-      if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
-         cost = fuel_at[dst_tile.uniq_id]
+      -- attack branch
+      if (dst_tile.unit and dst_tile.unit.player ~= self.player) then
+         print(string.format("can attack at: %s", dst_tile.uniq_id))
+      -- move branch
       else
-         -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
-         fuel_at[dst_tile.uniq_id] = cost
-      end
-      for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
-         local adj_cost = self:move_cost(adj_tile)
-         local total_cost = cost + adj_cost
-         if (total_cost <= fuel_limit) then
-            add_reachability_tile(dst_tile, adj_tile, total_cost)
+         if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
+            cost = fuel_at[dst_tile.uniq_id]
+         else
+            -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
+            fuel_at[dst_tile.uniq_id] = cost
+         end
+         for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
+            local adj_cost = self:move_cost(adj_tile)
+            local total_cost = cost + adj_cost
+            -- local has_enemy_unit = adj_tile.uniq and adj_tile.unit.player ~= self.player
+            if (total_cost <= fuel_limit and not has_enemy_unit) then
+               add_reachability_tile(dst_tile, adj_tile, total_cost)
+            end
          end
       end
    end
+   -- do not move on the tile, where unit is already located
+   fuel_at[self.tile.uniq_id] = nil
    actions_map.move = fuel_at
 
    self.data.actions_map = actions_map

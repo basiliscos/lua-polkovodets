@@ -37,6 +37,12 @@ function Renderer.create(engine, window, sdl_renderer)
 	  engine = engine,
 	  window = window,
 	  sdl_renderer = sdl_renderer,
+      cursors = {
+         ['default'     ] = 1,
+         ['move.leg'    ] = 2,
+         ['move.towed'  ] = 3,
+         ['move.tracked'] = 3,
+      },
 	  textures_cache = {},
       resources = {},
       fonts = {},
@@ -60,7 +66,10 @@ function Renderer:_load_theme()
    local cursors_file = 'cursors.bmp'
    local cursors_path = dir .. '/' .. cursors_file
    self.resources.cursors = cursors_path
-   self:load_texture(cursors_path)
+
+   local iterator_factory = function(surface) return self:create_simple_iterator(surface, CURSOR_SIZE, 0) end
+   self:load_joint_texture(cursors_path, iterator_factory)
+
    local active_hex_font = dir .. '/' .. engine.theme.active_hex.font
    local active_hex_size = engine.theme.active_hex.font_size
    self.fonts.active_tile = assert(ttf.open(active_hex_font, active_hex_size))
@@ -249,12 +258,24 @@ end
 
 
 function Renderer:_draw_cursor()
-   -- print("x = " .. x .. ", y = " .. y)
    local state, x, y = SDL.getMouseState()
-   local joint_cursors_texture = self:load_texture(self.resources.cursors)
-   local src = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = (self.current_cursor * CURSOR_SIZE), y = 0}
+   local kind = 'default'
+   local u = self.engine:get_selected_unit()
+   if (u) then
+      local tx, ty = table.unpack(self.active_tile)
+      local tile = self.engine.map.tiles[tx][ty]
+      local actions_map = u.data.actions_map
+      if (actions_map.move[tile.uniq_id]) then
+         local move_type = u.definition.data.move_type
+         kind = 'move.' .. move_type
+      end
+   end
+   local cursor_idx = assert(self.cursors[kind], "no cursor of " .. kind)
+   local cursor_texture = self:get_joint_texture(self.resources.cursors, cursor_idx)
+   -- local cursor_texture = self.engine.map.terrain:get_icon('frame')
+   local src = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = 0, y = 0 }
    local dst = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = x, y = y }
-   assert(self.sdl_renderer:copy(joint_cursors_texture, src, dst))
+   assert(self.sdl_renderer:copy(cursor_texture, src, dst))
 end
 
 
