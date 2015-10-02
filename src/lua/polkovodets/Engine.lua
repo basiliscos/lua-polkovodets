@@ -189,7 +189,7 @@ function Engine:get_adjastent_tiles(tile, skip_tiles)
       end
       if (found) then
          local tile = map.tiles[nx][ny]
-         print("found: " .. tile.uniq_id .. " ( " .. near_tile .. " ) ")
+         -- print("found: " .. tile.uniq_id .. " ( " .. near_tile .. " ) ")
          found = false -- allow further iterations
          return tile
       end
