@@ -132,6 +132,16 @@ function Unit:move_to(dst_tile)
    self:update_actions_map()
 end
 
+
+function Unit:_enemy_near(tile)
+   for adj_tile in self.engine:get_adjastent_tiles(tile) do
+      local has_enemy = adj_tile.unit and adj_tile.unit.player ~= self.player
+      if (has_enemy) then return true end
+   end
+   return false
+end
+
+
 function Unit:update_actions_map()
    local engine = self.engine
    local map = engine.map
@@ -156,6 +166,10 @@ function Unit:update_actions_map()
             local node = inspect_queue[min_idx]
             local src, dst = node.from, node.to
             table.remove(inspect_queue, min_idx)
+            -- remove more costly destionations
+            for idx, n in ipairs(inspect_queue) do
+               if (n.to == dst) then table.remove(inspect_queue, idx) end
+            end
             return src, dst, min_cost
          end
       end
@@ -170,7 +184,7 @@ function Unit:update_actions_map()
    for src_tile, dst_tile, cost in get_nearest_tile() do
       -- attack branch
       if (dst_tile.unit and dst_tile.unit.player ~= self.player) then
-         print(string.format("can attack at: %s", dst_tile.uniq_id))
+         -- print(string.format("can attack at: %s", dst_tile.uniq_id))
       -- move branch
       else
          if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
@@ -182,8 +196,10 @@ function Unit:update_actions_map()
          for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
             local adj_cost = self:move_cost(adj_tile)
             local total_cost = cost + adj_cost
-            -- local has_enemy_unit = adj_tile.uniq and adj_tile.unit.player ~= self.player
-            if (total_cost <= fuel_limit and not has_enemy_unit) then
+            local has_enemy_near = self:_enemy_near(dst_tile)
+            -- ignore near enemy, if we are moving from the start tile
+            if (dst_tile == self.tile) then has_enemy_near = false end
+            if (total_cost <= fuel_limit and not has_enemy_near) then
                add_reachability_tile(dst_tile, adj_tile, total_cost)
             end
          end

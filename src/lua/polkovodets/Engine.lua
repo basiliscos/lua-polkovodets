@@ -147,6 +147,7 @@ function Engine:end_turn()
    for k, unit in pairs(self.all_units) do
       unit.data.movement = unit.definition.data.movement
    end
+   self:unselect_unit()
 end
 
 function Engine:current_weather()

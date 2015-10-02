@@ -254,9 +254,9 @@ function Renderer:_recalc_active_tile()
       end
    end
    local tx, ty = map_x + engine.gui.map_x + 1, map_y + engine.gui.map_y + 1
-   if (tx > 0 and tx <= map.width ) then -- and ty > 0 and ty <= map.height
+   if (tx > 0 and tx <= map.width and ty > 0 and ty <= map.height) then
 	   self.active_tile = {tx, ty}
-	   -- print(string.format("active tile = %d:%d", map_x, map_y))
+       -- print(string.format("active tile = %d:%d", map_x, map_y))
 	end
 end
 
