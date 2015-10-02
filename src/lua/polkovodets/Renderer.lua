@@ -219,6 +219,7 @@ end
 
 function Renderer:_recalc_active_tile()
    local engine = self.engine
+   local map = engine.map
    local terrain = engine:get_map().terrain
    local map_sx, map_sy = engine.gui.map_sx, engine.gui.map_sy
    local hex_h = terrain.hex_height
@@ -252,8 +253,11 @@ function Renderer:_recalc_active_tile()
          map_y = map_y + fix[2]
       end
    end
-   self.active_tile = {map_x + engine.gui.map_x + 1, map_y + engine.gui.map_y + 1}
-   -- print(string.format("active tile = %d:%d", map_x, map_y))
+   local tx, ty = map_x + engine.gui.map_x + 1, map_y + engine.gui.map_y + 1
+   if (tx > 0 and tx <= map.width ) then -- and ty > 0 and ty <= map.height
+	   self.active_tile = {tx, ty}
+	   -- print(string.format("active tile = %d:%d", map_x, map_y))
+	end
 end
 
 
@@ -261,7 +265,7 @@ function Renderer:_draw_cursor()
    local state, x, y = SDL.getMouseState()
    local kind = 'default'
    local u = self.engine:get_selected_unit()
-   if (u) then
+   if (u and self.active_tile) then
       local tx, ty = table.unpack(self.active_tile)
       local tile = self.engine.map.tiles[tx][ty]
       local actions_map = u.data.actions_map
