@@ -200,58 +200,8 @@ end
 
 function Engine:select_unit(u)
    u.data.selected = true
-   local map = self.map
-   -- determine, what the current user can do at the visible area
-   local actions_map = {}
-   local start_map_x = self.gui.map_x
-   local start_map_y = self.gui.map_y
-
-   local map_sw = (self.gui.map_sw > map.width) and map.width or self.gui.map_sw
-   local map_sh = (self.gui.map_sh > map.height) and map.height or self.gui.map_sh
-
-   local inspect_queue = {}
-   local add_reachability_tile = function(src_tile, dst_tile, cost)
-      table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
-   end
-
-   local get_nearest_tile = function()
-      local iterator = function(state, value) -- ignored
-         if (#inspect_queue > 0) then
-            -- find route to a hex with smallest cost
-            local min_idx, min_cost = 1, inspect_queue[1].cost
-            for idx = 2, #inspect_queue do
-               if (inspect_queue[idx].cost < min_cost) then
-                  min_idx, min_cost = idx, inspect_queue[idx].cost
-               end
-            end
-            local node = inspect_queue[min_idx]
-            local src, dst = node.from, node.to
-            table.remove(inspect_queue, min_idx)
-            return src, dst, min_cost
-         end
-      end
-      return iterator, nil, true
-   end
-
-   -- initialize reachability with tile, on which unit is already located
-   add_reachability_tile(u.tile, u.tile, 0)
-   local fuel_at = {};
-   local fuel_limit = u:available_movement()
-   for src_tile, dst_tile, cost in get_nearest_tile() do
-      fuel_at[dst_tile.uniq_id] = cost
-      for adj_tile in self:get_adjastent_tiles(dst_tile, fuel_at) do
-         local adj_cost = u:move_cost(adj_tile)
-         local total_cost = cost + adj_cost
-         if (total_cost <= fuel_limit) then
-            add_reachability_tile(dst_tile, adj_tile, total_cost)
-         end
-      end
-   end
-   actions_map.move = fuel_at
-
-   u.data.actions_map = actions_map
-   print(inspect(actions_map))
    self.selected_unit = u
+   u:update_actions_map()
 end
 
 
@@ -266,5 +216,20 @@ function Engine:get_selected_unit()
    return self.selected_unit
 end
 
+
+function Engine:click_on_tile(x,y)
+   local tile = self.map.tiles[x][y]
+   if (tile.unit) then
+      self:unselect_unit()
+      self:select_unit(tile.unit)
+   elseif (self.selected_unit) then
+      local u = self.selected_unit
+      local actions_map = u.data.actions_map
+      local move_map = actions_map.move
+      if (move_map[tile.uniq_id]) then
+         u:move_to(tile)
+      end
+   end
+end
 
 return Engine

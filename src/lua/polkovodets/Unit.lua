@@ -39,6 +39,7 @@ function Unit.create(engine, data)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
    local fuel = data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
+   local movement = tonumber(definition.data.movement)
 
    local o = {
       engine = engine,
@@ -52,6 +53,7 @@ function Unit.create(engine, data)
          experience   = data.exp,
          fuel         = fuel,
          orientation  = data.orientation,
+         movement     = movement,
       }
    }
    setmetatable(o, Unit)
@@ -93,11 +95,12 @@ function Unit:draw(sdl_renderer, x, y)
 end
 
 function Unit:available_movement()
-   local movement = self.definition.data.movement
+   local fuel = self.data.fuel
+   local movement = self.data.movement
    if (self.definition.data.fuel == 0) then
       return movement
    else
-      return math.min(self.data.fuel, movement)
+      return math.min(fuel, movement)
    end
 end
 
@@ -111,6 +114,74 @@ function Unit:move_cost(tile)
    -- impassable
    elseif (value == 'X') then return math.maxinteger
    else return tonumber(value) end
+end
+
+function Unit:move_to(dst_tile)
+   assert(self.data.movement > 0, "unit already has been moved")
+   local cost = assert(self.data.actions_map.move[dst_tile.uniq_id])
+   if (self.definition.data.fuel > 0) then
+      self.data.fuel = self.data.fuel - cost
+   end
+   self.data.movement = 0
+   self.tile.unit = nil
+   dst_tile.unit = self
+   self.tile = dst_tile
+   self:update_actions_map()
+end
+
+function Unit:update_actions_map()
+   local engine = self.engine
+   local map = engine.map
+   -- determine, what the current user can do at the visible area
+   local actions_map = {}
+
+   local inspect_queue = {}
+   local add_reachability_tile = function(src_tile, dst_tile, cost)
+      table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
+   end
+
+   local get_nearest_tile = function()
+      local iterator = function(state, value) -- ignored
+         if (#inspect_queue > 0) then
+            -- find route to a hex with smallest cost
+            local min_idx, min_cost = 1, inspect_queue[1].cost
+            for idx = 2, #inspect_queue do
+               if (inspect_queue[idx].cost < min_cost) then
+                  min_idx, min_cost = idx, inspect_queue[idx].cost
+               end
+            end
+            local node = inspect_queue[min_idx]
+            local src, dst = node.from, node.to
+            table.remove(inspect_queue, min_idx)
+            return src, dst, min_cost
+         end
+      end
+      return iterator, nil, true
+   end
+
+   -- initialize reachability with tile, on which the unit is already located
+   add_reachability_tile(self.tile, self.tile, 0)
+   local fuel_at = {};
+   local fuel_limit = self:available_movement()
+   for src_tile, dst_tile, cost in get_nearest_tile() do
+      if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
+         cost = fuel_at[dst_tile.uniq_id]
+      else
+         -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
+         fuel_at[dst_tile.uniq_id] = cost
+      end
+      for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
+         local adj_cost = self:move_cost(adj_tile)
+         local total_cost = cost + adj_cost
+         if (total_cost <= fuel_limit) then
+            add_reachability_tile(dst_tile, adj_tile, total_cost)
+         end
+      end
+   end
+   actions_map.move = fuel_at
+
+   self.data.actions_map = actions_map
+   print(inspect(actions_map))
 end
 
 return Unit

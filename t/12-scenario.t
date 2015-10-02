@@ -39,4 +39,12 @@ local unit_rus_tank = map.tiles[8][4].unit
 ok(unit_rus_tank)
 is(unit_rus_tank:available_movement(), 6)
 
+local tile_83 = map.tiles[8][3]
+unit_rus_tank:update_actions_map()
+is(unit_rus_tank:available_movement(), 6)
+is(unit_rus_tank.data.fuel, 55)
+unit_rus_tank:move_to(tile_83)
+is(unit_rus_tank:available_movement(), 0)
+is(unit_rus_tank.data.fuel, 54)
+
 done_testing()
