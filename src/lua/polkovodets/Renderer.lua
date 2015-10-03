@@ -42,6 +42,7 @@ function Renderer.create(engine, window, sdl_renderer)
          ['move.leg'    ] = 2,
          ['move.towed'  ] = 3,
          ['move.tracked'] = 3,
+         ['attack'      ] = 4,
       },
 	  textures_cache = {},
       resources = {},
@@ -272,6 +273,8 @@ function Renderer:_draw_cursor()
       if (actions_map.move[tile.uniq_id]) then
          local move_type = u.definition.data.move_type
          kind = 'move.' .. move_type
+      elseif (actions_map.attack[tile.uniq_id]) then
+         kind = 'attack'
       end
    end
    local cursor_idx = assert(self.cursors[kind], "no cursor of " .. kind)

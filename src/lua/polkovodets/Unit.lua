@@ -184,7 +184,9 @@ function Unit:update_actions_map()
    for src_tile, dst_tile, cost in get_nearest_tile() do
       -- attack branch
       if (dst_tile.unit and dst_tile.unit.player ~= self.player) then
-         -- print(string.format("can attack at: %s", dst_tile.uniq_id))
+         -- need to check, if the current unit can really attack the target
+         local target = dst_tile.unit
+         attack_map[dst_tile.uniq_id] = true
       -- move branch
       else
          if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
@@ -208,6 +210,7 @@ function Unit:update_actions_map()
    -- do not move on the tile, where unit is already located
    fuel_at[self.tile.uniq_id] = nil
    actions_map.move = fuel_at
+   actions_map.attack = attack_map
 
    self.data.actions_map = actions_map
    print(inspect(actions_map))
