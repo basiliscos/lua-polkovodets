@@ -30,6 +30,13 @@ function Tile.create(engine, data)
    assert(data.terrain_type)
    assert(data.terrain_name)
 
+   -- use adjusted tiles (hex) coordinates
+   local tile_x = data.x
+   local tile_y = data.y + math.modf((tile_x - 2) * 0.5)
+
+   data.tile_x = tile_x
+   data.tile_y = tile_y
+
    local o = {
       uniq_id = Tile.uniq_id(data.x, data.y),
 	  engine = engine,
@@ -101,12 +108,15 @@ function Tile:draw(sdl_renderer, x, y)
 end
 
 function Tile:distance_to(other_tile)
-   local dx = math.abs(self.data.x - other_tile.data.x)
-   local dy = math.abs(self.data.y - other_tile.data.y)
-   dy = math.max(dy - dx/2, 0)
-   local result = math.modf(dx + dy)
-   --print(string.format("([%d:%d] -> [%d:%d]) = %d", self.data.x, self.data.y, other_tile.data.x, other_tile.data.y, result))
-   return result
+   --[[
+      calculate the distance in tile coordinates, see hex grid geometry
+      http://playtechs.blogspot.com.by/2007/04/hex-grids.html
+   --]]
+   local dx = self.data.tile_x - other_tile.data.tile_x
+   local dy = self.data.tile_y - other_tile.data.tile_y
+   local value = (math.abs(dx) + math.abs(dy) + math.abs(dy - dx)) / 2
+
+   return value;
 end
 
 return Tile

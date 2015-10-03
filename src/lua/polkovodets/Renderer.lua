@@ -303,6 +303,7 @@ function Renderer:_draw_active_hex_info()
    end
    if (x > 0 and x <= map.width and y > 0 and y <= map.height) then
       local tile = map.tiles[x][y]
+      --local str = string.format('%s (%d:%d)', tile.data.name, x-2, map.width - y - math.modf((x-2) * 0.5))
       local str = string.format('%s (%d:%d)', tile.data.name, x, y)
       local font = self.fonts.active_tile
       local outline_color = self.engine.theme.active_hex.outline_color

@@ -80,9 +80,10 @@ subtest("adjascent tiles",
 subtest("distances",
         function()
            local start = map.tiles[5][3]
+           is(start:distance_to(start), 0, "distance to self tile")
            for t in engine:get_adjastent_tiles(start) do
-              is(t:distance_to(start), 1)
-              is(start:distance_to(t), 1)
+              is(t:distance_to(start), 1, string.format("direct distance %s -> %s", t.uniq_id, start.uniq_id))
+              is(start:distance_to(t), 1, string.format("reverse distance %s -> %s", t.uniq_id, start.uniq_id))
            end
 
            is(map.tiles[8][4]:distance_to(map.tiles[4][4]), 4)
@@ -90,6 +91,7 @@ subtest("distances",
            is(map.tiles[8][4]:distance_to(map.tiles[4][6]), 4)
            is(map.tiles[8][4]:distance_to(map.tiles[4][7]), 5)
            is(map.tiles[8][4]:distance_to(map.tiles[4][8]), 6)
+           is(map.tiles[4][6]:distance_to(map.tiles[3][5]), 2)
         end
 )
 

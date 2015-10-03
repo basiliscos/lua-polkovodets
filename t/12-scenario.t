@@ -46,5 +46,30 @@ is(unit_rus_tank.data.fuel, 55)
 unit_rus_tank:move_to(tile_83)
 is(unit_rus_tank:available_movement(), 0)
 is(unit_rus_tank.data.fuel, 54)
+engine:end_turn()
+
+is(unit_rus_tank:available_movement(), 6)
+unit_rus_tank:update_actions_map()
+unit_rus_tank:move_to(map.tiles[4][6])
+engine:end_turn()
+unit_rus_tank:update_actions_map()
+
+subtest("tank actions",
+        function()
+           local actions_map = unit_rus_tank.data.actions_map
+           ok(actions_map.move[map.tiles[3][6].uniq_id])
+           ok(actions_map.move[map.tiles[9][3].uniq_id])
+           ok(not actions_map.move[map.tiles[2][4].uniq_id])
+           ok(not actions_map.move[map.tiles[2][5].uniq_id])
+           ok(not actions_map.move[map.tiles[2][6].uniq_id])
+           ok(not actions_map.move[map.tiles[4][8].uniq_id])
+
+           ok(actions_map.attack[map.tiles[3][7].uniq_id])
+           ok(actions_map.attack[map.tiles[4][7].uniq_id])
+           ok(not actions_map.attack[map.tiles[3][6].uniq_id])
+           ok(not actions_map.attack[map.tiles[3][5].uniq_id])
+        end
+)
+
 
 done_testing()
