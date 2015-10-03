@@ -148,69 +148,92 @@ function Unit:update_actions_map()
    -- determine, what the current user can do at the visible area
    local actions_map = {}
 
-   local inspect_queue = {}
-   local add_reachability_tile = function(src_tile, dst_tile, cost)
-      table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
-   end
+   local get_move_map = function()
+      local inspect_queue = {}
+      local add_reachability_tile = function(src_tile, dst_tile, cost)
+         table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
+      end
 
-   local get_nearest_tile = function()
-      local iterator = function(state, value) -- ignored
-         if (#inspect_queue > 0) then
-            -- find route to a hex with smallest cost
-            local min_idx, min_cost = 1, inspect_queue[1].cost
-            for idx = 2, #inspect_queue do
-               if (inspect_queue[idx].cost < min_cost) then
-                  min_idx, min_cost = idx, inspect_queue[idx].cost
+      local get_nearest_tile = function()
+         local iterator = function(state, value) -- ignored
+            if (#inspect_queue > 0) then
+               -- find route to a hex with smallest cost
+               local min_idx, min_cost = 1, inspect_queue[1].cost
+               for idx = 2, #inspect_queue do
+                  if (inspect_queue[idx].cost < min_cost) then
+                     min_idx, min_cost = idx, inspect_queue[idx].cost
+                  end
+               end
+               local node = inspect_queue[min_idx]
+               local src, dst = node.from, node.to
+               table.remove(inspect_queue, min_idx)
+               -- remove more costly destionations
+               for idx, n in ipairs(inspect_queue) do
+                  if (n.to == dst) then table.remove(inspect_queue, idx) end
+               end
+               return src, dst, min_cost
+            end
+         end
+         return iterator, nil, true
+      end
+
+      -- initialize reachability with tile, on which the unit is already located
+      add_reachability_tile(self.tile, self.tile, 0)
+      local fuel_at = {};
+      local attack_map = {};
+      local fuel_limit = self:available_movement()
+      for src_tile, dst_tile, cost in get_nearest_tile() do
+         -- need additionally check if the unit belongs to us and can merge
+         local can_move = not (dst_tile.unit and dst_tile.unit.player ~= self.player)
+         if (can_move) then
+            if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
+               cost = fuel_at[dst_tile.uniq_id]
+            else
+               -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
+               fuel_at[dst_tile.uniq_id] = cost
+            end
+            for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
+               local adj_cost = self:move_cost(adj_tile)
+               local total_cost = cost + adj_cost
+               local has_enemy_near = self:_enemy_near(dst_tile)
+               -- ignore near enemy, if we are moving from the start tile
+               if (dst_tile == self.tile) then has_enemy_near = false end
+               if (total_cost <= fuel_limit and not has_enemy_near) then
+                  add_reachability_tile(dst_tile, adj_tile, total_cost)
                end
             end
-            local node = inspect_queue[min_idx]
-            local src, dst = node.from, node.to
-            table.remove(inspect_queue, min_idx)
-            -- remove more costly destionations
-            for idx, n in ipairs(inspect_queue) do
-               if (n.to == dst) then table.remove(inspect_queue, idx) end
-            end
-            return src, dst, min_cost
          end
       end
-      return iterator, nil, true
+      -- do not move on the tile, where unit is already located
+      fuel_at[self.tile.uniq_id] = nil
+      return fuel_at
    end
 
-   -- initialize reachability with tile, on which the unit is already located
-   add_reachability_tile(self.tile, self.tile, 0)
-   local fuel_at = {};
-   local attack_map = {};
-   local fuel_limit = self:available_movement()
-   for src_tile, dst_tile, cost in get_nearest_tile() do
-      -- attack branch
-      if (dst_tile.unit and dst_tile.unit.player ~= self.player) then
-         -- need to check, if the current unit can really attack the target
-         local target = dst_tile.unit
-         attack_map[dst_tile.uniq_id] = true
-      -- move branch
-      else
-         if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
-            cost = fuel_at[dst_tile.uniq_id]
-         else
-            -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
-            fuel_at[dst_tile.uniq_id] = cost
+   local get_attack_map = function()
+      local attack_map = {}
+      local visited_tiles = {} -- cache
+      local start_tile = self.tile
+      local examine_queue = { start_tile }
+      local range = self.definition.data.range
+      while (#examine_queue > 0) do
+         local tile = table.remove(examine_queue, 1)
+         visited_tiles[tile.uniq_id] = true
+         if (tile.unit and tile.unit.player ~= self.player) then
+            attack_map[tile.uniq_id] = true
          end
-         for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
-            local adj_cost = self:move_cost(adj_tile)
-            local total_cost = cost + adj_cost
-            local has_enemy_near = self:_enemy_near(dst_tile)
-            -- ignore near enemy, if we are moving from the start tile
-            if (dst_tile == self.tile) then has_enemy_near = false end
-            if (total_cost <= fuel_limit and not has_enemy_near) then
-               add_reachability_tile(dst_tile, adj_tile, total_cost)
+         for adj_tile in engine:get_adjastent_tiles(tile, visited_tiles) do
+            local distance = start_tile:distance_to(adj_tile)
+            if ((distance <= range) or (range == 0 and distance == 1)) then
+               table.insert(examine_queue, adj_tile)
             end
          end
       end
+
+      return attack_map
    end
-   -- do not move on the tile, where unit is already located
-   fuel_at[self.tile.uniq_id] = nil
-   actions_map.move = fuel_at
-   actions_map.attack = attack_map
+
+   actions_map.move = get_move_map()
+   actions_map.attack = get_attack_map()
 
    self.data.actions_map = actions_map
    print(inspect(actions_map))

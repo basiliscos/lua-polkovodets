@@ -133,6 +133,7 @@ function Scenario:load(file)
       data.exp = tonumber(data.exp)
       data.entr = tonumber(data.entr)
       data.orientation = player.data.orientation
+      data.range = tonumber(data.range)
       local unit = Unit.create(engine, data, player)
       table.insert(all_units, unit)
    end

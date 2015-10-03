@@ -100,4 +100,13 @@ function Tile:draw(sdl_renderer, x, y)
    end
 end
 
+function Tile:distance_to(other_tile)
+   local dx = math.abs(self.data.x - other_tile.data.x)
+   local dy = math.abs(self.data.y - other_tile.data.y)
+   dy = math.max(dy - dx/2, 0)
+   local result = math.modf(dx + dy)
+   --print(string.format("([%d:%d] -> [%d:%d]) = %d", self.data.x, self.data.y, other_tile.data.x, other_tile.data.y, result))
+   return result
+end
+
 return Tile
