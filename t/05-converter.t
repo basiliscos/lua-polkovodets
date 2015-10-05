@@ -140,4 +140,156 @@ id;name;nation;units_class;size;initiative;spotting;ammo;_;_;_;_;icon_path;!staf
         end
 )
 
+
+subtest("terrain-parse",
+        function()
+           local csv_data = [[
+id;name;min_entr;max_entr;max_init;!image;k;v;/!;!spot_cost;k;v;/!;<move_cost;!leg;k;v;/!;!tracked;k;v;/!;!halftracked;k;v;/!;!allterrain;k;v;/!;!wheeled;k;v;/!;!towed;k;v;/!;!air;k;v;/!;!naval;k;v;/!;/>
+c;Поле;0;5;3;;fair;clear.png;;;fair;1;;;;fair;1;;;fair;1;;;fair;1;;;fair;1;;;fair;2;;;fair;A;;;fair;1;;;fair;1;;
+;;;;;;clouds;clear.png;;;clouds;1;;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;2;;;clouds;A;;;clouds;1;;;clouds;1;;
+;;;;;;raining;clear.png;;;raining;2;;;;raining;1;;;raining;1;;;raining;1;;;raining;1;;;raining;2;;;raining;A;;;raining;1;;;raining;1;;
+;;;;;;snowing;clear.png;;;snowing;2;;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;2;;;snowing;A;;;snowing;1;;;snowing;1;;
+r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;
+;;;;;;clouds;;;;clouds;;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;
+;;;;;;raining;;;;raining;;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;
+                  ]]
+           local c = Converter.create(create_iterator(csv_data))
+           local data = c:convert()
+           -- print(inspect(data))
+           ok(data, "got converted data")
+           is(#data, 2, "2 rows in data")
+           is_deeply(data[1],
+                     {
+                        id = "c",
+                        image = {
+                           clouds = "clear.png",
+                           fair = "clear.png",
+                           raining = "clear.png",
+                           snowing = "clear.png"
+                        },
+                        max_entr = "5",
+                        max_init = "3",
+                        min_entr = "0",
+                        move_cost = {
+                           air = {
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1",
+                              snowing = "1"
+                           },
+                           allterrain = {
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1",
+                              snowing = "1"
+                           },
+                           halftracked = {
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1",
+                              snowing = "1"
+                           },
+                           leg = {
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1",
+                              snowing = "1"
+                           },
+                           naval = {
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1",
+                              snowing = "1"
+                           },
+                           towed = {
+                              clouds = "A",
+                              fair = "A",
+                              raining = "A",
+                              snowing = "A"
+                           },
+                           tracked = {
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1",
+                              snowing = "1"
+                           },
+                           wheeled = {
+                              clouds = "2",
+                              fair = "2",
+                              raining = "2",
+                              snowing = "2"
+                           }
+                        },
+                        name = "Поле",
+                        spot_cost = {
+                           clouds = "1",
+                           fair = "1",
+                           raining = "2",
+                           snowing = "2"
+                        },
+                     },
+                     "1-st item is correct"
+           )
+           is_deeply(data[2],
+                     {
+                        id = "r",
+                        image = {
+                           clouds = "",
+                           fair = "",
+                           raining = ""
+                        },
+                        move_cost = {
+                           air = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           allterrain = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           halftracked = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           leg = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           naval = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           towed = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           tracked = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           },
+                           wheeled = {
+                              clouds = "",
+                              fair = "",
+                              raining = ""
+                           }
+                        },
+                        name = "Дорога",
+                        spot_cost = {
+                           clouds = "",
+                           fair = "",
+                           raining = ""
+                        }
+                     },
+                     "2-nd item is correct"
+           )
+        end
+)
+
 done_testing()

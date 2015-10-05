@@ -82,20 +82,8 @@ function Converter:_convert_csv()
 
    local items = {}
    local current_item
+   local last_hash
    local last_key
-   local hash_started = false
-   local start_line = function(force)
-      if (force or (not hashes_exist)) then
-         current_item = {}
-      end
-   end
-
-   local end_line = function(force)
-      if (force or (not hashes_exist)) then
-         table.insert(items, current_item)
-         current_item = nil
-      end
-   end
 
    local push_out = function()
       if (current_item) then
@@ -105,7 +93,6 @@ function Converter:_convert_csv()
             current_item = current_item._parent
             c._parent = nil
          end
-         hash_started = false
          table.insert(items, current_item)
       end
    end
@@ -131,21 +118,28 @@ function Converter:_convert_csv()
          last_key = value
       elseif (cmd.command == 'put.value') then
          -- print(string.format("put value %s", value))
-         current_item[last_key] = value
+         last_hash[last_key] = value
          last_key = nil
       elseif (cmd.command == 'zoom-in') then
-         local embedded_obj = { _parent = current_item }
-         current_item[cmd.to] = embedded_obj
-         current_item = embedded_obj
-      elseif (cmd.command == 'hash.start') then
-         if (not hash_started) then
-            local embedded_obj = { _parent = current_item }
-            current_item[cmd.to] = embedded_obj
-            current_item = embedded_obj
-            hash_started = true
+         local parent = current_item
+         if (not current_item[cmd.to]) then
+            current_item[cmd.to] = {}
+            current_item = current_item[cmd.to]
+         else
+            current_item = current_item[cmd.to]
          end
+         current_item._parent = parent
+      elseif (cmd.command == 'hash.start') then
+         if (current_item[cmd.to]) then
+            last_hash = current_item[cmd.to]
+         else
+            last_hash = {}
+            current_item[cmd.to] = last_hash
+         end
+      elseif (cmd.command == 'hash.finish') then
+         last_hash = nil
       elseif (cmd.command == 'zoom-out') then
-         c = current_item
+         local c = current_item
          current_item = current_item._parent
          c._parent = nil
       end
