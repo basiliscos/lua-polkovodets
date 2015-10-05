@@ -87,14 +87,14 @@ function Unit:draw(sdl_renderer, x, y)
       assert(sdl_renderer:copy(frame_icon, nil, {x = x, y = y, w = hex_w, h = hex_h}))
    end
 
-   assert(sdl_renderer:copyEx(
-             texture,
-             {x = 0 , y = 0, w = w, h = h}, -- src
-             dst,
-             nil,                           -- no angle
-             nil,                           -- no center
-             flip
-   ))
+   assert(sdl_renderer:copyEx({
+             texture     = texture,
+             source      = {x = 0 , y = 0, w = w, h = h},
+             destination = dst,
+             nil,                                          -- no angle
+             nil,                                          -- no center
+             flip        = flip,
+   }))
 end
 
 function Unit:available_movement()
