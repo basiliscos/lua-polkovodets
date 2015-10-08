@@ -81,19 +81,15 @@ function Converter:_convert_csv()
 
 
    local items = {}
-   local current_item
-   local last_hash
-   local last_key
+   local stack = {}
+
+   -- local current_item
+   -- local last_hash
+   -- local last_key
 
    local push_out = function()
-      if (current_item) then
-         -- unwind to root item
-         while (current_item._parent) do
-            local c = current_item
-            current_item = current_item._parent
-            c._parent = nil
-         end
-         table.insert(items, current_item)
+      if (#stack) then
+         table.insert(items, table.remove(stack))
       end
    end
 
@@ -104,44 +100,28 @@ function Converter:_convert_csv()
       -- print("value (" .. column .. ") " .. value)
       if (column == 1 and #value >0 ) then
          push_out()       -- push the current one (if exists)
-         current_item = {} -- start new item
+         table.insert(stack, {}) -- start new item
       elseif (column == 1  and not (#value >0)) then
          -- ignore empty column
          return
       end
 
       if (cmd.command == 'put' and #value > 0) then
+         stack[#stack][cmd.to] = value
          -- print(string.format("put %s -> %s", value, cmd.to))
-         current_item[cmd.to] = value
       elseif (cmd.command == 'put.key') then
+         table.insert(stack, value)
          -- print(string.format("put key %s", value))
-         last_key = value
       elseif (cmd.command == 'put.value') then
          -- print(string.format("put value %s", value))
-         last_hash[last_key] = value
-         last_key = nil
-      elseif (cmd.command == 'zoom-in') then
-         local parent = current_item
-         if (not current_item[cmd.to]) then
-            current_item[cmd.to] = {}
-            current_item = current_item[cmd.to]
-         else
-            current_item = current_item[cmd.to]
-         end
-         current_item._parent = parent
-      elseif (cmd.command == 'hash.start') then
-         if (current_item[cmd.to]) then
-            last_hash = current_item[cmd.to]
-         else
-            last_hash = {}
-            current_item[cmd.to] = last_hash
-         end
-      elseif (cmd.command == 'hash.finish') then
-         last_hash = nil
-      elseif (cmd.command == 'zoom-out') then
-         local c = current_item
-         current_item = current_item._parent
-         c._parent = nil
+         local key = table.remove(stack)
+         stack[#stack][key] = value
+      elseif ((cmd.command == 'zoom-in') or (cmd.command == 'hash.start')) then
+         local value = stack[#stack][cmd.to] or {}
+         stack[#stack][cmd.to] = value
+         table.insert(stack, value)
+      elseif ((cmd.command == 'zoom-out') or (cmd.command == 'hash.finish')) then
+         table.remove(stack)
       end
    end
 
