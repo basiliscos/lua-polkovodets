@@ -136,6 +136,13 @@ function Converter:_convert_csv()
          end
          if (column <= columns) then
             -- print("v: " .. column .. " " .. (value or 'nil'))
+            if (string.find(value, '|', nil, true)) then
+               local array = {}
+               for v in string.gmatch(value, '([^|]+)|?') do
+                  table.insert(array, v)
+               end
+               value = array
+            end
             push_value(value, column)
             column = column + 1
          end
