@@ -25,6 +25,37 @@ local create_iterator = function(csv_data)
 
 end
 
+
+subtest("armed-forces-parse",
+        function()
+           local csv_data = [[
+<weapons;target_types;classes;movement_types;categories;types;list;/>;<units;classes;definitions;/>
+;weapon-target-types.json;weapon-classes.json;weapon-movement-types.json;weapon-categories.json;weapon-types.json;weapons.json;;;unit-classes.json;unit-definitions.json;
+                  ]]
+           local c = Converter.create(create_iterator(csv_data))
+           local data = c:convert()
+           ok(data, "got converted data")
+           is(#data, 1, "1 rows in data")
+           is_deeply(data[1],
+                     {
+                        units = {
+                           classes = "unit-classes.json",
+                           definitions = "unit-definitions.json"
+                        },
+                        weapons = {
+                           categories = "weapon-categories.json",
+                           classes = "weapon-classes.json",
+                           list = "weapons.json",
+                           movement_types = "weapon-movement-types.json",
+                           target_types = "weapon-target-types.json",
+                           types = "weapon-types.json"
+                        },
+                     },
+                     "1-st item is correct"
+           )
+        end
+)
+
 subtest("weapons-parse",
         function()
            local csv_data = [[

@@ -98,7 +98,7 @@ function Converter:_convert_csv()
       local cmd = structure_at[column]
 
       -- print("value (" .. column .. ") " .. value)
-      if (column == 1 and #value >0 ) then
+      if (column == 1 and (#value >0 or #stack == 0) ) then
          push_out()       -- push the current one (if exists)
          table.insert(stack, {}) -- start new item
       elseif (column == 1  and not (#value >0)) then
