@@ -77,7 +77,7 @@ name;nation;weap_type;weap_class;weap_category;target_type;movement;move_type;ra
                         },
                         def_air = "9",
                         def_ground = "11",
-                        icon_id = "weapon\\rus\\armory\\RusTank01.png;",
+                        icon_id = "weapon/rus/armory/RusTank01.png;",
                         move_type = "tracked",
                         movement = "5",
                         name = 'Маневренный бронеход "Витязь" обр.1930',
@@ -100,7 +100,7 @@ name;nation;weap_type;weap_class;weap_category;target_type;movement;move_type;ra
                         },
                         def_air = "7",
                         def_ground = "6",
-                        icon_id = "weapon\\rus\\infantry\\RusInf01.png;",
+                        icon_id = "weapon/rus/infantry/RusInf01.png;",
                         move_type = "leg",
                         movement = "3",
                         name = "Стрелковое отделение обр.1935",
@@ -134,7 +134,7 @@ id;name;nation;units_class;size;initiative;spotting;ammo;_;_;_;_;icon_path;!staf
            is_deeply(data[1],
                      {
                         ammo = "5",
-                        icon_path = "units\\rus\\RusInf01",
+                        icon_path = "units/rus/RusInf01",
                         id = "1",
                         initiative = "1",
                         name = "Пехотная дивизия штата 1401/30",
@@ -153,7 +153,7 @@ id;name;nation;units_class;size;initiative;spotting;ammo;_;_;_;_;icon_path;!staf
            is_deeply(data[2],
                      {
                         ammo = "5",
-                        icon_path = "units\\rus\\RusInf01",
+                        icon_path = "units/rus/RusInf01",
                         id = "2",
                         initiative = "1",
                         name = "ПД",
@@ -176,10 +176,10 @@ subtest("terrain-parse",
         function()
            local csv_data = [[
 id;name;min_entr;max_entr;max_init;!image;k;v;/!;!spot_cost;k;v;/!;<move_cost;!leg;k;v;/!;!tracked;k;v;/!;!halftracked;k;v;/!;!allterrain;k;v;/!;!wheeled;k;v;/!;!towed;k;v;/!;!air;k;v;/!;!naval;k;v;/!;/>
-c;Поле;0;5;3;;fair;clear.png;;;fair;1;;;;fair;1;;;fair;1;;;fair;1;;;fair;1;;;fair;2;;;fair;A;;;fair;1;;;fair;1;;
-;;;;;;clouds;clear.png;;;clouds;1;;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;2;;;clouds;A;;;clouds;1;;;clouds;1;;
-;;;;;;raining;clear.png;;;raining;2;;;;raining;1;;;raining;1;;;raining;1;;;raining;1;;;raining;2;;;raining;A;;;raining;1;;;raining;1;;
-;;;;;;snowing;clear.png;;;snowing;2;;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;2;;;snowing;A;;;snowing;1;;;snowing;1;;
+c;Поле;0;5;3;;fair;terrain/clear.png;;;fair;1;;;;fair;1;;;fair;1;;;fair;1;;;fair;1;;;fair;2;;;fair;A;;;fair;1;;;fair;1;;
+;;;;;;clouds;terrain/clear.png;;;clouds;1;;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;2;;;clouds;A;;;clouds;1;;;clouds;1;;
+;;;;;;raining;terrain/clear.png;;;raining;2;;;;raining;1;;;raining;1;;;raining;1;;;raining;1;;;raining;2;;;raining;A;;;raining;1;;;raining;1;;
+;;;;;;snowing;terrain/clear.png;;;snowing;2;;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;2;;;snowing;A;;;snowing;1;;;snowing;1;;
 r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;
 ;;;;;;clouds;;;;clouds;;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;
 ;;;;;;raining;;;;raining;;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;
@@ -193,10 +193,10 @@ r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair
                      {
                         id = "c",
                         image = {
-                           clouds = "clear.png",
-                           fair = "clear.png",
-                           raining = "clear.png",
-                           snowing = "clear.png"
+                           clouds = "terrain/clear.png",
+                           fair = "terrain/clear.png",
+                           raining = "terrain/clear.png",
+                           snowing = "terrain/clear.png"
                         },
                         max_entr = "5",
                         max_init = "3",

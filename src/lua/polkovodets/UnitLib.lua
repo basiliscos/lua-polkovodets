@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local UnitLib = {}
 UnitLib.__index = UnitLib
 
+local inspect = require('inspect')
 local Parser = require 'polkovodets.Parser'
 local UnitDefinition = require 'polkovodets.UnitDefinition'
 
@@ -34,112 +35,104 @@ end
 
 function UnitLib:load(unit_file)
    local engine = self.engine
-   local path = engine.get_units_dir() .. '/' .. unit_file
-   print('loading units ' .. path)
+   local definitions_dir = engine.get_definitions_dir()
+   local path = definitions_dir .. '/' .. unit_file
+   print('loading armed forces ' .. path)
    local parser = Parser.create(path)
-   local icon_file = parser:get_value('icons')
-   local icons_dir = engine:get_unit_icons_dir()
-   local icon_path = icons_dir .. '/' .. icon_file
-   self.icons.units = icon_path
 
-   local iterator_factory = function(surface)
-      local w,h = surface:getSize()
-      local x,y = 0, 0
-
-      -- probes (0,0) as marker and finds x and y markers
-      -- of the frame
-      local iterator = function(state, value) -- ignored
-         local marker = surface:getRawPixel(x, y)
-         local x_endpoint = x + 1
-         while (x_endpoint <= w) do
-            local pixel = surface:getRawPixel(x_endpoint, y)
-            if (pixel == marker) then
-               break
-            end
-            x_endpoint = x_endpoint + 1
-         end
-         assert(x_endpoint <= w, "cannot find x-marker")
-
-         local y_endpoint = y + 1
-         while (y_endpoint <= h) do
-            local pixel = surface:getRawPixel(0, y_endpoint)
-            if (pixel == marker) then
-               break
-            end
-            y_endpoint = y_endpoint + 1
-         end
-         if ( y_endpoint <= h ) then
-            local frame = { x = 0, y = y + 1, w = x_endpoint, h = y_endpoint - y - 1}
-            y = y_endpoint + 1
-            return frame
-         end
+   local load_hash = function(parent, key)
+      local file = assert(parent[key])
+      local parser = Parser.create(definitions_dir .. '/' .. file)
+      local hash = {}
+      for k, data in pairs(parser:get_raw_data()) do
+         local id = assert(data.id)
+         hash[id] = data
       end
+      return hash
+   end
+   --------------------------
+   -- load weapons section --
+   --------------------------
+   local weapons_data = assert(parser:get_value('weapons'))
 
-      local first_frame = iterator()
-      return function() return iterator, nil, first_frame end
+   -- load all simple definitions
+   local movement_types = load_hash(weapons_data, 'movement_types')
+   local target_types = load_hash(weapons_data, 'target_types')
+   local classes = load_hash(weapons_data, 'classes')
+   local categories = load_hash(weapons_data, 'categories')
+   local types = load_hash(weapons_data, 'types')
+
+   -- load main weapon definitions
+   local weapons_file = assert(weapons_data.list)
+   local weapon_definitions = {}
+   for k, data in pairs(Parser.create(definitions_dir .. '/' .. weapons_file):get_raw_data()) do
+      local id = assert(data.id)
+      local w_class = assert(data.weap_class)
+      local w_type = assert(data.weap_type)
+      local w_category = assert(data.weap_category)
+      local movement_type = assert(data.move_type)
+      local target_type = assert(data.target_type)
+      data.movement = assert(tonumber(data.movement))
+      data.range = assert(tonumber(data.range) >= 0)
+      local nation = assert(data.nation)
+      local attacks = assert(data.attack)
+
+      assert(classes[w_class])
+      assert(types[w_type])
+      assert(categories[w_category], "category " .. w_category .. " is not available")
+      assert(movement_types[movement_type])
+      assert(target_types[target_type])
+      assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
+
+      for attack_type, v in pairs(target_types) do
+         local exists = attacks[attack_type] or attacks[attack_type] == 0
+         assert(exists, "attack " .. attack_type .. " isn't present in unit " .. id)
+      end
+      weapon_definitions[id] = data
    end
 
-   engine.renderer:load_joint_texture(icon_path, iterator_factory)
+   self.weapons = {
+      movement_types = movement_types,
+      target_types   = target_types,
+      classes        = classes,
+      categories     = categories,
+      types          = types,
+      definitions    = weapon_definitions,
+   }
 
-   -- target types
-   local target_types_data = assert(parser:get_value('target_types'))
-   local target_types = {}
-   for id, data in pairs(target_types_data) do
-      target_types[id] = {
-         id   = id,
-         name = assert(data.name)
-      }
-   end
-   self.target_types = target_types
+   -----------------------------------
+   -- load unit definitions section --
+   -----------------------------------
+   local units_data = assert(parser:get_value('units'))
+   local unit_classes = load_hash(units_data, 'classes')
+   local units_file = assert(units_data.definitions)
+   local unit_definitions = {}
+   for k, data in pairs(Parser.create(definitions_dir .. '/' .. units_file):get_raw_data()) do
+      local id = assert(data.id)
+      local nation = assert(data.nation)
+      local class = assert(data.unit_class)
+      local staff = assert(data.staff)
 
-   -- unit classes
-   local classes_data = assert(parser:get_value('unit_classes'))
-   local classes_list = {} -- keep order as in database
-   local classes = {}
-   for id, data in pairs(classes_data) do
-      data.id = id
-      assert(data.name)
-      assert(data.purchase)
-      table.insert(classes_list, data)
-      classes[id] = data
+      assert(unit_classes[class])
+      assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
+      for weapon_type, quantity in ipairs(staff) do
+         assert(quantity)
+         assert(types[weapon_type])
+         quantity = tonumber(quantity)
+         assert(quantity >= 0)
+         staff[weapon_type] = quantity
+      end
+      local unit_definition = UnitDefinition.create(engine, data)
+      unit_definitions[id] = unit_definition
    end
-   self.classes_list = classes_list
-   self.classes = classes
 
-   -- unit movement types
-   local move_types_data = assert(parser:get_value('move_types'))
-   local move_types = {}
-   for id, data in pairs(move_types_data) do
-      data.id = id
-      assert(data.name)
-      assert(data.sound)
-      move_types[id] = data
-   end
-   self.move_types = move_types
+   self.units = {
+      classes     = unit_classes,
+      definitions = unit_definitions,
+   }
 
    -- make unit_lib available via engine
    engine.unit_lib = self
-
-   local units_data = assert(parser:get_value('unit_lib'))
-   local unit_definitions = {}
-   for id, data in pairs(units_data) do
-      data.id = id
-      data.initiative = tonumber(data.initiative)
-      data.spotting = tonumber(data.spotting)
-      data.movement = tonumber(data.movement)
-      data.fuel = tonumber(data.fuel)
-      data.icon_id = tonumber(data.icon_id)
-      data.range = tonumber(data.range)
-      data.ammo = tonumber(data.ammo)
-      data.attack.count = tonumber(data.attack.count)
-      local unit_def = UnitDefinition.create(engine, data)
-      unit_definitions[id] = unit_def
-   end
-   self.unit_definitions = unit_definitions
-end
-
-function UnitLib:get_unit_icon(id)
-   return self.engine.renderer:get_joint_texture(self.icons.units, id)
 end
 
 return UnitLib

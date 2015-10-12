@@ -24,49 +24,21 @@ function UnitDefinition.create(engine, data)
 
    assert(data.id)
    assert(data.name)
-   assert(data.class)
-   assert(unit_lib.classes[data.class])
-   assert(data.target_type)
-   assert(unit_lib.target_types[data.target_type])
-   assert(data.move_type)
-   assert(unit_lib.move_types[data.move_type])
-   assert(data.nation)
-   -- if nation is 'none' that it is not allowed to purchase unit
-   if (data.nation ~= 'none') then
-      assert(engine.nation_for[data.nation], "Unit nation '" .. data.nation .. "' isn't present among scenatio nations")
-   end
-
-   assert(data.movement)
-   assert(data.initiative)
-   assert(data.spotting)
-   assert(data.fuel)
-   assert(data.range)
-   assert(data.ammo)
-   assert(data.def_ground)
-   assert(data.def_air)
-   assert(data.def_close)
-   assert(data.flags)
-   assert(data.icon_id)
-   assert(data.start_year)
-   assert(data.start_month)
-   assert(data.last_year)
-   assert(data.attack)
-   assert(data.attack.count)
-
-   for target_id, v in pairs(unit_lib.target_types) do
-      assert(data.attack[target_id], "no attack value tor target '" .. target_id .. "'")
-   end
-
+   assert(data.unit_class)
+   assert(data.staff)
+   local icon_path = assert(data.icon_path)
+   local full_icon_path = engine:get_gfx_dir() .. '/' .. icon_path
    local o = {
       engine = engine,
       data = data,
+      icon = engine.renderer:load_texture(full_icon_path),
    }
    setmetatable(o, UnitDefinition)
    return o
 end
 
 function UnitDefinition:get_icon()
-   return self.engine.unit_lib:get_unit_icon(self.data.icon_id)
+   return self.icon
 end
 
 return UnitDefinition

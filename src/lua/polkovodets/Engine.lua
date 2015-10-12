@@ -96,15 +96,10 @@ end
 function Engine:get_map() return self.map end
 
 
-function Engine:get_scenarios_dir() return 'data/scenarios' end
-function Engine:get_maps_dir() return 'data/maps' end
-function Engine:get_units_dir() return 'data/units' end
-function Engine:get_unit_icons_dir() return 'data/gfx/units' end
-function Engine:get_terrains_dir() return 'data/maps' end
-function Engine:get_terrain_icons_dir() return 'data/gfx/terrain' end
-function Engine:get_nations_icons_dir() return 'data/gfx/flags' end
-function Engine:get_nations_dir() return 'data/nations' end
-function Engine:get_theme_dir() return 'data/themes/' .. self.theme.name end
+function Engine:get_scenarios_dir() return 'data/db/scenarios' end
+function Engine:get_definitions_dir() return 'data/db' end
+function Engine:get_gfx_dir() return 'data/gfx' end
+function Engine:get_theme_dir() return 'data/gfx/themes/' .. self.theme.name end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer
@@ -127,7 +122,7 @@ function Engine:set_nations(nations)
    self.nation_for = nation_for
 end
 
-function Engine:set_flags(flags) self.flags = flags end
+function Engine:set_objectives(objectives) self.objectives = objectives end
 
 function Engine:set_players(players)
    self.players = players

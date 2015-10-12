@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
+local inspect = require('inspect')
+
 local Terrain = {}
 Terrain.__index = Terrain
 
@@ -35,23 +37,25 @@ end
 
 function Terrain:load(terrain_file)
    local engine = self.engine
-   local path = engine.get_terrains_dir() .. '/' .. terrain_file
-   print('loading terrain ' .. path)
+   local path = engine.get_definitions_dir() .. '/' .. terrain_file
+   print('loading landscape ' .. path)
    local parser = Parser.create(path)
    self.parser = parser
 
    -- hex tile geometry
-   self.hex_width = tonumber(parser:get_value('hex_width'))
-   self.hex_height = tonumber(parser:get_value('hex_height'))
-   self.hex_x_offset = tonumber(parser:get_value('hex_x_offset'))
-   self.hex_y_offset = tonumber(parser:get_value('hex_y_offset'))
+   local hex = assert(parser:get_value('hex'), 'no hex in ' .. terrain_file)
+   self.hex_width = tonumber(hex['width'])
+   self.hex_height = tonumber(hex['height'])
+   self.hex_x_offset = tonumber(hex['x_offset'])
+   self.hex_y_offset = tonumber(hex['y_offset'])
 
-   -- load icons
-   local icons_dir = self.engine:get_terrain_icons_dir()
+   -- load generic landscape icons
+   local gfx_dir = engine:get_gfx_dir()
+   local icon_for = assert(parser:get_value('image'))
    local load_icon = function(key)
-      local icon_file = parser:get_value(key)
+      local icon_file = icon_for[key]
       assert(icon_file, "cannot find icon for '" .. key .. "' in " .. path)
-      local path = icons_dir .. '/' .. icon_file
+      local path = gfx_dir .. '/' .. icon_file
       self.icons[key] = path
       engine.renderer:load_texture(path)
    end
@@ -61,28 +65,44 @@ function Terrain:load(terrain_file)
    local fog_texture = self:get_icon('fog')
    assert(fog_texture:setAlphaMod(40))
 
-   -- load terrain hexes
-   local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
-   local terrains_for = self.parser:get_value('terrain')
-   local renderer = engine.renderer
-   local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, self.hex_width, 0) end
+   -- weather
+   local weather_file = assert(parser:get_value('weather-types'))
+   local weather_parser = Parser.create(engine.get_definitions_dir() .. '/' .. weather_file)
+   local weather = {}
+   for k, data in pairs(weather_parser:get_raw_data()) do
+      local id = assert(data.id)
+      weather[id] = data
+   end
+   self.weather = weather
 
-   for key,terrain_data in pairs(terrains_for) do
-      local images_for = assert(terrain_data.image)
-      local weather_images = {}
-      for weather, image_file in pairs(images_for) do
-         local path = icons_dir .. '/' .. image_file
-         renderer:load_joint_texture(path, iterator_factory)
-         weather_images[weather] = path
+   -- terrain types
+   local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
+   local terrain_types_file = assert(parser:get_value('terrain-types'))
+   local tt_parser = Parser.create(engine.get_definitions_dir() .. '/' .. terrain_types_file)
+   local renderer = engine.renderer
+   local hex_width = self.hex_width
+   local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, hex_width, 0) end
+
+   local terrain_types = {}
+   for k, data in pairs(tt_parser:get_raw_data()) do
+      local id = assert(data.id)
+      terrain_types[id] = data
+      local image_for = assert(data.image)
+      for weather_id, image_path in pairs(image_for) do
+         assert(weather[weather_id], "weather type " .. weather_id .. " must exist")
+         local full_path = gfx_dir .. '/' .. image_path
+         renderer:load_joint_texture(full_path, iterator_factory)
+         image_for[weather_id] = full_path
       end
-      terrain_images[key] = weather_images
+      terrain_images[id] = image_for
    end
    self.terrain_images = terrain_images
+   self.terrain_types = terrain_types
 end
 
 function Terrain:get_type(name)
    -- name 1-symbol
-   local terrains_for = self.parser:get_value('terrain')
+   local terrains_for = self.terrain_types
    assert(terrains_for)
 
    local terrain_type = terrains_for[name]

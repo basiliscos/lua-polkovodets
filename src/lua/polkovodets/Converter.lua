@@ -136,12 +136,14 @@ function Converter:_convert_csv()
          end
          if (column <= columns) then
             -- print("v: " .. column .. " " .. (value or 'nil'))
-            if (string.find(value, '|', nil, true)) then
+            if (string.find(value, '|', nil, true)) then -- make a list of values
                local array = {}
                for v in string.gmatch(value, '([^|]+)|?') do
                   table.insert(array, v)
                end
                value = array
+            elseif (string.find(value, '\\')) then -- windows backslashes => unix slashes
+               value = string.gsub(value, '\\', '/')
             end
             push_value(value, column)
             column = column + 1

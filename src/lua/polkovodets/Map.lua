@@ -33,7 +33,7 @@ end
 
 
 function Map:load(map_file)
-   local path = self.engine.get_maps_dir() .. '/' .. map_file
+   local path = map_file
    print('loading map at ' .. path)
    local parser = Parser.create(path)
    self.width = tonumber(parser:get_value('width'))

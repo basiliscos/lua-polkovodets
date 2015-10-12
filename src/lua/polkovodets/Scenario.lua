@@ -36,104 +36,108 @@ end
 
 function Scenario:load(file)
    local engine = self.engine
+   local scenario_file = 'scenario.json'
+   local scenarios_dir = self.engine.get_scenarios_dir() ..  '/' .. file
 
-   local path = self.engine.get_scenarios_dir() .. '/' .. file
+   local path =  scenarios_dir .. '/' .. scenario_file
    print('loading scenario at ' .. path)
    local parser = Parser.create(path)
    self.name = assert(parser:get_value('name'))
-   self.description = assert(parser:get_value('desc'))
+   self.description = assert(parser:get_value('description'))
    self.authors = assert(parser:get_value('authors'))
    self.start_date = assert(parser:get_value('date'))
-   self.turns = assert(tonumber(parser:get_value('turns')))
-   self.days_per_turn = assert(tonumber(parser:get_value('days_per_turn')))
+   self.weather = assert(parser:get_value('weather'))
 
-   local weather_data = parser:get_list_value('weather')
-   self.weather = weather_data
-
+   local files = assert(parser:get_value('files'))
 
    -- load nations
-   local nations_file = assert(parser:get_value('nation_db'))
-   local nations_path = engine:get_nations_dir()  .. '/' .. nations_file
-   print('loading nations database at ' .. nations_path)
+   local nations_file = assert(files.nations)
+   local nations_path = engine:get_definitions_dir() .. '/' .. nations_file
    local nations_parser = Parser.create(nations_path)
-   local nations_shared_data = {
-	  icon_width = tonumber(nations_parser:get_value('icon_width')),
-	  icon_height = tonumber(nations_parser:get_value('icon_height')),
-	  icons_image = assert(nations_parser:get_value('icons')),
-   }
-   local nation_definitions = assert(nations_parser:get_value('nations'))
+   local nation_definitions = nations_parser:get_raw_data()
    -- print(inspect(nation_definitions))
-
    local nations = {}
-   for id, nation_data in pairs(nation_definitions) do
+   for k, nation_data in pairs(nation_definitions) do
+      local id = nation_data.id
 	  nation_data.id = id
-	  local nation = Nation.create(engine, nations_shared_data, nation_data)
+	  local nation = Nation.create(engine, nation_data)
 	  nations[ #nations +1 ] = nation
    end
    engine:set_nations(nations)
 
    -- load map
-   local map_file = assert(parser:get_value('map'))
+   local map_file = assert(files.map, "scenario files has map")
    local map = Map.create(engine)
-   map:load(map_file)
+   map:load(scenarios_dir .. '/' .. map_file)
    engine:set_map(map)
 
-
-   -- setup flags
-   local flags_data = (parser:get_value('flags'))['flag']
-   local flags = {}
-   -- print(inspect(flags_data))
-   for key, flag in pairs(flags_data) do
-	  local nation = assert(engine.nation_for[flag.nation])
-	  local x = tonumber(flag.x) + 1
-	  local y = tonumber(flag.y) + 1
-	  local objective = tonumber(flag.objective)
+   -- load & setup objectives
+   local objectives_file = assert(files.objectives)
+   local objectives_parser = Parser.create(scenarios_dir .. '/' .. objectives_file)
+   local objectives = {}
+   for k, obj_data in pairs(objectives_parser:get_raw_data()) do
+      local nation_id = obj_data.nation
+	  local nation = assert(engine.nation_for[nation_id], "no nation " .. nation_id .. ' is available')
+	  local x = tonumber(obj_data.x) + 1
+	  local y = tonumber(obj_data.y) + 1
+      table.insert(objectives, obj_data)
 	  local tile = map.tiles[x][y]
-	  --- print(inspect(tile.data.name))
 	  tile.data.nation = nation
 	  tile.data.objective = objective
-	  table.insert(flags, {x = x, y = y, objective = objective})
    end
-   engine:set_flags(flags)
+   engine:set_objectives(objectives)
 
-   -- load units db
-   local unit_db = assert(parser:get_value('unit_db'))
-   local unit_files = {}
-   for k, file in pairs(unit_db) do
-      table.insert(unit_files, file)
-   end
+   -- load armed forces (unit lib) db
+   local armed_forces_file = assert(files.armed_forces)
    local unit_lib = UnitLib.create(engine)
-   unit_lib:load(unit_files[1]) -- hard-code, support only 1 unit file for now
+   unit_lib:load(armed_forces_file)
 
    -- load players
-   local players_data = assert(parser:get_value('players'))
+   local players_file = assert(files.players, "scenario should have players file")
    local players = {}
+
    local nation_for_player = {} -- used for lookup player
-   for player_id, data in pairs(players_data) do
-      data.id = player_id
-      data.nations = Parser.split_list(data.nations)
+   for order, data in pairs(Parser.create(scenarios_dir .. '/' .. players_file):get_raw_data()) do
+      local id = assert(data.id)
+      data.order = order
+      local nation_id = assert(data.nations)
+      assert(engine.nation_for[nation_id])
+      data.nations = {nation_id}
       local player = Player.create(engine, data)
-      table.insert(players, player)
-      -- print(inspect(data.nations))
-      for k,nation_id in pairs(data.nations) do
+      players[id] = player
+      for k,nation_id in pairs(player.data.nations) do
          nation_for_player[nation_id] = player
       end
    end
    engine:set_players(players)
 
    -- load units
-   local units_data = assert(parser:get_value('units'))
+   local army_file = assert(files.army)
    local all_units = {}
-   for k, data in pairs(units_data.unit) do
-      local player = nation_for_player[data.nation]
-
-      data.x = tonumber(data.x)
-      data.y = tonumber(data.y)
-      data.str = tonumber(data.str)
-      data.exp = tonumber(data.exp)
-      data.entr = tonumber(data.entr)
-      data.orientation = player.data.orientation
-      data.range = tonumber(data.range)
+   for k, data in pairs(Parser.create(scenarios_dir .. '/' .. army_file):get_raw_data()) do
+      local id = assert(data.id)
+      assert(data.unit_name)
+      local definition_id = assert(data.unit_definition_id)
+      local x = tonumber(assert(data.x))
+      local y = tonumber(assert(data.y))
+      data.entr = tonumber(assert(data.entr))
+      data.exp = tonumber(assert(data.exp))
+      local staff = assert(data.staff)
+      local unit_definition = assert(unit_lib.units.definitions[definition_id])
+      for weapon_id, quantity in ipairs(staff) do
+         quantity = tonumber(quantity)
+         local weapon = unit_lib.weapons.definitions[weapon_id]
+         assert(weapon, "no such weapon with id " .. weapon_id)
+         local w_type = unit_lib.weapons.types[weapon.weap_type].id
+         local max_quantity = unit_definition.data.staff[w_type]
+         assert(max_quantity or max_quantity == 0,
+                "no such weapon type " .. w_type .. " in unit definition " .. unit_definition.data.id)
+         print(inspect(max_quantity))
+         assert(quantity <= max_quantity, "quantity " .. quantity .. " exceeds nominal quantity " ..  max_quantity)
+         staff[weapon_id] = quantity
+      end
+      local nation_id = unit_definition.data.nation
+      local player = nation_for_player[nation_id]
       local unit = Unit.create(engine, data, player)
       table.insert(all_units, unit)
    end

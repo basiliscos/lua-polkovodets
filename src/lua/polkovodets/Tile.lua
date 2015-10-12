@@ -87,10 +87,10 @@ function Tile:draw(sdl_renderer, x, y)
    local nation = self.data.nation
    if (nation) then
 	  -- print("flag for " .. nation.data.name)
-	  local nation_flag_width = nation.shared_data.icon_width
-	  local nation_flag_height = nation.shared_data.icon_height
-	  local flag_x = x  + (hex_w - nation_flag_width) / 2
-	  local flag_y = y + hex_h - nation_flag_height - 2
+	  local nation_flag_width = nation.flag.w
+	  local nation_flag_height = nation.flag.h
+	  local flag_x = x  + math.modf((hex_w - nation_flag_width) / 2)
+	  local flag_y = y + math.modf((hex_h - nation_flag_height - 2))
 	  local objective = self.data.objective
 	  nation:draw_flag(sdl_renderer, flag_x, flag_y, objective)
    end

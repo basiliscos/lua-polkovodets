@@ -26,35 +26,28 @@ local SDL = require "SDL"
 function Unit.create(engine, data, player)
    assert(player, "unit should have player assigned")
    assert(data.id)
-   assert(data.nation)
+   assert(data.unit_definition_id)
    assert(data.x)
    assert(data.y)
-   assert(data.str)
-   assert(data.entr)
-   assert(data.exp)
-   assert(data.orientation)
+   assert(data.staff)
 
-   local definition = assert(engine.unit_lib.unit_definitions[data.id])
-   local nation = assert(engine.nation_for[data.nation])
+
+   local definition = assert(engine.unit_lib.units.definitions[data.unit_definition_id])
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
-   local fuel = data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
-   local movement = tonumber(definition.data.movement)
+   local fuel = 0 --data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
+   local movement = 5 --tonumber(definition.data.movement)
 
    local o = {
       engine = engine,
-      nation = nation,
       player = player,
       tile = tile,
       definition = definition,
       data = {
          selected     = false,
-         streight     = data.str,
-         entrenchment = data.entr,
-         experience   = data.exp,
          fuel         = fuel,
-         orientation  = data.orientation,
+         orientation  = 'right',
          movement     = movement,
       }
    }

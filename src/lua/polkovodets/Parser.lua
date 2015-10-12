@@ -16,11 +16,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
+local inspect = require('inspect')
+local json = require ("dkjson")
+
 local Parser = {}
 Parser.__index = Parser
-local inspect = require('inspect')
+
+local _JSONParser = {}
+_JSONParser.__index = _JSONParser
+
+function _JSONParser.create(path)
+   print("opening " .. path)
+   local file = assert(io.open(path , "r"))
+   local str = file:read('*a')
+   local data = json.decode(str)
+   local o = { data = data, path = path }
+   setmetatable(o, _JSONParser)
+   return o
+end
+
+
+function _JSONParser:get_value(key)
+   assert(key)
+   local v = self.data[key]
+   assert(v, key .. " not found in " .. self.path)
+   return v
+end
+
+function _JSONParser:get_raw_data()
+   return self.data
+end
+
 
 function Parser.create(path)
+   if (string.find(path, '.json', nil, true)) then
+      return _JSONParser.create(path)
+   end
+
    print("opening " .. path)
    local file = io.open(path , "r")
    assert(file, "error opening file at " .. path)
