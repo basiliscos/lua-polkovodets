@@ -18,9 +18,9 @@ terrain:load('landscape.json')
 
 local clear = terrain:get_type('c')
 ok(clear)
-print(inspect(clear))
+-- print(inspect(clear))
 is(clear.move_cost.air.fair, 1)
 is(clear.move_cost.halftracked.raining_mud, 3)
-
+is(clear.spot_cost.snowing_ice, 2)
 
 done_testing()
