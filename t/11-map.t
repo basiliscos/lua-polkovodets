@@ -14,7 +14,7 @@ engine:set_renderer(DummyRenderer.create(640, 480))
 local map = Map.create(engine)
 ok(map)
 
-map:load('pg/map01')
+map:load('data/db/scenarios/Test/map01')
 
 is(#map.tiles, 10)
 is(#map.tiles[1], 10)
@@ -26,7 +26,6 @@ is(first_tile.data.y, 1)
 is(first_tile.data.y, 1)
 is(first_tile.data.image_idx, 14)
 is(first_tile.data.name, 'Clear')
-is(first_tile.data.terrain_type.move_cost.air.I, '1')
 
 engine:set_map(map)
 is(engine.gui.map_sw, 16)
