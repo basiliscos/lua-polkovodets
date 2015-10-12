@@ -5,6 +5,7 @@ local _DummyTexture = {}
 _DummyTexture.__index = _DummyTexture
 
 function _DummyTexture:setAlphaMod() return true end
+function _DummyTexture:query() return 'a', 'b', 10, 20 end
 
 function DummyRenderer.create(width, height)
    local o = {
