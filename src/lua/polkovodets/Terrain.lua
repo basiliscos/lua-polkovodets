@@ -94,6 +94,12 @@ function Terrain:load(terrain_file)
          renderer:load_joint_texture(full_path, iterator_factory)
          image_for[weather_id] = full_path
       end
+      for movement_type, data in pairs(assert(data.move_cost)) do
+         for weather_id, value in pairs(data) do
+            assert(weather[weather_id])
+            data[weather_id] = tonumber(assert(value))
+         end
+      end
       terrain_images[id] = image_for
    end
    self.terrain_images = terrain_images
