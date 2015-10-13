@@ -31,22 +31,32 @@ function Unit.create(engine, data, player)
    assert(data.y)
    assert(data.staff)
    local orientation = assert(data.orientation)
-   print(inspect(data))
    assert(string.find(orientation,'right') or string.find(orientation, 'left'))
 
-   local definition = assert(engine.unit_lib.units.definitions[data.unit_definition_id])
+
+   local unit_lib = engine.unit_lib
+   local definition = assert(unit_lib.units.definitions[data.unit_definition_id])
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
    local fuel = 0 --data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
    local movement = 5 --tonumber(definition.data.movement)
 
+   -- key: weapon, value: quantity
+   local staff = {}
+   local weapon_for = unit_lib.weapons.definitions
+   for weapon_id, quantity in pairs(data.staff) do
+      local weapon = assert(weapon_for[weapon_id])
+      staff[weapon] = tonumber(quantity)
+   end
+
 
    local o = {
-      engine = engine,
-      player = player,
-      tile = tile,
+      engine     = engine,
+      player     = player,
+      tile       = tile,
       definition = definition,
+      staff      = staff,
       data = {
          selected     = false,
          fuel         = fuel,
@@ -91,6 +101,37 @@ function Unit:draw(sdl_renderer, x, y)
              nil,                                          -- no center
              flip        = flip,
    }))
+end
+
+-- retunrs a table of weapons, which are will be marched,
+-- i.e. as if they already packed into transporters
+function Unit:_marched_weapons()
+   local list = {}
+
+   -- k:  type of weapon movement, which are capable to transport, w: quantity
+   local transport_for = {}
+
+   -- pass 1: determine transport capabilites
+   for weapon, quantity in pairs(self.staff) do
+      local transport_capability = weapon:is_capable('TRANSPORTS_%w+')
+      if (transport_capability) then
+         local transport_kind = string.lower(string.gsub(transport_capability, 'TRANSPORTS_', ''))
+         local prev_value = transport_for[transport_kind] or 0
+         transport_for[transport_kind] = prev_value + quantity
+      end
+   end
+
+   -- pass 2: put into transpots related weapons
+   for weapon, quantity in pairs(self.staff) do
+      local kind = weapon.movement_type
+      local transported = false
+      if ((transport_for[kind] or 0) >= quantity) then
+         transported = true
+         transport_for[kind] = transport_for[kind] - quantity
+      end
+      if (not transported) then table.insert(list, weapon) end
+   end
+   return list
 end
 
 function Unit:available_movement()

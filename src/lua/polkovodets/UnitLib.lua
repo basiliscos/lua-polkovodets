@@ -21,13 +21,15 @@ UnitLib.__index = UnitLib
 
 local inspect = require('inspect')
 local Parser = require 'polkovodets.Parser'
+local Weapon = require 'polkovodets.Weapon'
 local UnitDefinition = require 'polkovodets.UnitDefinition'
 
 function UnitLib.create(engine)
    local o = {
       engine = engine,
-      icons = {
-      }
+      weapons = {},
+      units = {},
+      icons = {},
    }
    setmetatable(o, UnitLib)
    return o
@@ -47,6 +49,11 @@ function UnitLib:load(unit_file)
       for k, data in pairs(parser:get_raw_data()) do
          local id = assert(data.id)
          hash[id] = data
+         if (data.flags) then
+            if (type(data.flags) == 'string') then data.flags = {data.flags} end
+         else
+            data.flags = {}
+         end
       end
       return hash
    end
@@ -56,49 +63,25 @@ function UnitLib:load(unit_file)
    local weapons_data = assert(parser:get_value('weapons'))
 
    -- load all simple definitions
-   local movement_types = load_hash(weapons_data, 'movement_types')
-   local target_types = load_hash(weapons_data, 'target_types')
-   local classes = load_hash(weapons_data, 'classes')
-   local categories = load_hash(weapons_data, 'categories')
-   local types = load_hash(weapons_data, 'types')
+   self.weapons.movement_types = load_hash(weapons_data, 'movement_types')
+   self.weapons.target_types = load_hash(weapons_data, 'target_types')
+   self.weapons.classes = load_hash(weapons_data, 'classes')
+   self.weapons.categories = load_hash(weapons_data, 'categories')
+   self.weapons.types = load_hash(weapons_data, 'types')
+
+   -- make unit_lib available via engine
+   engine.unit_lib = self
 
    -- load main weapon definitions
    local weapons_file = assert(weapons_data.list)
    local weapon_definitions = {}
    for k, data in pairs(Parser.create(definitions_dir .. '/' .. weapons_file):get_raw_data()) do
-      local id = assert(data.id)
-      local w_class = assert(data.weap_class)
-      local w_type = assert(data.weap_type)
-      local w_category = assert(data.weap_category)
-      local movement_type = assert(data.move_type)
-      local target_type = assert(data.target_type)
-      data.movement = assert(tonumber(data.movement))
-      data.range = assert(tonumber(data.range) >= 0)
-      local nation = assert(data.nation)
-      local attacks = assert(data.attack)
-
-      assert(classes[w_class])
-      assert(types[w_type])
-      assert(categories[w_category], "category " .. w_category .. " is not available")
-      assert(movement_types[movement_type])
-      assert(target_types[target_type])
-      assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
-
-      for attack_type, v in pairs(target_types) do
-         local exists = attacks[attack_type] or attacks[attack_type] == 0
-         assert(exists, "attack " .. attack_type .. " isn't present in unit " .. id)
-      end
-      weapon_definitions[id] = data
+      data.movement = tonumber(data.movement)
+      data.range = tonumber(data.range)
+      local w = Weapon.create(engine, data)
+      weapon_definitions[w.id] = w
    end
-
-   self.weapons = {
-      movement_types = movement_types,
-      target_types   = target_types,
-      classes        = classes,
-      categories     = categories,
-      types          = types,
-      definitions    = weapon_definitions,
-   }
+   self.weapons.definitions = weapon_definitions;
 
    -----------------------------------
    -- load unit definitions section --
@@ -131,8 +114,6 @@ function UnitLib:load(unit_file)
       definitions = unit_definitions,
    }
 
-   -- make unit_lib available via engine
-   engine.unit_lib = self
 end
 
 return UnitLib

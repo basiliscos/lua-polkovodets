@@ -3,6 +3,7 @@
 package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 
 local t = require 'Test.More'
+local _ = require ("moses")
 local inspect = require('inspect')
 
 
@@ -26,6 +27,30 @@ is(berlin.data.nation.data.name, "Deutschland")
 
 ok(engine.unit_lib)
 ok(engine.unit_lib.units.definitions)
+
+subtest("move rus infantry",
+        function()
+           local inf = map.tiles[8][4].unit
+           ok(inf)
+           local marched_weapons = inf:_marched_weapons()
+           ok(marched_weapons)
+           is(#marched_weapons, 7)
+           local types = _.sort(_.map(marched_weapons, function(k, v) return v.weapon_type end))
+           print(inspect(types))
+           is_deeply(
+              types,
+              {
+                 "wt_MG",
+                 "wt_antitankRifl",
+                 "wt_infant",
+                 "wt_minBn",
+                 "wt_minComp",
+                 "wt_tankInfMid",
+                 "wt_tractorL"
+              }
+           )
+        end
+)
 
 -- no requnired units on the map
 -- local unit_rus_art = map.tiles[7][5].unit
