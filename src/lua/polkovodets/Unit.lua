@@ -30,7 +30,9 @@ function Unit.create(engine, data, player)
    assert(data.x)
    assert(data.y)
    assert(data.staff)
-
+   local orientation = assert(data.orientation)
+   print(inspect(data))
+   assert(string.find(orientation,'right') or string.find(orientation, 'left'))
 
    local definition = assert(engine.unit_lib.units.definitions[data.unit_definition_id])
    local x,y = tonumber(data.x), tonumber(data.y)
@@ -38,6 +40,7 @@ function Unit.create(engine, data, player)
 
    local fuel = 0 --data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
    local movement = 5 --tonumber(definition.data.movement)
+
 
    local o = {
       engine = engine,
@@ -47,7 +50,7 @@ function Unit.create(engine, data, player)
       data = {
          selected     = false,
          fuel         = fuel,
-         orientation  = 'right',
+         orientation  = orientation,
          movement     = movement,
       }
    }
