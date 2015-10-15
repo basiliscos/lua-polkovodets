@@ -97,7 +97,11 @@ function Terrain:load(terrain_file)
       local numerize_weather = function(data)
          for weather_id, value in pairs(data) do
             assert(weather[weather_id])
-            data[weather_id] = tonumber(assert(value))
+            assert(value)
+            local number_value = tonumber(value)
+            assert(number_value or (value == 'A' or value == 'X'),
+                   "invalid movement cost " .. value .. " for terrain/weather " .. id .. "/" .. weather_id)
+            data[weather_id] = number_value or value
          end
       end
 
