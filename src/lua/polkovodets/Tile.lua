@@ -64,8 +64,6 @@ function Tile:draw(sdl_renderer, x, y)
    -- print(inspect(weather))
    -- print(inspect(self.data.terrain_type.image))
 
-   local joint_weather_image = assert(self.data.terrain_type.image[weather])
-
    local hex_h = terrain.hex_height
    local hex_w = terrain.hex_width
 
