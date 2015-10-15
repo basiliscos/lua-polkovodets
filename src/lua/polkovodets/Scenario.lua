@@ -71,6 +71,11 @@ function Scenario:load(file)
    map:load(scenarios_dir .. '/' .. map_file)
    engine:set_map(map)
 
+   -- validate weathers
+   for idx, weather_id in pairs(self.weather) do
+      assert(map.terrain.weather[weather_id], "wrong weather " .. weather_id)
+   end
+
    -- load & setup objectives
    local objectives_file = assert(files.objectives)
    local objectives_parser = Parser.create(scenarios_dir .. '/' .. objectives_file)
@@ -123,7 +128,9 @@ function Scenario:load(file)
       data.entr = tonumber(assert(data.entr))
       data.exp = tonumber(assert(data.exp))
       local staff = assert(data.staff)
-      local unit_definition = assert(unit_lib.units.definitions[definition_id])
+      local unit_definition = assert(unit_lib.units.definitions[definition_id],
+                                     "unit definiton " .. definition_id .. " not fond"
+      )
       for weapon_id, quantity in ipairs(staff) do
          quantity = tonumber(quantity)
          local weapon = unit_lib.weapons.definitions[weapon_id]

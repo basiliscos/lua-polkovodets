@@ -128,7 +128,8 @@ end
 
 function Terrain:get_hex_image(terrain_key, weather, index)
    local weather_images = assert(self.terrain_images[terrain_key], "no terrain for " .. terrain_key)
-   local texture_path = assert(weather_images[weather])
+   local texture_path = assert(weather_images[weather],
+                               string.format("no image #%d for terrain/weater %s/%s", index, terrain_key, weater))
    return self.engine.renderer:get_joint_texture(texture_path, index + 1)
 end
 
