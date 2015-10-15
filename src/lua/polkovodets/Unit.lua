@@ -21,6 +21,7 @@ Unit.__index = Unit
 
 local inspect = require('inspect')
 local SDL = require "SDL"
+local Vector = require 'polkovodets.Vector'
 
 
 function Unit.create(engine, data, player)
@@ -39,11 +40,9 @@ function Unit.create(engine, data, player)
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
-   local fuel = 0 --data.fuel and tonumber(data.fuel) or tonumber(definition.data.fuel)
-   local movement = 5 --tonumber(definition.data.movement)
-
    -- key: weapon, value: quantity
    local staff = {}
+   local staff_data = { }
    local weapon_for = unit_lib.weapons.definitions
    for weapon_id, quantity in pairs(data.staff) do
       local weapon = assert(weapon_for[weapon_id])
@@ -59,13 +58,13 @@ function Unit.create(engine, data, player)
       staff      = staff,
       data = {
          selected     = false,
-         fuel         = fuel,
          orientation  = orientation,
-         movement     = movement,
+         staff_data   = staff_data,
       }
    }
    setmetatable(o, Unit)
    tile.unit = o
+   o:_refresh_movements()
    table.insert(player.units, o)
    return o
 end
@@ -134,35 +133,41 @@ function Unit:_marched_weapons()
    return list
 end
 
-function Unit:available_movement()
-   local fuel = self.data.fuel
-   local movement = self.data.movement
-   if (self.definition.data.fuel == 0) then
-      return movement
-   else
-      return math.min(fuel, movement)
+
+function Unit:_refresh_movements()
+   local result = {}
+   for idx, weapon in pairs(self:_marched_weapons()) do
+      local movement = weapon.data.movement
+      result[weapon.id] = movement
    end
+   self.data.staff_data.movement = Vector.create(result)
 end
 
+
+-- returns table (k: weapon_id, v: value) of available movements for all marched weapons
+function Unit:available_movement()
+   return self.data.staff_data.movement
+end
+
+-- returns table (k: weapon_id, v: movement cost) for all marched weapons
 function Unit:move_cost(tile)
-   local move_type = self.definition.data.move_type
    local weather = self.engine:current_weather()
    local cost_for = tile.data.terrain_type.move_cost
-   local value = cost_for[move_type][weather]
-   -- all movement cost
-   if (value == 'A') then return self.definition.data.movement
-   -- impassable
-   elseif (value == 'X') then return math.maxinteger
-   else return tonumber(value) end
+   local costs = {} -- k: weapon id, v: movement cost
+   for idx, weapon in pairs(self:_marched_weapons()) do
+      local movement_type = weapon.movement_type
+      local value = cost_for[movement_type][weather]
+      if (value == 'A') then value = weapon.data.movement     -- all movement points
+      elseif (value == 'X') then value = math.maxinteger end  -- impassable
+      costs[weapon.id] = value
+   end
+   return Vector.create(costs)
 end
 
 function Unit:move_to(dst_tile)
-   assert(self.data.movement > 0, "unit already has been moved")
-   local cost = assert(self.data.actions_map.move[dst_tile.uniq_id])
-   if (self.definition.data.fuel > 0) then
-      self.data.fuel = self.data.fuel - cost
-   end
-   self.data.movement = 0
+   local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
+   local movements = self.data.staff_data.movement
+   self.data.staff_data.movement = movements - costs
    self.tile.unit = nil
    dst_tile.unit = self
    self.tile = dst_tile
@@ -190,15 +195,16 @@ function Unit:update_actions_map()
       local add_reachability_tile = function(src_tile, dst_tile, cost)
          table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
       end
+      local marched_weapons = self:_marched_weapons()
 
       local get_nearest_tile = function()
          local iterator = function(state, value) -- ignored
             if (#inspect_queue > 0) then
                -- find route to a hex with smallest cost
-               local min_idx, min_cost = 1, inspect_queue[1].cost
+               local min_idx, min_cost = 1, inspect_queue[1].cost:min()
                for idx = 2, #inspect_queue do
-                  if (inspect_queue[idx].cost < min_cost) then
-                     min_idx, min_cost = idx, inspect_queue[idx].cost
+                  if (inspect_queue[idx].cost:min() < min_cost) then
+                     min_idx, min_cost = idx, inspect_queue[idx].cost:min()
                   end
                end
                local node = inspect_queue[min_idx]
@@ -208,35 +214,34 @@ function Unit:update_actions_map()
                for idx, n in ipairs(inspect_queue) do
                   if (n.to == dst) then table.remove(inspect_queue, idx) end
                end
-               return src, dst, min_cost
+               return src, dst, node.cost
             end
          end
          return iterator, nil, true
       end
 
       -- initialize reachability with tile, on which the unit is already located
-      add_reachability_tile(self.tile, self.tile, 0)
-      local fuel_at = {};
-      local attack_map = {};
+      local initial_costs = {}
+      for idx, w in pairs(marched_weapons) do initial_costs[w.id] = 0 end
+      add_reachability_tile(self.tile, self.tile, Vector.create(initial_costs))
+
+
+      local fuel_at = {};  -- k: tile_id, v: movement_costs table
       local fuel_limit = self:available_movement()
-      for src_tile, dst_tile, cost in get_nearest_tile() do
+      for src_tile, dst_tile, costs in get_nearest_tile() do
          -- need additionally check if the unit belongs to us and can merge
          local can_move = not (dst_tile.unit and dst_tile.unit.player ~= self.player)
          if (can_move) then
-            if ((fuel_at[dst_tile.uniq_id] or cost + 1) < cost) then
-               cost = fuel_at[dst_tile.uniq_id]
-            else
-               -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
-               fuel_at[dst_tile.uniq_id] = cost
-            end
+            -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
+            fuel_at[dst_tile.uniq_id] = costs
             for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
                local adj_cost = self:move_cost(adj_tile)
-               local total_cost = cost + adj_cost
+               local total_costs = costs + adj_cost
                local has_enemy_near = self:_enemy_near(dst_tile)
                -- ignore near enemy, if we are moving from the start tile
                if (dst_tile == self.tile) then has_enemy_near = false end
-               if (total_cost <= fuel_limit and not has_enemy_near) then
-                  add_reachability_tile(dst_tile, adj_tile, total_cost)
+               if (total_costs <= fuel_limit and not has_enemy_near) then
+                  add_reachability_tile(dst_tile, adj_tile, total_costs)
                end
             end
          end
@@ -270,7 +275,8 @@ function Unit:update_actions_map()
    end
 
    actions_map.move = get_move_map()
-   actions_map.attack = get_attack_map()
+   actions_map.attack = {}
+   -- actions_map.attack = get_attack_map()
 
    self.data.actions_map = actions_map
    print(inspect(actions_map))

@@ -140,7 +140,7 @@ function Engine:end_turn()
    self.turn = self.turn + 1
    print("current turm: " .. self.turn)
    for k, unit in pairs(self.all_units) do
-      unit.data.movement = unit.definition.data.movement
+      unit:_refresh_movements()
    end
    self:unselect_unit()
 end

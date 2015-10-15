@@ -59,7 +59,10 @@ function Weapon.create(engine, data)
       movement_type = movement_type,
       target_type   = target_type,
       attacks       = attacks,
-      flags         = flags
+      flags         = flags,
+      data          = {
+         movement = data.movement,
+      },
    }
    setmetatable(o, Weapon)
    return o

@@ -61,6 +61,8 @@ function Tile:draw(sdl_renderer, x, y)
    local map = engine:get_map()
    local terrain = map.terrain
    local weather = engine:current_weather()
+   -- print(inspect(weather))
+   -- print(inspect(self.data.terrain_type.image))
 
    local joint_weather_image = assert(self.data.terrain_type.image[weather])
 

@@ -39,9 +39,7 @@ function Renderer.create(engine, window, sdl_renderer)
 	  sdl_renderer = sdl_renderer,
       cursors = {
          ['default'     ] = 1,
-         ['move.leg'    ] = 2,
-         ['move.towed'  ] = 3,
-         ['move.tracked'] = 3,
+         ['move'        ] = 2,
          ['attack'      ] = 4,
       },
 	  textures_cache = {},
@@ -271,8 +269,7 @@ function Renderer:_draw_cursor()
       local tile = self.engine.map.tiles[tx][ty]
       local actions_map = u.data.actions_map
       if (actions_map.move[tile.uniq_id]) then
-         local move_type = u.definition.data.move_type
-         kind = 'move.' .. move_type
+         kind = 'move'
       elseif (actions_map.attack[tile.uniq_id]) then
          kind = 'attack'
       end
