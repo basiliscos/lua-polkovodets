@@ -43,12 +43,7 @@ int main(int argc, char** argv) {
     char* lua_path_env;
     char* lua_path_env_new;
 
-    if (argc < 2) {
-	fprintf(stderr, "usage: %s lua_dir", argv[0]);
-	return -1;
-    }
-
-    snprintf(path, sizeof(path), "%s/%s", argv[1], MAIN_LUA);
+    snprintf(path, sizeof(path), "%s/%s", LUA_SRCDIR, MAIN_LUA);
 
     result = stat(path, &script_stat);
     if (result) {
@@ -75,7 +70,7 @@ int main(int argc, char** argv) {
     }
 
     /* add to searching the path to polkovodets lua dir */
-    snprintf(lua_path, sizeof(lua_path), "%s/?.lua;%s/?/init.lua", argv[1], argv[1]);
+    snprintf(lua_path, sizeof(lua_path), "%s/?.lua;%s/?/init.lua", LUA_SRCDIR, LUA_SRCDIR);
     lua_path_env = getenv("LUA_PATH");
 
     /* +2: path_separator + zero at the end + LUA_PATH=*/
