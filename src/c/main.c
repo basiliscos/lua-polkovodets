@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #define MAIN_LUA "main.lua"
+#define LOG_FILE "polkovodets.log"
 
 int main(int argc, char** argv) {
     struct stat script_stat;
@@ -44,6 +45,12 @@ int main(int argc, char** argv) {
     char* lua_path_env;
     char* lua_path_env_new;
 
+#ifdef ENABLE_LOG
+    freopen(LOG_FILE, "ab", stdout);
+    freopen(LOG_FILE, "ab", stderr);
+#endif
+    printf("\nstarting polkovodets\n");
+
     snprintf(path, sizeof(path), "%s/%s", POLKOVODETS_LUA_PATH, MAIN_LUA);
 
     result = stat(path, &script_stat);
@@ -54,7 +61,7 @@ int main(int argc, char** argv) {
 
     script = calloc(script_stat.st_size+1, 1);
     if (!script) {
-	fprintf(stderr, "cannot allocate %ld bytes for script\n", script_stat.st_size);
+	printf("cannot allocate %ld bytes for script\n", script_stat.st_size);
 	return -1;
     }
 
@@ -66,7 +73,7 @@ int main(int argc, char** argv) {
 
     result = fread(script, script_stat.st_size, 1, script_file);
     if (result != 1) {
-	fprintf(stderr, "error reading script %s\n", path);
+	printf("error reading script %s\n", path);
 	return -1;
     }
 
@@ -80,7 +87,7 @@ int main(int argc, char** argv) {
     /* +2: path_separator + zero at the end + LUA_PATH=*/
     lua_path_env_new = (char*) malloc(strlen(lua_path_env) + strlen(lua_path) + 1 + 10);
     if (!lua_path_env_new) {
-	fprintf(stderr, "allocating new LUA_PATH value failed\n");
+	printf("allocating new LUA_PATH value failed\n");
 	return -1;
     }
     if (lua_path_env) {
@@ -89,17 +96,17 @@ int main(int argc, char** argv) {
 	sprintf(lua_path_env_new, "LUA_PATH=%s", lua_path);
     }
     putenv(lua_path_env_new);
-    fprintf(stderr, "%s\n", lua_path_env_new);
+    printf("%s\n", lua_path_env_new);
 
 #ifdef POLKOVODETS_LUA_CPATH
     sprintf(lua_cpath, "LUA_CPATH=%s", POLKOVODETS_LUA_CPATH);
-    fprintf(stderr, "%s\n", lua_cpath);
+    printf("%s\n", lua_cpath);
     putenv(lua_cpath);
 #endif
 
     L = luaL_newstate();
     if (!L) {
-	fprintf(stderr, "allocating LUA interpreter failed\n");
+	printf("allocating LUA interpreter failed\n");
 	return -1;
     }
 
@@ -107,13 +114,13 @@ int main(int argc, char** argv) {
     luaL_openlibs(L);
 
     if (luaL_loadstring(L, script)) {
-	fprintf(stderr, "compiling script %s error: %s\n", path, lua_tostring(L, -1));
+	printf("compiling script %s error: %s\n", path, lua_tostring(L, -1));
 	return -1;
     }
 
 
     if (lua_pcall(L, 0, 0, 0)) {
-	fprintf(stderr, "main script execution error: %s\n", lua_tostring(L, -1));
+	printf("main script execution error: %s\n", lua_tostring(L, -1));
 	return -1;
     }
 

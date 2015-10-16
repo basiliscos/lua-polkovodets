@@ -8,6 +8,7 @@ AX_LUA_LIBS
 AX_LUA_HEADERS
 
 AC_CHECK_FUNC(putenv)
+AC_CHECK_FUNC(freopen)
 
 dnl POLKOVODETS_LUA_PATH
 AC_ARG_VAR([POLKOVODETS_LUA_PATH], [directory with polkovodets lua path])
@@ -27,6 +28,13 @@ AS_IF([test "x$POLKOVODETS_LUA_CPATH" != "x"],
 	AC_DEFINE_UNQUOTED([POLKOVODETS_LUA_CPATH], ["$POLKOVODETS_LUA_CPATH"], [directory with polkovodets lua cpath])
 )
 
+
+
+AC_ARG_ENABLE([log],
+	[AS_HELP_STRING([--enable-log=yes|no],
+                 [Enable or disable writing data to log file instead of stderr/stdout. Default is disabled.])],
+	[AC_DEFINE([ENABLE_LOG], 1, [enables logging into polkovodets.log])]
+)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile src/c/Makefile src/lua/Makefile])
