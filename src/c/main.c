@@ -40,10 +40,11 @@ int main(int argc, char** argv) {
     int result;
     lua_State *L;
     char lua_path[2048];
+    char lua_cpath[2048];
     char* lua_path_env;
     char* lua_path_env_new;
 
-    snprintf(path, sizeof(path), "%s/%s", LUA_SRCDIR, MAIN_LUA);
+    snprintf(path, sizeof(path), "%s/%s", POLKOVODETS_LUA_PATH, MAIN_LUA);
 
     result = stat(path, &script_stat);
     if (result) {
@@ -70,14 +71,14 @@ int main(int argc, char** argv) {
     }
 
     /* add to searching the path to polkovodets lua dir */
-    snprintf(lua_path, sizeof(lua_path), "%s/?.lua;%s/?/init.lua", LUA_SRCDIR, LUA_SRCDIR);
+    snprintf(lua_path, sizeof(lua_path), "%s/?.lua;%s/?/init.lua", POLKOVODETS_LUA_PATH, POLKOVODETS_LUA_PATH);
     lua_path_env = getenv("LUA_PATH");
     if (!lua_path_env){
 	lua_path_env = "";
     }
 
     /* +2: path_separator + zero at the end + LUA_PATH=*/
-    lua_path_env_new = (char*) malloc(strlen(lua_path_env) + (lua_path ? strlen(lua_path) + 1 : 0) + 10);
+    lua_path_env_new = (char*) malloc(strlen(lua_path_env) + strlen(lua_path) + 1 + 10);
     if (!lua_path_env_new) {
 	fprintf(stderr, "allocating new LUA_PATH value failed\n");
 	return -1;
@@ -88,7 +89,13 @@ int main(int argc, char** argv) {
 	sprintf(lua_path_env_new, "LUA_PATH=%s", lua_path);
     }
     putenv(lua_path_env_new);
-	fprintf(stderr, "%s\n", lua_path_env_new);
+    fprintf(stderr, "%s\n", lua_path_env_new);
+
+#ifdef POLKOVODETS_LUA_CPATH
+    sprintf(lua_cpath, "LUA_CPATH=%s", POLKOVODETS_LUA_CPATH);
+    fprintf(stderr, "%s\n", lua_cpath);
+    putenv(lua_cpath);
+#endif
 
     L = luaL_newstate();
     if (!L) {
@@ -110,5 +117,5 @@ int main(int argc, char** argv) {
 	return -1;
     }
 
-
+    return 0;
 }

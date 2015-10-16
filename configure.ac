@@ -9,16 +9,24 @@ AX_LUA_HEADERS
 
 AC_CHECK_FUNC(putenv)
 
-AC_ARG_VAR([LUA_SRCDIR], [directory with polkovodets lua sources])
-AS_IF([test "x$LUA_SRCDIR" != "x"], [],
-        AC_SUBST(LUA_SRCDIR, "src/lua")
+dnl POLKOVODETS_LUA_PATH
+AC_ARG_VAR([POLKOVODETS_LUA_PATH], [directory with polkovodets lua path])
+AS_IF([test "x$POLKOVODETS_LUA_PATH" != "x"], [],
+        AC_SUBST(POLKOVODETS_LUA_PATH, "src/lua")
 )
 
-AC_CHECK_FILE(["$LUA_SRCDIR/main.lua"],
+AC_CHECK_FILE(["$POLKOVODETS_LUA_PATH/main.lua"],
 	[],
-	[AC_MSG_ERROR([main.lua not found in LUA_SRCDIR ($LUA_SRCDIR)])],
+	[AC_MSG_ERROR([main.lua not found in POLKOVODETS_LUA_PATH ($POLKOVODETS_LUA_PATH)])],
 )
-AC_DEFINE_UNQUOTED([LUA_SRCDIR], ["$LUA_SRCDIR"], [directory with polkovodets lua sources])
+AC_DEFINE_UNQUOTED([POLKOVODETS_LUA_PATH], ["$POLKOVODETS_LUA_PATH"], [directory with polkovodets lua path])
+
+dnl POLKOVODETS_LUA_CPATH
+AC_ARG_VAR([POLKOVODETS_LUA_CPATH], [directory with polkovodets lua cpath])
+AS_IF([test "x$POLKOVODETS_LUA_CPATH" != "x"],
+	AC_DEFINE_UNQUOTED([POLKOVODETS_LUA_CPATH], ["$POLKOVODETS_LUA_CPATH"], [directory with polkovodets lua cpath])
+)
+
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile src/c/Makefile src/lua/Makefile])
