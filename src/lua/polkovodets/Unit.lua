@@ -84,8 +84,8 @@ function Unit:draw(sdl_renderer, x, y)
    }
    local orientation = self.data.orientation
    assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
-   local flip = (orientation == 'right') and SDL.rendererFlip.none or
-                 (orientation == 'left') and SDL.rendererFlip.Horizontal
+   local flip = (orientation == 'left') and SDL.rendererFlip.none or
+                 (orientation == 'right') and SDL.rendererFlip.Horizontal
 
    if (self.data.selected) then
       local frame_icon = terrain:get_icon('frame')
@@ -164,13 +164,25 @@ function Unit:move_cost(tile)
    return Vector.create(costs)
 end
 
+function Unit:_update_orientation(dst_tile, src_tile)
+   local dx = dst_tile.data.x - src_tile.data.x
+   local orientation = self.data.orientation
+   if (dx > 0) then orientation = 'right'
+   elseif (dx <0) then orientation = 'left' end
+
+   -- print("orientation: " .. self.data.orientation .. " -> " .. orientation)
+   self.data.orientation = orientation
+end
+
 function Unit:move_to(dst_tile)
    local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
    local movements = self.data.staff_data.movement
+   local src_tile = self.tile
    self.data.staff_data.movement = movements - costs
    self.tile.unit = nil
    dst_tile.unit = self
    self.tile = dst_tile
+   self:_update_orientation(dst_tile, src_tile)
    self:update_actions_map()
 end
 
@@ -279,7 +291,7 @@ function Unit:update_actions_map()
    -- actions_map.attack = get_attack_map()
 
    self.data.actions_map = actions_map
-   print(inspect(actions_map))
+   -- print(inspect(actions_map))
 end
 
 return Unit
