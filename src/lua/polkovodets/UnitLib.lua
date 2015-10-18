@@ -87,7 +87,14 @@ function UnitLib:load(unit_file)
    -- load unit definitions section --
    -----------------------------------
    local units_data = assert(parser:get_value('units'))
+   local unit_types = load_hash(units_data, 'types')
    local unit_classes = load_hash(units_data, 'classes')
+   -- validate classes by types
+   for idx, class in pairs(unit_classes) do
+      local t = class.type
+      assert(unit_types[t], "unknown unit type " .. t .. " for unit class " .. idx)
+   end
+
    local units_file = assert(units_data.definitions)
    local unit_definitions = {}
    for k, data in pairs(Parser.create(definitions_dir .. '/' .. units_file):get_raw_data()) do

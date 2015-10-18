@@ -39,7 +39,8 @@ local input_for = {
       'nations.csv', 'weather-types.csv', 'terrain-types.csv', 'landscape.csv',
       'weapon-types.csv', 'weapon-categories.csv', 'weapon-target-types.csv',
       'weapon-classes.csv', 'weapon-movement-types.csv', 'weapons.csv',
-      'unit-definitions.csv', 'unit-classes.csv', 'armed-forces.csv',
+      'unit-types.csv', 'unit-classes.csv', 'unit-definitions.csv',
+      'armed-forces.csv',
    },
    scenario = {
       'players.csv', 'objectives.csv', 'army.csv', 'scenario.csv',
