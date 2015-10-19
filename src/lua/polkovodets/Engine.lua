@@ -216,17 +216,24 @@ function Engine:get_selected_unit()
 end
 
 
-function Engine:click_on_tile(x,y)
+function Engine:click_on_tile(x,y, action)
    local tile = self.map.tiles[x][y]
-   if (tile.unit) then
-      self:unselect_unit()
-      self:select_unit(tile.unit)
-   elseif (self.selected_unit) then
+   if (action == 'default') then
+      if (tile.unit) then
+         self:unselect_unit()
+         self:select_unit(tile.unit)
+      end
+   end
+   if (self.selected_unit) then
       local u = self.selected_unit
-      local actions_map = u.data.actions_map
-      local move_map = actions_map.move
-      if (move_map[tile.uniq_id]) then
-         u:move_to(tile)
+      local method_for = {
+         move = 'move_to',
+         merge = 'merge_at',
+      }
+      local method = method_for[action]
+      if (method) then
+         u[method](u, tile)
+         self:click_on_tile(x, y, 'default')
       end
    end
 end

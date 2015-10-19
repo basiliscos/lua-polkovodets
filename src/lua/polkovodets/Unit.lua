@@ -187,6 +187,36 @@ function Unit:move_to(dst_tile)
    self:update_actions_map()
 end
 
+function Unit:merge_at(dst_tile)
+   local other_unit = assert(dst_tile.unit)
+   local weight_for = {
+      L = 100,
+      M = 10,
+      S = 1,
+   }
+   local my_weight    = weight_for[self.definition.data.size]
+   local other_weight = weight_for[other_unit.definition.data.size]
+   local core_unit, aux_unit
+   if (my_weight > other_weight) then
+      core_unit, aux_unit = self, other_unit
+   else
+      core_unit, aux_unit = other_unit, self
+   end
+
+   for idx, unit in pairs(aux_unit.data.attached) do
+      table.remove(aux_unit.data.attached)
+      table.insert(core_unit.data.attached, unit)
+   end
+   table.insert(core_unit.data.attached, aux_unit)
+
+   self:move_to(dst_tile)
+   -- aux unit is now attached, remove from map
+   aux_unit.tile.unit = nil
+   aux_unit.tile = nil
+   dst_tile.unit = core_unit
+   core_unit:update_actions_map()
+end
+
 
 function Unit:_enemy_near(tile)
    for adj_tile in self.engine:get_adjastent_tiles(tile) do

@@ -262,23 +262,30 @@ function Renderer:_recalc_active_tile()
 	end
 end
 
-
-function Renderer:_draw_cursor()
-   local state, x, y = SDL.getMouseState()
+function Renderer:_action_kind(tile)
    local kind = 'default'
    local u = self.engine:get_selected_unit()
-   if (u and self.active_tile) then
-      local tx, ty = table.unpack(self.active_tile)
+   if (u and tile) then
+      local tx, ty = table.unpack(tile)
       local tile = self.engine.map.tiles[tx][ty]
       local actions_map = u.data.actions_map
       if (actions_map.merge[tile.uniq_id]) then
          kind = 'merge'
       elseif (actions_map.attack[tile.uniq_id]) then
          kind = 'attack'
-      elseif (actions_map.move[tile.uniq_id]) then
+      -- move to the tile if it is free
+      -- hilight it the tile, even if there is our unit, i.e. we can pass *through* it
+      elseif (actions_map.move[tile.uniq_id] and not(tile.unit)) then
          kind = 'move'
       end
    end
+   return kind
+end
+
+
+function Renderer:_draw_cursor()
+   local state, x, y = SDL.getMouseState()
+   local kind = self:_action_kind(self.active_tile)
    local cursor_idx = assert(self.cursors[kind], "no cursor of " .. kind)
    local cursor_texture = self:get_joint_texture(self.resources.cursors, cursor_idx)
    -- local cursor_texture = self.engine.map.terrain:get_icon('frame')
@@ -352,7 +359,8 @@ function Renderer:main_loop()
          self:_recalc_active_tile()
          local x, y = table.unpack(self.active_tile)
          if (e.button == SDL.mouseButton.Left) then
-            engine:click_on_tile(x,y)
+            local action_kind = self:_action_kind(self.active_tile)
+            engine:click_on_tile(x,y, action_kind)
          elseif(e.button == SDL.mouseButton.Right) then
             engine:unselect_unit()
          end
