@@ -95,6 +95,12 @@ function UnitLib:load(unit_file)
       assert(unit_types[t], "unknown unit type " .. t .. " for unit class " .. idx)
    end
 
+   -- make types & classes be accessible for units
+   self.units = {
+      types       = unit_types,
+      classes     = unit_classes,
+   }
+
    local units_file = assert(units_data.definitions)
    local unit_definitions = {}
    for k, data in pairs(Parser.create(definitions_dir .. '/' .. units_file):get_raw_data()) do
@@ -115,11 +121,7 @@ function UnitLib:load(unit_file)
       local unit_definition = UnitDefinition.create(engine, data)
       unit_definitions[id] = unit_definition
    end
-
-   self.units = {
-      classes     = unit_classes,
-      definitions = unit_definitions,
-   }
+   self.units.definitions = unit_definitions
 
 end
 

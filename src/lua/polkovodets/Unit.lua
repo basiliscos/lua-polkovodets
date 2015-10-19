@@ -60,6 +60,7 @@ function Unit.create(engine, data, player)
          selected     = false,
          orientation  = orientation,
          staff_data   = staff_data,
+         attached     = {},
       }
    }
    setmetatable(o, Unit)
@@ -202,6 +203,8 @@ function Unit:update_actions_map()
    -- determine, what the current user can do at the visible area
    local actions_map = {}
 
+   local merge_candidates = {}
+
    local get_move_map = function()
       local inspect_queue = {}
       local add_reachability_tile = function(src_tile, dst_tile, cost)
@@ -241,15 +244,17 @@ function Unit:update_actions_map()
       local fuel_at = {};  -- k: tile_id, v: movement_costs table
       local fuel_limit = self:available_movement()
       for src_tile, dst_tile, costs in get_nearest_tile() do
-         -- need additionally check if the unit belongs to us and can merge
+         if (dst_tile.unit and dst_tile.unit.player == self.player) then
+            table.insert(merge_candidates, dst_tile)
+         end
          local can_move = not (dst_tile.unit and dst_tile.unit.player ~= self.player)
          if (can_move) then
             -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
             fuel_at[dst_tile.uniq_id] = costs
+            local has_enemy_near = self:_enemy_near(dst_tile)
             for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
                local adj_cost = self:move_cost(adj_tile)
                local total_costs = costs + adj_cost
-               local has_enemy_near = self:_enemy_near(dst_tile)
                -- ignore near enemy, if we are moving from the start tile
                if (dst_tile == self.tile) then has_enemy_near = false end
                if (total_costs <= fuel_limit and not has_enemy_near) then
@@ -286,7 +291,28 @@ function Unit:update_actions_map()
       return attack_map
    end
 
+   local get_merge_map = function()
+      local merge_map = {}
+      local my_size = self.definition.data.size
+      local my_attached = self.data.attached
+      local my_unit_type = self.definition.unit_type.id
+      for k, tile in pairs(merge_candidates) do
+         local other_unit = tile.unit
+         if (other_unit.definition.unit_type.id == my_unit_type) then
+            local expected_quantity = 1 + 1 + #my_attached + #other_unit.data.attached
+            local other_size = other_unit.definition.data.size
+            local size_matches = my_size ~= other_size
+            if (expected_quantity <= 3 and size_matches) then
+               merge_map[tile.uniq_id] = true
+               -- print("m " .. tile.uniq_id .. ":" .. my_size .. other_size)
+            end
+         end
+      end
+      return merge_map
+   end
+
    actions_map.move = get_move_map()
+   actions_map.merge = get_merge_map()
    actions_map.attack = {}
    -- actions_map.attack = get_attack_map()
 

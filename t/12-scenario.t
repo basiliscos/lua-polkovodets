@@ -15,7 +15,7 @@ local engine = Engine.create()
 engine:set_renderer(DummyRenderer.create(640, 480))
 
 local scenario = Scenario.create(engine)
-scenario:load('Test')
+scenario:load('Test2')
 ok(engine:get_scenario())
 ok(engine:get_map())
 
@@ -79,6 +79,10 @@ subtest("move rus infantry",
                      "available movements is correct"
            )
            inf:update_actions_map()
+           -- print(inspect(inf.data.actions_map.move))
+           ok(inf.data.actions_map.move[map.tiles[5][4].uniq_id])
+           ok(inf.data.actions_map.move[map.tiles[9][7].uniq_id])
+           ok(inf.data.actions_map.merge[map.tiles[8][5].uniq_id])
         end
 )
 

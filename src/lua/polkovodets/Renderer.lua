@@ -40,6 +40,7 @@ function Renderer.create(engine, window, sdl_renderer)
       cursors = {
          ['default'     ] = 1,
          ['move'        ] = 2,
+         ['merge'       ] = 3,
          ['attack'      ] = 4,
       },
 	  textures_cache = {},
@@ -270,10 +271,12 @@ function Renderer:_draw_cursor()
       local tx, ty = table.unpack(self.active_tile)
       local tile = self.engine.map.tiles[tx][ty]
       local actions_map = u.data.actions_map
-      if (actions_map.move[tile.uniq_id]) then
-         kind = 'move'
+      if (actions_map.merge[tile.uniq_id]) then
+         kind = 'merge'
       elseif (actions_map.attack[tile.uniq_id]) then
          kind = 'attack'
+      elseif (actions_map.move[tile.uniq_id]) then
+         kind = 'move'
       end
    end
    local cursor_idx = assert(self.cursors[kind], "no cursor of " .. kind)

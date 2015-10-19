@@ -129,7 +129,7 @@ function Scenario:load(file)
       data.exp = tonumber(assert(data.exp))
       local staff = assert(data.staff)
       local unit_definition = assert(unit_lib.units.definitions[definition_id],
-                                     "unit definiton " .. definition_id .. " not fond"
+                                     "unit definiton " .. definition_id .. " not found for unit " .. id
       )
       for weapon_id, quantity in ipairs(staff) do
          quantity = tonumber(quantity)
