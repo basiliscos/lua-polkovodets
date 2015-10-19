@@ -176,10 +176,12 @@ function Renderer:_draw_map()
 	  local y_shift = (tx % 2 == 0) and  hex_y_offset or 0
 	  for j = 1,map_sh do
          local ty = j + start_map_y
-         -- print(string.format("tx:ty = (%d:%d), start_map_x = %d", tx, ty, start_map_x))
-		 local tile = map.tiles[tx][ty]
-		 tile:draw(sdl_renderer, x, y + y_shift)
-		 y = y + hex_h
+         if (tx <= map.width and ty <= map.height) then
+            -- print(string.format("tx:ty = (%d:%d), start_map_y = %d", tx, ty, start_map_y))
+            local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
+            tile:draw(sdl_renderer, x, y + y_shift)
+            y = y + hex_h
+         end
 	  end
 	  x = x + hex_x_offset
 	  y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
