@@ -351,7 +351,11 @@ function Renderer:main_loop()
       elseif (t == SDL.event.MouseButtonUp) then
          self:_recalc_active_tile()
          local x, y = table.unpack(self.active_tile)
-         engine:click_on_tile(x,y)
+         if (e.button == SDL.mouseButton.Left) then
+            engine:click_on_tile(x,y)
+         elseif(e.button == SDL.mouseButton.Right) then
+            engine:unselect_unit()
+         end
       elseif (t == SDL.event.MouseWheel) then
          self:_check_scroll(e.x, e.y) -- check scroll by mouse wheel
 	  end
