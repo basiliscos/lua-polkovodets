@@ -25,6 +25,7 @@ local Nation = require 'polkovodets.Nation'
 local Player = require 'polkovodets.Player'
 local Unit = require 'polkovodets.Unit'
 local UnitLib = require 'polkovodets.UnitLib'
+local WeaponInstance = require 'polkovodets.WeaponInstance'
 local Parser = require 'polkovodets.Parser'
 
 function Scenario.create(engine)
@@ -131,18 +132,12 @@ function Scenario:load(file)
       local unit_definition = assert(unit_lib.units.definitions[definition_id],
                                      "unit definiton " .. definition_id .. " not found for unit " .. id
       )
-      for weapon_id, quantity in ipairs(staff) do
+      local staff_instances = {}
+      for weapon_id, quantity in pairs(staff) do
          quantity = tonumber(quantity)
-         local weapon = unit_lib.weapons.definitions[weapon_id]
-         assert(weapon, "no such weapon with id " .. weapon_id)
-         local w_type = unit_lib.weapons.types[weapon.weap_type].id
-         local max_quantity = unit_definition.data.staff[w_type]
-         assert(max_quantity or max_quantity == 0,
-                "no such weapon type " .. w_type .. " in unit definition " .. unit_definition.data.id)
-         print(inspect(max_quantity))
-         assert(quantity <= max_quantity, "quantity " .. quantity .. " exceeds nominal quantity " ..  max_quantity)
-         staff[weapon_id] = quantity
+         staff_instances[weapon_id] = WeaponInstance.create(engine, weapon_id, id, quantity)
       end
+      data.staff = staff_instances
       local nation_id = unit_definition.data.nation
       local player = nation_for_player[nation_id]
       local unit = Unit.create(engine, data, player)

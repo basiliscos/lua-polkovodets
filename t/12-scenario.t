@@ -35,7 +35,7 @@ subtest("move rus infantry",
            local marched_weapons = inf:_marched_weapons()
            ok(marched_weapons)
            is(#marched_weapons, 7)
-           local types = _.sort(_.map(marched_weapons, function(k, v) return v.weapon_type end))
+           local types = _.sort(_.map(marched_weapons, function(k, v) return v.weapon.weapon_type end))
            -- print(inspect(types))
            is_deeply(
               types,
@@ -50,33 +50,34 @@ subtest("move rus infantry",
               }
            )
            local move_cost = inf:move_cost(map.tiles[7][4])
-           assert(move_cost)
+           -- print(inspect(move_cost))
+           ok(move_cost)
            is_deeply(move_cost.data,
                      {
-                        ["1"]  = 1,
-                        ["14"] = 1,
-                        ["18"] = 1,
-                        ["2"]  = 1,
-                        ["3"]  = 1,
-                        ["4"]  = 1,
-                        ["5"]  = 1,
+                        ["1:1"]  = 1,
+                        ["1:14"] = 1,
+                        ["1:18"] = 1,
+                        ["1:2"]  = 1,
+                        ["1:3"]  = 1,
+                        ["1:4"]  = 1,
+                        ["1:5"]  = 1,
                      },
                      "move cost to 7:4 is correct"
            )
            local available_movement = inf:available_movement()
            -- print(inspect(available_movement))
-           assert(available_movement)
-           is_deeply(available_movement.data,
+           ok(available_movement)
+           is_deeply(available_movement,
                      {
-                        ["1"]  = 5,
-                        ["14"] = 3,
-                        ["18"] = 4,
-                        ["2"]  = 3,
-                        ["3"]  = 3,
-                        ["4"]  = 3,
-                        ["5"]  = 3,
+                        ["1:1"]  = 5,
+                        ["1:14"] = 3,
+                        ["1:18"] = 4,
+                        ["1:2"]  = 3,
+                        ["1:3"]  = 3,
+                        ["1:4"]  = 3,
+                        ["1:5"]  = 3,
                      },
-                     "available movements is correct"
+                     "available movements are correct"
            )
            inf:update_actions_map()
            -- print(inspect(inf.data.actions_map.move))

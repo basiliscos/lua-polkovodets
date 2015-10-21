@@ -40,26 +40,15 @@ function Unit.create(engine, data, player)
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
-   -- key: weapon, value: quantity
-   local staff = {}
-   local staff_data = { }
-   local weapon_for = unit_lib.weapons.definitions
-   for weapon_id, quantity in pairs(data.staff) do
-      local weapon = assert(weapon_for[weapon_id])
-      staff[weapon] = tonumber(quantity)
-   end
-
-
    local o = {
       engine     = engine,
       player     = player,
       tile       = tile,
       definition = definition,
-      staff      = staff,
       data = {
+         staff        = data.staff,
          selected     = false,
          orientation  = orientation,
-         staff_data   = staff_data,
          attached     = {},
       }
    }
@@ -103,7 +92,7 @@ function Unit:draw(sdl_renderer, x, y)
    }))
 end
 
--- retunrs a table of weapons, which are will be marched,
+-- retunrs a table of weapon instances, which are will be marched,
 -- i.e. as if they already packed into transporters
 function Unit:_marched_weapons()
    local list = {}
@@ -112,24 +101,25 @@ function Unit:_marched_weapons()
    local transport_for = {}
 
    -- pass 1: determine transport capabilites
-   for weapon, quantity in pairs(self.staff) do
-      local transport_capability = weapon:is_capable('TRANSPORTS_%w+')
+   for weapon_id, weapon_instance in pairs(self.data.staff) do
+      local transport_capability = weapon_instance:is_capable('TRANSPORTS_%w+')
       if (transport_capability) then
          local transport_kind = string.lower(string.gsub(transport_capability, 'TRANSPORTS_', ''))
          local prev_value = transport_for[transport_kind] or 0
-         transport_for[transport_kind] = prev_value + quantity
+         transport_for[transport_kind] = prev_value + weapon_instance:quantity()
       end
    end
 
    -- pass 2: put into transpots related weapons
-   for weapon, quantity in pairs(self.staff) do
-      local kind = weapon.movement_type
+   for weapon_id, weapon_instance in pairs(self.data.staff) do
+      local kind = weapon_instance.weapon.movement_type
       local transported = false
+      local quantity = weapon_instance:quantity()
       if ((transport_for[kind] or 0) >= quantity) then
          transported = true
          transport_for[kind] = transport_for[kind] - quantity
       end
-      if (not transported) then table.insert(list, weapon) end
+      if (not transported) then table.insert(list, weapon_instance) end
    end
    return list
 end
@@ -137,30 +127,33 @@ end
 
 function Unit:_refresh_movements()
    local result = {}
-   for idx, weapon in pairs(self:_marched_weapons()) do
-      local movement = weapon.data.movement
-      result[weapon.id] = movement
+   for idx, weapon_instance in pairs(self:_marched_weapons()) do
+      weapon_instance:refresh_movements()
    end
-   self.data.staff_data.movement = Vector.create(result)
 end
 
 
--- returns table (k: weapon_id, v: value) of available movements for all marched weapons
+-- returns table (k: weapon_instance_id, v: value) of available movements for all
+-- marched weapons instances
 function Unit:available_movement()
-   return self.data.staff_data.movement
+   local data = {}
+   for idx, weapon_instance in pairs(self:_marched_weapons()) do
+      data[weapon_instance.uniq_id] = weapon_instance.data.movement
+   end
+   return data
 end
 
--- returns table (k: weapon_id, v: movement cost) for all marched weapons
+-- returns table (k: weapon_instance_id, v: movement cost) for all marched weapon instances
 function Unit:move_cost(tile)
    local weather = self.engine:current_weather()
    local cost_for = tile.data.terrain_type.move_cost
    local costs = {} -- k: weapon id, v: movement cost
-   for idx, weapon in pairs(self:_marched_weapons()) do
-      local movement_type = weapon.movement_type
+   for idx, weapon_instance in pairs(self:_marched_weapons()) do
+      local movement_type = weapon_instance.weapon.movement_type
       local value = cost_for[movement_type][weather]
-      if (value == 'A') then value = weapon.data.movement     -- all movement points
-      elseif (value == 'X') then value = math.maxinteger end  -- impassable
-      costs[weapon.id] = value
+      if (value == 'A') then value = weapon_instance.data.movement -- all movement points
+      elseif (value == 'X') then value = math.maxinteger end       -- impassable
+      costs[weapon_instance.uniq_id] = value
    end
    return Vector.create(costs)
 end
@@ -177,10 +170,12 @@ end
 
 function Unit:move_to(dst_tile)
    local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
-   local movements = self.data.staff_data.movement
    local src_tile = self.tile
-   self.data.staff_data.movement = movements - costs
    self.tile.unit = nil
+   for idx, weapon_instance in pairs(self:_marched_weapons()) do
+      local cost = costs.data[weapon_instance.uniq_id]
+      weapon_instance.data.movement = weapon_instance.data.movement - cost
+   end
    dst_tile.unit = self
    self.tile = dst_tile
    self:_update_orientation(dst_tile, src_tile)
@@ -267,12 +262,12 @@ function Unit:update_actions_map()
 
       -- initialize reachability with tile, on which the unit is already located
       local initial_costs = {}
-      for idx, w in pairs(marched_weapons) do initial_costs[w.id] = 0 end
+      for idx, wi in pairs(marched_weapons) do initial_costs[wi.uniq_id] = 0 end
       add_reachability_tile(self.tile, self.tile, Vector.create(initial_costs))
 
 
       local fuel_at = {};  -- k: tile_id, v: movement_costs table
-      local fuel_limit = self:available_movement()
+      local fuel_limit = Vector.create(self:available_movement())
       for src_tile, dst_tile, costs in get_nearest_tile() do
          if (dst_tile.unit and dst_tile.unit.player == self.player) then
             table.insert(merge_candidates, dst_tile)
