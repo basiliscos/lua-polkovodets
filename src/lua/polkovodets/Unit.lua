@@ -41,6 +41,7 @@ function Unit.create(engine, data, player)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
    local o = {
+      id         = data.id,
       engine     = engine,
       player     = player,
       tile       = tile,
@@ -94,14 +95,26 @@ end
 
 -- retunrs a table of weapon instances, which are will be marched,
 -- i.e. as if they already packed into transporters
+-- includes attached units too.
 function Unit:_marched_weapons()
    local list = {}
+
+   local unit_list = {self}
+   for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
+
+   local united_staff = {}
+   for idx, unit in pairs(unit_list) do
+      --print("unit = " .. inspect(unit))
+      for idx2, weapon_instance in pairs(unit.data.staff) do
+         table.insert(united_staff, weapon_instance)
+      end
+   end
 
    -- k:  type of weapon movement, which are capable to transport, w: quantity
    local transport_for = {}
 
    -- pass 1: determine transport capabilites
-   for weapon_id, weapon_instance in pairs(self.data.staff) do
+   for idx, weapon_instance in pairs(united_staff) do
       local transport_capability = weapon_instance:is_capable('TRANSPORTS_%w+')
       if (transport_capability) then
          local transport_kind = string.lower(string.gsub(transport_capability, 'TRANSPORTS_', ''))
@@ -111,7 +124,7 @@ function Unit:_marched_weapons()
    end
 
    -- pass 2: put into transpots related weapons
-   for weapon_id, weapon_instance in pairs(self.data.staff) do
+   for idx, weapon_instance in pairs(united_staff) do
       local kind = weapon_instance.weapon.movement_type
       local transported = false
       local quantity = weapon_instance:quantity()
@@ -151,8 +164,8 @@ function Unit:move_cost(tile)
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
       local movement_type = weapon_instance.weapon.movement_type
       local value = cost_for[movement_type][weather]
-      if (value == 'A') then value = weapon_instance.data.movement -- all movement points
-      elseif (value == 'X') then value = math.maxinteger end       -- impassable
+      if (value == 'A') then value = weapon_instance.weapon.data.movement -- all movement points
+      elseif (value == 'X') then value = math.maxinteger end              -- impassable
       costs[weapon_instance.uniq_id] = value
    end
    return Vector.create(costs)
@@ -172,6 +185,7 @@ function Unit:move_to(dst_tile)
    local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
    local src_tile = self.tile
    self.tile.unit = nil
+   -- print(inspect(costs))
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
       local cost = costs.data[weapon_instance.uniq_id]
       weapon_instance.data.movement = weapon_instance.data.movement - cost
@@ -184,6 +198,8 @@ end
 
 function Unit:merge_at(dst_tile)
    local other_unit = assert(dst_tile.unit)
+   self:move_to(dst_tile)
+
    local weight_for = {
       L = 100,
       M = 10,
@@ -204,7 +220,6 @@ function Unit:merge_at(dst_tile)
    end
    table.insert(core_unit.data.attached, aux_unit)
 
-   self:move_to(dst_tile)
    -- aux unit is now attached, remove from map
    aux_unit.tile.unit = nil
    aux_unit.tile = nil
