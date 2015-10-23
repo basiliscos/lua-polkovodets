@@ -83,9 +83,9 @@ function Tile:draw(sdl_renderer, x, y)
 
    local show_grid = engine.options.show_grid
 
-   -- draw nation flag
+   -- draw nation flag in city, unless there is unit (then unit flag will be drawn)
    local nation = self.data.nation
-   if (nation) then
+   if (nation and not(self.unit)) then
 	  -- print("flag for " .. nation.data.name)
 	  local nation_flag_width = nation.flag.w
 	  local nation_flag_height = nation.flag.h

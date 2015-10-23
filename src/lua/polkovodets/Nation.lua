@@ -26,18 +26,26 @@ function Nation.create(engine, nation_data)
    assert(nation_data.name)
    assert(nation_data.icon_path)
 
+   local load_flag = function(short_path)
+      local image_path = engine:get_gfx_dir() .. '/' .. short_path
+      local texture = engine.renderer:load_texture(image_path)
+      local format, access, w, h = texture:query()
+      return {
+         texture = texture,
+         w = w,
+         h = h,
+      }
+   end
+
    local image_path = engine:get_gfx_dir() .. '/' .. nation_data.icon_path
    local texture = engine.renderer:load_texture(image_path)
    local format, access, w, h = texture:query()
 
    local o = {
-	  engine = engine,
-	  data = nation_data,
-      flag = {
-         texture = texture,
-         w = w,
-         h = h,
-      },
+	  engine    = engine,
+	  data      = nation_data,
+      flag      = load_flag(nation_data.icon_path),
+      unit_flag = load_flag(nation_data.unit_icon_path),
    }
 
    setmetatable(o, Nation)

@@ -64,6 +64,7 @@ function Unit:draw(sdl_renderer, x, y)
    local terrain = self.engine.map.terrain
    local hex_h = terrain.hex_height
    local hex_w = terrain.hex_width
+   local hex_x_offset = terrain.hex_x_offset
 
    local texture = self.definition:get_icon()
    local format, access, w, h = texture:query()
@@ -91,6 +92,18 @@ function Unit:draw(sdl_renderer, x, y)
              nil,                                          -- no center
              flip        = flip,
    }))
+   -- unit nation flag
+   local unit_flag = self.definition.nation.unit_flag
+   assert(sdl_renderer:copy(
+             unit_flag.texture,
+             nil,
+             {
+                x = x + hex_x_offset - unit_flag.w,
+                y = y + hex_h - unit_flag.h,
+                w = unit_flag.w,
+                h = unit_flag.h,
+             }
+   ))
 end
 
 -- retunrs a table of weapon instances, which are will be marched,

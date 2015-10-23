@@ -27,6 +27,7 @@ function UnitDefinition.create(engine, data)
    assert(data.unit_class)
    assert(data.staff)
    assert(data.size)
+   assert(data.nation)
    assert(string.find(data.size, '[LMS]'))
    local icon_path = assert(data.icon_path)
    local full_icon_path = engine:get_gfx_dir() .. '/' .. icon_path
@@ -34,12 +35,15 @@ function UnitDefinition.create(engine, data)
    local unit_type_id = unit_class['type']
    local unit_type = assert(unit_lib.units.types[unit_type_id], "type " .. unit_type_id .. " not found")
 
+   local nation = assert(engine.nation_for[data.nation])
+
    local o = {
       engine = engine,
       data = data,
       icon = engine.renderer:load_texture(full_icon_path),
       unit_type = unit_type,
       unit_class = unit_class,
+      nation = nation,
    }
    setmetatable(o, UnitDefinition)
    return o
