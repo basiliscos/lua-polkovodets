@@ -39,6 +39,23 @@ function Theme.create(engine, data)
    local active_hex_font = theme_dir .. '/' .. data.active_hex.font
    local active_hex_size = assert(data.active_hex.font_size)
    local active_hex_ttf = assert(ttf.open(active_hex_font, active_hex_size))
+
+   local unit_states = {}
+
+   for idx, size in pairs({'L', 'M', 'S'}) do
+      for idx2, efficiency in pairs({'high', 'avg', 'low'}) do
+         local icon_name = size .. '-' .. efficiency .. '.png'
+         local icon_path = theme_dir .. '/unit-state-icons/' .. icon_name
+         local texture = renderer:load_texture(icon_path)
+         local format, access, w, h = texture:query()
+         local key = size .. '-' .. efficiency
+         unit_states[key] = {
+            w       = w,
+            h       = h,
+            texture = texture,
+         }
+      end
+   end
    
    local o = {
       engine   = engine,
@@ -48,9 +65,16 @@ function Theme.create(engine, data)
       fonts    = {
          active_hex = active_hex_ttf,
       },
+      unit_states = unit_states,
    }
    setmetatable(o,Theme)
    return o
+end
+
+function Theme:get_unit_state_icon(size, efficiency)
+   local key = size .. '-' .. efficiency
+   local icon = assert(self.unit_states[key], 'unit state ' .. key .. ' is n/a')
+   return icon
 end
 
 function Theme:get_cursor(kind)

@@ -40,6 +40,8 @@ function Unit.create(engine, data, player)
    local x,y = tonumber(data.x), tonumber(data.y)
    local tile = assert(engine.map.tiles[x + 1][y + 1])
 
+   local possible_efficiencies = {'high', 'avg', 'low'}
+
    local o = {
       id         = data.id,
       engine     = engine,
@@ -49,6 +51,7 @@ function Unit.create(engine, data, player)
       data = {
          staff        = data.staff,
          selected     = false,
+         efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
          orientation  = orientation,
          attached     = {},
       }
@@ -102,6 +105,20 @@ function Unit:draw(sdl_renderer, x, y)
                 y = y + hex_h - unit_flag.h,
                 w = unit_flag.w,
                 h = unit_flag.h,
+             }
+   ))
+   -- unit state
+   local size = self.definition.data.size
+   local efficiency = self.data.efficiency
+   local unit_state = self.engine.renderer.theme:get_unit_state_icon(size, efficiency)
+   assert(sdl_renderer:copy(
+             unit_state.texture,
+             nil,
+             {
+                x = x + (hex_w - hex_x_offset),
+                y = y + hex_h - unit_state.h,
+                w = unit_state.w,
+                h = unit_state.h,
              }
    ))
 end

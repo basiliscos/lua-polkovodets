@@ -80,7 +80,9 @@ end
 
 function Renderer:_load_image(path)
    local surface = assert(image.load(path), "error loading image " .. path)
-   assert(surface:setColorKey(1, 0x0))
+   if (string.find(path, '.bmp', nil, true)) then
+      assert(surface:setColorKey(1, 0x0))
+   end
    return surface
 end
 
