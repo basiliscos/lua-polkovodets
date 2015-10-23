@@ -50,6 +50,7 @@ function Renderer.create(engine, window, sdl_renderer)
    -- hide system mouse pointer
    assert(SDL.showCursor(false))
    setmetatable(o, Renderer)
+   engine:set_renderer(o)
    o:_load_theme();
    return o
 end

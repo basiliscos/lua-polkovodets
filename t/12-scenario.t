@@ -12,7 +12,7 @@ local Engine = require 'polkovodets.Engine'
 local DummyRenderer = require 't.DummyRenderer'
 
 local engine = Engine.create()
-engine:set_renderer(DummyRenderer.create(640, 480))
+DummyRenderer.create(engine, 640, 480)
 
 local scenario = Scenario.create(engine)
 scenario:load('Test2')

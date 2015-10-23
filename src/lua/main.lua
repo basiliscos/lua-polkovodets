@@ -52,7 +52,6 @@ assert(renderer, err)
 
 local engine = Engine.create()
 local gui_renderer = Renderer.create(engine, window, renderer)
-engine:set_renderer(gui_renderer)
 
 local scenario = Scenario.create(engine)
 scenario:load('Test2')

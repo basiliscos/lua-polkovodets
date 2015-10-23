@@ -7,13 +7,14 @@ _DummyTexture.__index = _DummyTexture
 function _DummyTexture:setAlphaMod() return true end
 function _DummyTexture:query() return 'a', 'b', 10, 20 end
 
-function DummyRenderer.create(width, height)
+function DummyRenderer.create(engine, width, height)
    local o = {
 	  w = width,
 	  h = height,
       textures = {},
    }
    setmetatable(o, DummyRenderer)
+   engine:set_renderer(o)
    return o
 end
 
