@@ -23,8 +23,8 @@ local SDL	= require "SDL"
 local image = require "SDL.image"
 local inspect = require('inspect')
 local ttf = require "SDL.ttf"
+local Theme = require 'polkovodets.Theme'
 
-local CURSOR_SIZE = 22
 local SCROLL_TOLERANCE = 5
 local EVENT_DELAY = 50
 
@@ -37,12 +37,6 @@ function Renderer.create(engine, window, sdl_renderer)
 	  engine = engine,
 	  window = window,
 	  sdl_renderer = sdl_renderer,
-      cursors = {
-         ['default'     ] = 1,
-         ['move'        ] = 2,
-         ['merge'       ] = 3,
-         ['attack'      ] = 4,
-      },
 	  textures_cache = {},
       resources = {},
       fonts = {},
@@ -51,29 +45,36 @@ function Renderer.create(engine, window, sdl_renderer)
    assert(SDL.showCursor(false))
    setmetatable(o, Renderer)
    engine:set_renderer(o)
-   o:_load_theme();
+   local theme = Theme.create(engine,
+                              {
+                                 name = 'default',
+                                 active_hex = {
+                                    outline_color = 0x0,
+                                    outline_width = 2,
+                                    color = 0xFFFFFF,
+                                    font_size = 15,
+                                    font = 'DroidSansMono.ttf'
+                                 },
+                                 cursors = {
+                                    path = 'cursors.bmp',
+                                    size = 22,
+                                    actions = {
+                                       ['default'     ] = 1,
+                                       ['move'        ] = 2,
+                                       ['merge'       ] = 3,
+                                       ['attack'      ] = 4,
+                                    }
+                                 },
+
+                              }
+   )
+   o.theme = theme
    return o
 end
 
 
 function Renderer:get_size()
    return table.unpack(self.size)
-end
-
-
-function Renderer:_load_theme()
-   local engine = self.engine
-   local dir = engine:get_theme_dir()
-   local cursors_file = 'cursors.bmp'
-   local cursors_path = dir .. '/' .. cursors_file
-   self.resources.cursors = cursors_path
-
-   local iterator_factory = function(surface) return self:create_simple_iterator(surface, CURSOR_SIZE, 0) end
-   self:load_joint_texture(cursors_path, iterator_factory)
-
-   local active_hex_font = dir .. '/' .. engine.theme.active_hex.font
-   local active_hex_size = engine.theme.active_hex.font_size
-   self.fonts.active_tile = assert(ttf.open(active_hex_font, active_hex_size))
 end
 
 
@@ -287,12 +288,10 @@ end
 function Renderer:_draw_cursor()
    local state, x, y = SDL.getMouseState()
    local kind = self:_action_kind(self.active_tile)
-   local cursor_idx = assert(self.cursors[kind], "no cursor of " .. kind)
-   local cursor_texture = self:get_joint_texture(self.resources.cursors, cursor_idx)
-   -- local cursor_texture = self.engine.map.terrain:get_icon('frame')
-   local src = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = 0, y = 0 }
-   local dst = { w = CURSOR_SIZE, h = CURSOR_SIZE, x = x, y = y }
-   assert(self.sdl_renderer:copy(cursor_texture, src, dst))
+   local texture = self.theme:get_cursor(kind)
+   local cursor_size = self.theme.data.cursors.size
+   local dst = { w = cursor_size, h = cursor_size, x = x, y = y }
+   assert(self.sdl_renderer:copy(texture, nil, dst))
 end
 
 
@@ -315,10 +314,10 @@ function Renderer:_draw_active_hex_info()
       local tile = map.tiles[x][y]
       --local str = string.format('%s (%d:%d)', tile.data.name, x-2, map.width - y - math.modf((x-2) * 0.5))
       local str = string.format('%s (%d:%d)', tile.data.name, x, y)
-      local font = self.fonts.active_tile
-      local outline_color = self.engine.theme.active_hex.outline_color
-      local color = self.engine.theme.active_hex.color
-      font:setOutline(self.engine.theme.active_hex.outline_width)
+      local font = self.theme.fonts.active_hex
+      local outline_color = self.theme.data.active_hex.outline_color
+      local color = self.theme.data.active_hex.color
+      font:setOutline(self.theme.data.active_hex.outline_width)
       render_label(font:renderUtf8(str, "solid", outline_color))
       font:setOutline(0)
       render_label(font:renderUtf8(str, "solid", color))

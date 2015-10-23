@@ -28,16 +28,6 @@ function Engine.create()
    local e = {
 	  turn = 0,
       selected_unit = nil,
-      theme = {
-         name = 'default',
-         active_hex = {
-            outline_color = 0x0,
-            outline_width = 2,
-            color = 0xFFFFFF,
-            font_size = 15,
-            font = 'DroidSansMono.ttf'
-         },
-      },
 	  gui = {
 		 map_x = 0,
 		 map_y = 0,
@@ -99,7 +89,7 @@ function Engine:get_map() return self.map end
 function Engine:get_scenarios_dir() return 'data/db/scenarios' end
 function Engine:get_definitions_dir() return 'data/db' end
 function Engine:get_gfx_dir() return 'data/gfx' end
-function Engine:get_theme_dir() return 'data/gfx/themes/' .. self.theme.name end
+function Engine:get_themes_dir() return 'data/gfx/themes/' end
 
 function Engine:set_renderer(renderer)
    self.renderer = renderer
