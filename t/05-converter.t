@@ -176,13 +176,13 @@ subtest("terrain-parse",
         function()
            local csv_data = [[
 id;name;min_entr;max_entr;max_init;!image;k;v;/!;!spot_cost;k;v;/!;<move_cost;!leg;k;v;/!;!tracked;k;v;/!;!halftracked;k;v;/!;!allterrain;k;v;/!;!wheeled;k;v;/!;!towed;k;v;/!;!air;k;v;/!;!naval;k;v;/!;/>
-c;Поле;0;5;3;;fair;terrain/clear.png;;;fair;1;;;;fair;1;;;fair;1;;;fair;1;;;fair;1;;;fair;2;;;fair;A;;;fair;1;;;fair;1;;
-;;;;;;clouds;terrain/clear.png;;;clouds;1;;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;2;;;clouds;A;;;clouds;1;;;clouds;1;;
-;;;;;;raining;terrain/clear.png;;;raining;2;;;;raining;1;;;raining;1;;;raining;1;;;raining;1;;;raining;2;;;raining;A;;;raining;1;;;raining;1;;
-;;;;;;snowing;terrain/clear.png;;;snowing;2;;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;2;;;snowing;A;;;snowing;1;;;snowing;1;;
-r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;
-;;;;;;clouds;;;;clouds;;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;;clouds;;;
-;;;;;;raining;;;;raining;;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;;raining;;;
+c;Поле;0;5;99;;fair;terrain/clear.bmp;;;fair;1;;;;fair;1;;;fair;1;;;fair;1;;;fair;1;;;fair;2;;;fair;A;;;fair;1;;;fair;X;;
+;;;;;;clouds;terrain/clear.bmp;;;clouds;1;;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;1;;;clouds;2;;;clouds;A;;;clouds;1;;;clouds;X;;
+;;;;;;raining;terrain/clear.bmp;;;raining;2;;;;raining;1;;;raining;1;;;raining;1;;;raining;1;;;raining;2;;;raining;A;;;raining;1;;;raining;X;;
+;;;;;;snowing;terrain/clear.bmp;;;snowing;2;;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;1;;;snowing;2;;;snowing;A;;;snowing;1;;;snowing;X;;
+f;Лес;2;7;3;;fair;terrain/forest.bmp;;;fair;2;;;;fair;2;;;fair;2;;;fair;2;;;fair;3;;;fair;3;;;fair;A;;;fair;1;;;fair;X;;
+;;;;;;clouds;terrain/forest.bmp;;;clouds;2;;;;clouds;2;;;clouds;2;;;clouds;2;;;clouds;3;;;clouds;3;;;clouds;A;;;clouds;1;;;clouds;X;;
+;;;;;;raining;terrain/forest.bmp;;;raining;2;;;;raining;2;;;raining;2;;;raining;2;;;raining;3;;;raining;3;;;raining;A;;;raining;1;;;raining;X;;
                   ]]
            local c = Converter.create(create_iterator(csv_data))
            local data = c:convert()
@@ -193,13 +193,13 @@ r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair
                      {
                         id = "c",
                         image = {
-                           clouds = "terrain/clear.png",
-                           fair = "terrain/clear.png",
-                           raining = "terrain/clear.png",
-                           snowing = "terrain/clear.png"
+                           clouds = "terrain/clear.bmp",
+                           fair = "terrain/clear.bmp",
+                           raining = "terrain/clear.bmp",
+                           snowing = "terrain/clear.bmp"
                         },
                         max_entr = "5",
-                        max_init = "3",
+                        max_init = "99",
                         min_entr = "0",
                         move_cost = {
                            air = {
@@ -227,10 +227,10 @@ r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair
                               snowing = "1"
                            },
                            naval = {
-                              clouds = "1",
-                              fair = "1",
-                              raining = "1",
-                              snowing = "1"
+                              clouds = "X",
+                              fair = "X",
+                              raining = "X",
+                              snowing = "X"
                            },
                            towed = {
                               clouds = "A",
@@ -257,69 +257,100 @@ r;Дорога;;;;;fair;;;;fair;;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair;;;;fair
                            fair = "1",
                            raining = "2",
                            snowing = "2"
-                        },
+                        }
                      },
                      "1-st item is correct"
            )
            is_deeply(data[2],
                      {
-                        id = "r",
+                        id = "f",
                         image = {
-                           clouds = "",
-                           fair = "",
-                           raining = ""
+                           clouds = "terrain/forest.bmp",
+                           fair = "terrain/forest.bmp",
+                           raining = "terrain/forest.bmp"
                         },
+                        max_entr = "7",
+                        max_init = "3",
+                        min_entr = "2",
                         move_cost = {
                            air = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "1",
+                              fair = "1",
+                              raining = "1"
                            },
                            allterrain = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "3",
+                              fair = "3",
+                              raining = "3"
                            },
                            halftracked = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "2",
+                              fair = "2",
+                              raining = "2"
                            },
                            leg = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "2",
+                              fair = "2",
+                              raining = "2"
                            },
                            naval = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "X",
+                              fair = "X",
+                              raining = "X"
                            },
                            towed = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "A",
+                              fair = "A",
+                              raining = "A"
                            },
                            tracked = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "2",
+                              fair = "2",
+                              raining = "2"
                            },
                            wheeled = {
-                              clouds = "",
-                              fair = "",
-                              raining = ""
+                              clouds = "3",
+                              fair = "3",
+                              raining = "3"
                            }
                         },
-                        name = "Дорога",
+                        name = "Лес",
                         spot_cost = {
-                           clouds = "",
-                           fair = "",
-                           raining = ""
+                           clouds = "2",
+                           fair = "2",
+                           raining = "2"
                         }
                      },
                      "2-nd item is correct"
            )
+        end
+)
+
+subtest("armed-forces-parse",
+        function()
+           local csv_data = [[
+id;name;!flags;k;v;/!
+wc_antiair;Средства ПВО ;;;;
+wc_tractor;Тягачи;;TRANSPORTS_TOWED;TRUE;
+                  ]]
+           local c = Converter.create(create_iterator(csv_data))
+           local data = c:convert()
+           -- print(inspect(data))
+           ok(data, "got converted data")
+           is(#data, 2, "2 rows in data")
+           is_deeply(data, {
+                     {
+                        flags = { },
+                        id = "wc_antiair",
+                        name = "Средства ПВО "
+                     }, {
+                        flags = {
+                           TRANSPORTS_TOWED = "TRUE"
+                        },
+                        id = "wc_tractor",
+                        name = "Тягачи"
+                     }
+           })
         end
 )
 

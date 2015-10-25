@@ -109,12 +109,12 @@ function Converter:_convert_csv()
       if (cmd.command == 'put' and #value > 0) then
          stack[#stack][cmd.to] = value
          -- print(string.format("put %s -> %s", value, cmd.to))
-      elseif (cmd.command == 'put.key') then
+      elseif (cmd.command == 'put.key' and #value > 0) then
          table.insert(stack, value)
          -- print(string.format("put key %s", value))
-      elseif (cmd.command == 'put.value') then
-         -- print(string.format("put value %s", value))
+      elseif (cmd.command == 'put.value' and #value > 0) then
          local key = table.remove(stack)
+         -- print(string.format("put value %s ->%s", key, value))
          stack[#stack][key] = value
       elseif ((cmd.command == 'zoom-in') or (cmd.command == 'hash.start')) then
          local value = stack[#stack][cmd.to] or {}
