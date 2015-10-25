@@ -51,6 +51,7 @@ function Unit.create(engine, data, player)
       data = {
          staff        = data.staff,
          selected     = false,
+         allow_move   = true,
          efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
          orientation  = orientation,
          attached     = {},
@@ -170,6 +171,7 @@ end
 
 function Unit:_refresh_movements()
    local result = {}
+   self.data.allow_move = true
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
       weapon_instance:refresh_movements()
    end
@@ -180,8 +182,9 @@ end
 -- marched weapons instances
 function Unit:available_movement()
    local data = {}
+   local allow_move = self.data.allow_move
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
-      data[weapon_instance.uniq_id] = weapon_instance.data.movement
+      data[weapon_instance.uniq_id] = allow_move and weapon_instance.data.movement or 0
    end
    return data
 end
@@ -214,6 +217,7 @@ end
 function Unit:move_to(dst_tile)
    local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
    local src_tile = self.tile
+   self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
    self.tile.unit = nil
    -- print(inspect(costs))
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
