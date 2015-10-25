@@ -105,7 +105,7 @@ function UnitLib:load(unit_file)
    local unit_definitions = {}
    for k, data in pairs(Parser.create(definitions_dir .. '/' .. units_file):get_raw_data()) do
       local id = assert(data.id)
-      local nation = assert(data.nation)
+      local nation = assert(data.nation, "no nation for unit definition " .. id)
       local class = assert(data.unit_class)
       local staff = assert(data.staff)
 

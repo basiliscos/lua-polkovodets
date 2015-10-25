@@ -23,7 +23,7 @@ Weapon.__index = Weapon
 
 function Weapon.create(engine, data)
    local unit_lib = engine.unit_lib
-   
+
    local id = assert(data.id)
    local w_class = assert(data.weap_class)
    local w_type = assert(data.weap_type)
@@ -49,8 +49,9 @@ function Weapon.create(engine, data)
 
    -- gather all flags
    local flags = {}
-   for k, f in pairs(category.flags) do table.insert(flags, f) end
-   
+   for flag, value in pairs(category.flags) do flags[flag] = value end
+   -- print(inspect(flags))
+
    local o = {
       id            = id,
       class         = w_class,
@@ -69,10 +70,9 @@ function Weapon.create(engine, data)
 end
 
 function Weapon:is_capable(flag_mask)
-   for k, f in pairs(self.flags) do
-      if (string.find(f, flag_mask)) then return f end
+   for flag, value in pairs(self.flags) do
+      if (string.find(flag, flag_mask)) then return flag, value end
    end
 end
 
 return Weapon
-

@@ -145,8 +145,8 @@ function Unit:_marched_weapons()
 
    -- pass 1: determine transport capabilites
    for idx, weapon_instance in pairs(united_staff) do
-      local transport_capability = weapon_instance:is_capable('TRANSPORTS_%w+')
-      if (transport_capability) then
+      local transport_capability, value = weapon_instance:is_capable('TRANSPORTS_%w+')
+      if (value == 'TRUE') then
          local transport_kind = string.lower(string.gsub(transport_capability, 'TRANSPORTS_', ''))
          local prev_value = transport_for[transport_kind] or 0
          transport_for[transport_kind] = prev_value + weapon_instance:quantity()
