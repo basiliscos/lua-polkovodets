@@ -51,7 +51,7 @@ function Tile.uniq_id(x,y)
 end
 
 
-function Tile:draw(sdl_renderer, x, y)
+function Tile:draw(sdl_renderer, x, y, context)
    assert(sdl_renderer)
    local sx, sy = self.data.x, self.data.y
    -- print(inspect(self.data))
@@ -72,13 +72,17 @@ function Tile:draw(sdl_renderer, x, y)
 
    -- draw terrain
    assert(sdl_renderer:copy(texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
-   local u = engine:get_selected_unit()
-   if (u) then
+   if (context.selected_unit) then
+      local u = context.selected_unit
       local movement_area = u.data.actions_map.move
       if ((not movement_area[self.uniq_id]) and (u.tile.uniq_id ~= self.uniq_id)) then
          local fog_texture = terrain:get_icon('fog')
          assert(sdl_renderer:copy(fog_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
       end
+   end
+   if (context.subordinated[self.uniq_id]) then
+      local managed_texture = terrain:get_icon('managed')
+      assert(sdl_renderer:copy(managed_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
    end
 
    local show_grid = engine.options.show_grid

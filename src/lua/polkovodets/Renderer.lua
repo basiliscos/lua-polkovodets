@@ -31,7 +31,7 @@ local EVENT_DELAY = 50
 function Renderer.create(engine, window, sdl_renderer)
    assert(ttf.init())
    local o = {
-      active_tile = {0, 0},
+      active_tile = {1, 1},
 	  size = table.pack(window:getSize()),
       current_cursor = 0,
 	  engine = engine,
@@ -170,27 +170,49 @@ function Renderer:_draw_map()
    local start_map_x = engine.gui.map_x
    local start_map_y = engine.gui.map_y
 
-   local x = engine.gui.map_sx - ( start_map_x - engine.gui.map_x ) * hex_x_offset
-   local y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
-
    local map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
    local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
 
-   for i = 1,map_sw do
-      local tx = i + start_map_x
-	  local y_shift = (tx % 2 == 0) and  hex_y_offset or 0
-	  for j = 1,map_sh do
-         local ty = j + start_map_y
-         if (tx <= map.width and ty <= map.height) then
-            -- print(string.format("tx:ty = (%d:%d), start_map_y = %d", tx, ty, start_map_y))
-            local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
-            tile:draw(sdl_renderer, x, y + y_shift)
-            y = y + hex_h
+   local draw = function(draw_at_tile)
+      local x = engine.gui.map_sx - ( start_map_x - engine.gui.map_x ) * hex_x_offset
+      local y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+
+      for i = 1,map_sw do
+         local tx = i + start_map_x
+         local y_shift = (tx % 2 == 0) and  hex_y_offset or 0
+         for j = 1,map_sh do
+            local ty = j + start_map_y
+            if (tx <= map.width and ty <= map.height) then
+               draw_at_tile(tx, ty, x, y + y_shift)
+               y = y + hex_h
+            end
          end
-	  end
-	  x = x + hex_x_offset
-	  y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+         x = x + hex_x_offset
+         y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+      end
    end
+
+   local u = engine:get_selected_unit()
+   local context = {
+      selected_unit = u,
+      subordinated = {}, -- k: tile_id, v: unit
+   }
+
+   local active_x, active_y = table.unpack(self.active_tile)
+   local active_tile = map.tiles[active_x][active_y]
+   local hilight_unit = u or (active_tile and active_tile.unit)
+   if (hilight_unit) then
+      for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
+         local tile_id = subordinated_unit.tile.uniq_id
+         context.subordinated[tile_id] = true
+      end
+   end
+
+   draw(function(tx, ty, x, y)
+         local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
+         tile:draw(sdl_renderer, x, y, context)
+        end
+   )
 end
 
 

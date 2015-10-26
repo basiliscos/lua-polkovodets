@@ -117,9 +117,10 @@ function Scenario:load(file)
    end
    engine:set_players(players)
 
-   -- load units
+   -- 1st pass: load units
    local army_file = assert(files.army)
    local all_units = {}
+   local unit_for = {}
    for k, data in pairs(Parser.create(scenarios_dir .. '/' .. army_file):get_raw_data()) do
       local id = assert(data.id)
       assert(data.unit_name)
@@ -142,7 +143,17 @@ function Scenario:load(file)
       local player = nation_for_player[nation_id]
       local unit = Unit.create(engine, data, player)
       table.insert(all_units, unit)
+      unit_for[id] = unit
    end
+   -- 2nd pass: bind hq
+   for idx, unit in pairs(all_units) do
+      local managed_by = unit.data.managed_by
+      if (managed_by) then
+         local manager_unit = assert(unit_for[managed_by], "no manager " .. managed_by)
+         manager_unit:subordinate(unit)
+      end
+   end
+
 
    engine.all_units = all_units
    engine:set_scenario(self)

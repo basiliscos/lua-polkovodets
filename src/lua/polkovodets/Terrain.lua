@@ -62,6 +62,7 @@ function Terrain:load(terrain_file)
    load_icon('grid')
    load_icon('frame')
    load_icon('fog')
+   load_icon('managed')
    local fog_texture = self:get_icon('fog')
    assert(fog_texture:setAlphaMod(40))
 

@@ -55,6 +55,8 @@ function Unit.create(engine, data, player)
          efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
          orientation  = orientation,
          attached     = {},
+         subordinated = {},
+         managed_by   = data.managed_by,
       }
    }
    setmetatable(o, Unit)
@@ -392,6 +394,83 @@ function Unit:update_actions_map()
 
    self.data.actions_map = actions_map
    -- print(inspect(actions_map))
+end
+
+function Unit:is_capable(flag_mask)
+   return self.definition:is_capable(flag_mask)
+end
+
+function Unit:get_subordinated(recursively)
+   local r = {}
+   local get_subordinated
+   get_subordinated = function(u)
+      for idx, s_unit in pairs(u.data.subordinated) do
+         table.insert(r, s_unit)
+         if (recursively) then get_subordinated(s_unit) end
+      end
+   end
+   get_subordinated(self)
+   return r
+end
+
+
+function Unit:subordinate(subject)
+   local k, manage_level = self:is_capable('MANAGE_LEVEL')
+   assert(manage_level, "unit " .. self.id .. " isn't capable to manage")
+   manage_level = tonumber(manage_level)
+   local k, subject_manage_level = subject:is_capable('MANAGE_LEVEL')
+
+   if (not subject_manage_level) then -- subordinate usual (non-command) unit
+      local k, units_limit = self:is_capable('MANAGED_UNITS_LIMIT')
+      local k, unit_sizes_limit = self:is_capable('MANAGED_UNIT_SIZES_LIMIT')
+      if (units_limit ~= 'unlimited') then
+         local total_subjects = #self.data.subordinated
+         assert(total_subjects < tonumber(units_limit),
+                "not able to subordinate " .. subject.id .. ": already have " .. total_subjects)
+      end
+      if (unit_sizes_limit ~= 'unlimited') then
+         local total_subjects = 0
+         for k, unit in pairs(self.data.subordinated) do
+            if (unit.definition.size == subject.definition.data.size) then
+               total_subjects = total_subjects + 1
+            end
+         end
+         assert(total_subjects < tonumber(unit_sizes_limit),
+                "not able to subordinate " .. subject.id .. ": already have " .. total_subjects
+                 .. "of size " .. subject.definition.data.size
+         )
+      end
+      -- all OK, can subordinate
+      table.insert(self.data.subordinated, subject)
+      print("unit " .. subject.id .. " managed by " .. self.id)
+   else -- subordinate command unit (manager)
+      subject_manage_level = tonumber(subject_manage_level)
+      assert(subject_manage_level < manage_level)
+
+      local k, managed_managers_level_limit = self:is_capable('MANAGED_MANAGERS_LEVEL_LIMIT')
+
+      if (managed_managers_level_limit ~= 'unlimited') then
+         local total_subjects = 0
+         managed_managers_level_limit = tonumber(managed_managers_level_limit)
+         for k, unit in pairs(self.data.subordinated) do
+            local k, unit_manage_level = subject:is_capable('MANAGE_LEVEL')
+            if (unit_manage_level) then
+               unit_manage_level = tonumber(unit_manage_level)
+               if (unit_manage_level == subject_manage_level) then
+                  total_subjects = total_subjects + 1
+               end
+            end
+         end
+         assert(total_subjects < managed_managers_level_limit,
+                "not able to subordinate " .. subject.id .. ": already have " .. total_subjects
+                   .. " manager units of level " .. subject_manage_level
+         )
+      end
+
+      -- all, OK, can subordinate
+      table.insert(self.data.subordinated, subject)
+      print("manager unit " .. subject.id .. " managed by " .. self.id)
+   end
 end
 
 return Unit

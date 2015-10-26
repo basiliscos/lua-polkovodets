@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
+local inspect = require('inspect')
+
 local UnitDefinition = {}
 UnitDefinition.__index = UnitDefinition
 
@@ -28,6 +30,7 @@ function UnitDefinition.create(engine, data)
    assert(data.staff)
    assert(data.size)
    assert(data.nation)
+   assert(data.flags)
    assert(string.find(data.size, '[LMS]'))
    local icon_path = assert(data.icon_path)
    local full_icon_path = engine:get_gfx_dir() .. '/' .. icon_path
@@ -52,5 +55,13 @@ end
 function UnitDefinition:get_icon()
    return self.icon
 end
+
+
+function UnitDefinition:is_capable(flag_mask)
+   for flag, value in pairs(self.data.flags) do
+      if (string.find(flag, flag_mask)) then return flag, value end
+   end
+end
+
 
 return UnitDefinition
