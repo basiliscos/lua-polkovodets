@@ -249,7 +249,6 @@ function Renderer:_recalc_active_tile()
    local engine = self.engine
    local map = engine.map
    local terrain = engine:get_map().terrain
-   local map_sx, map_sy = engine.gui.map_sx, engine.gui.map_sy
    local hex_h = terrain.hex_height
    local hex_w = terrain.hex_width
    local hex_x_offset = terrain.hex_x_offset
@@ -257,35 +256,51 @@ function Renderer:_recalc_active_tile()
    local state, x, y = SDL.getMouseState()
 
    local hex_x_delta = hex_w - hex_x_offset
-   local hex_y_delta = hex_y_offset
 
-   local map_x = (x - map_sx) // hex_x_offset
-   local y_offset = (map_x % 2 == 1) and hex_y_offset or 0
-   local map_y = (y - y_offset - map_sy) // hex_h
-
-   local tile_x_offset = x - (map_x * hex_x_offset) - map_sx
-   local tile_y_offset = (y - map_sy) % hex_h
-   -- print(string.format("tile: %d:%d, offset: %d, %d", map_x, map_y, tile_x_offset, tile_y_offset))
-
-   if (tile_x_offset < hex_x_delta) then
-      local fix = { -1, 1 }
-      if (tile_y_offset > hex_y_offset) then
-         tile_y_offset = hex_h - tile_y_offset
-         fix = { -1, 0 }
-      end
-      -- print(string.format("(A:B) = %d, %d, (tx, ty) = %d, %d", hex_y_delta, -hex_x_delta, tile_x_offset, tile_y_offset))
-      local value = hex_y_delta * tile_x_offset - hex_x_delta * tile_y_offset
-      -- print("hit " .. value)
-      if (value < 0) then
-         map_x = map_x + fix[1]
-         map_y = map_y + fix[2]
+   local left_col = math.modf((x - hex_x_delta) / hex_x_offset) + 1
+   local right_col = left_col + 1
+   local top_row = math.modf(y / hex_h) + 1
+   local bot_row = top_row + 1
+   -- print(string.format("mouse [%d:%d] ", x, y))
+   -- print(string.format("[l:r] [t:b] = [%d:%d] [%d:%d] ", left_col, right_col, top_row, bot_row))
+   local adj_tiles = {
+      {left_col, top_row},
+      {left_col, bot_row},
+      {right_col, top_row},
+      {right_col, bot_row},
+   }
+   -- print("adj-tiles = " .. inspect(adj_tiles))
+   local tile_center_off = {math.modf(hex_w/2), math.modf(hex_h/2)}
+   local get_tile_center = function(tx, ty)
+      local top_x = (tx - 1) * hex_x_offset
+      local top_y = ((ty - 1) * hex_h) - ((tx % 2 == 1) and hex_y_offset or 0)
+      return {top_x + tile_center_off[1], top_y + tile_center_off[2]}
+   end
+   local tile_centers = {}
+   for idx, t_coord in pairs(adj_tiles) do
+      local center = get_tile_center(t_coord[1], t_coord[2])
+      table.insert(tile_centers, center)
+   end
+   -- print(inspect(tile_centers))
+   local nearest_idx, nearest_distance = -1, math.maxinteger
+   for idx, t_center in pairs(tile_centers) do
+      local dx = x - t_center[1]
+      local dy = y - t_center[2]
+      local d = math.sqrt(dx*dx + dy*dy)
+      if (d < nearest_distance) then
+         nearest_idx = idx
+         nearest_distance = d
       end
    end
-   local tx, ty = map_x + engine.gui.map_x + 1, map_y + engine.gui.map_y + 1
+   local active_tile = adj_tiles[nearest_idx]
+   -- print("active_tile = " .. inspect(active_tile))
+   local tx = active_tile[1] + 1 + engine.gui.map_x
+   local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + engine.gui.map_y
+
    if (tx > 0 and tx <= map.width and ty > 0 and ty <= map.height) then
-	   self.active_tile = {tx, ty}
-       -- print(string.format("active tile = %d:%d", map_x, map_y))
-	end
+       self.active_tile = {tx, ty}
+       -- print(string.format("active tile = %d:%d", tx, ty))
+   end
 end
 
 function Renderer:_action_kind(tile)
