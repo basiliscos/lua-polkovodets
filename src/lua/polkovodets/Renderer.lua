@@ -203,8 +203,11 @@ function Renderer:_draw_map()
    local hilight_unit = u or (active_tile and active_tile.unit)
    if (hilight_unit) then
       for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
-         local tile_id = subordinated_unit.tile.uniq_id
-         context.subordinated[tile_id] = true
+         local tile = subordinated_unit.tile
+         -- tile could be nil if unit is attached to some other
+         if (tile) then
+            context.subordinated[tile.uniq_id] = true
+         end
       end
    end
 
