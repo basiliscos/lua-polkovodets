@@ -378,7 +378,8 @@ function Unit:update_actions_map()
             local expected_quantity = 1 + 1 + #my_attached + #other_unit.data.attached
             local other_size = other_unit.definition.data.size
             local size_matches = my_size ~= other_size
-            if (expected_quantity <= 3 and size_matches) then
+            local any_manager = self:is_capable('MANAGE_LEVEL') or other_unit:is_capable('MANAGE_LEVEL')
+            if (expected_quantity <= 3 and size_matches and not any_manager) then
                merge_map[tile.uniq_id] = true
                -- print("m " .. tile.uniq_id .. ":" .. my_size .. other_size)
             end
