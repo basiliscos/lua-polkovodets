@@ -31,6 +31,7 @@ function Unit.create(engine, data, player)
    assert(data.x)
    assert(data.y)
    assert(data.staff)
+   assert(data.state)
    local orientation = assert(data.orientation)
    assert(string.find(orientation,'right') or string.find(orientation, 'left'))
 
@@ -50,6 +51,7 @@ function Unit.create(engine, data, player)
       definition = definition,
       data = {
          staff        = data.staff,
+         state        = data.state,
          selected     = false,
          allow_move   = true,
          efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
@@ -72,7 +74,7 @@ function Unit:draw(sdl_renderer, x, y)
    local hex_w = terrain.hex_width
    local hex_x_offset = terrain.hex_x_offset
 
-   local texture = self.definition:get_icon()
+   local texture = self.definition:get_icon(self.data.state)
    local format, access, w, h = texture:query()
    local dst = {
       x = x + math.modf((hex_w - w)/2),
@@ -229,6 +231,7 @@ function Unit:move_to(dst_tile)
    dst_tile.unit = self
    self.tile = dst_tile
    self:_update_orientation(dst_tile, src_tile)
+   self.data.state = 'marching'
    self:update_actions_map()
 end
 

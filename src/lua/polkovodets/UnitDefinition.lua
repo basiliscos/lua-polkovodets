@@ -32,8 +32,18 @@ function UnitDefinition.create(engine, data)
    assert(data.nation)
    assert(data.flags)
    assert(string.find(data.size, '[LMS]'))
-   local icon_path = assert(data.icon_path)
-   local full_icon_path = engine:get_gfx_dir() .. '/' .. icon_path
+
+   assert(data.icons)
+   local state_icons = {}
+   for state, path in pairs(data.icons) do
+      local full_path = engine:get_gfx_dir() .. '/' .. path
+      local texture = engine.renderer:load_texture(full_path)
+      state_icons[state] = texture
+   end
+   assert(state_icons.attacking)
+   assert(state_icons.defending)
+   assert(state_icons.marching)
+
    local unit_class = assert(unit_lib.units.classes[data.unit_class])
    local unit_type_id = unit_class['type']
    local unit_type = assert(unit_lib.units.types[unit_type_id], "type " .. unit_type_id .. " not found")
@@ -41,19 +51,21 @@ function UnitDefinition.create(engine, data)
    local nation = assert(engine.nation_for[data.nation])
 
    local o = {
-      engine = engine,
-      data = data,
-      icon = engine.renderer:load_texture(full_icon_path),
-      unit_type = unit_type,
-      unit_class = unit_class,
-      nation = nation,
+      engine      = engine,
+      data        = data,
+      state_icons = state_icons,
+      unit_type   = unit_type,
+      unit_class  = unit_class,
+      nation      = nation,
    }
    setmetatable(o, UnitDefinition)
    return o
 end
 
-function UnitDefinition:get_icon()
-   return self.icon
+function UnitDefinition:get_icon(state)
+   assert(state)
+   local texture = assert(self.state_icons[state], "no icon for " .. state .. " for unit defintion " .. self.data.id)
+   return texture
 end
 
 
