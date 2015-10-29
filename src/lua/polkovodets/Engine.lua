@@ -186,6 +186,62 @@ function Engine:get_adjastent_tiles(tile, skip_tiles)
    return iterator, nil, true
 end
 
+function Engine:pointer_to_tile(x,y)
+   local map = self.map
+   local terrain = map.terrain
+   local hex_h = terrain.hex_height
+   local hex_w = terrain.hex_width
+   local hex_x_offset = terrain.hex_x_offset
+   local hex_y_offset = terrain.hex_y_offset
+
+   local hex_x_delta = hex_w - hex_x_offset
+
+   local left_col = math.modf((x - hex_x_delta) / hex_x_offset) + 1
+   local right_col = left_col + 1
+   local top_row = math.modf(y / hex_h) + 1
+   local bot_row = top_row + 1
+   -- print(string.format("mouse [%d:%d] ", x, y))
+   -- print(string.format("[l:r] [t:b] = [%d:%d] [%d:%d] ", left_col, right_col, top_row, bot_row))
+   local adj_tiles = {
+      {left_col, top_row},
+      {left_col, bot_row},
+      {right_col, top_row},
+      {right_col, bot_row},
+   }
+   -- print("adj-tiles = " .. inspect(adj_tiles))
+   local tile_center_off = {math.modf(hex_w/2), math.modf(hex_h/2)}
+   local get_tile_center = function(tx, ty)
+      local top_x = (tx - 1) * hex_x_offset
+      local top_y = ((ty - 1) * hex_h) - ((tx % 2 == 1) and hex_y_offset or 0)
+      return {top_x + tile_center_off[1], top_y + tile_center_off[2]}
+   end
+   local tile_centers = {}
+   for idx, t_coord in pairs(adj_tiles) do
+      local center = get_tile_center(t_coord[1], t_coord[2])
+      table.insert(tile_centers, center)
+   end
+   -- print(inspect(tile_centers))
+   local nearest_idx, nearest_distance = -1, math.maxinteger
+   for idx, t_center in pairs(tile_centers) do
+      local dx = x - t_center[1]
+      local dy = y - t_center[2]
+      local d = math.sqrt(dx*dx + dy*dy)
+      if (d < nearest_distance) then
+         nearest_idx = idx
+         nearest_distance = d
+      end
+   end
+   local active_tile = adj_tiles[nearest_idx]
+   -- print("active_tile = " .. inspect(active_tile))
+   local tx = active_tile[1] + 1 + self.gui.map_x
+   local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + self.gui.map_y
+
+   if (tx > 0 and tx <= map.width and ty > 0 and ty <= map.height) then
+      return {tx, ty}
+      -- print(string.format("active tile = %d:%d", tx, ty))
+   end
+end
+
 
 function Engine:select_unit(u)
    u.data.selected = true
