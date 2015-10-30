@@ -250,7 +250,6 @@ end
 
 function Renderer:_recalc_active_tile()
    local state, x, y = SDL.getMouseState()
-   print(x .. ", " .. y)
    local active_tile = self.engine:pointer_to_tile(x,y)
    if (active_tile) then self.active_tile = active_tile end
 end

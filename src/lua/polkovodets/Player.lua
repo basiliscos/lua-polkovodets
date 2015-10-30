@@ -22,6 +22,7 @@ Player.__index = Player
 function Player.create(engine, data)
    assert(data.id)
    assert(data.nations)
+   assert(data.order)
 
    for k,nation_id in pairs(data.nations) do
       assert(engine.nation_for[nation_id], "no nation '" .. nation_id .. "' present in scenario")

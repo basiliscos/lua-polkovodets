@@ -28,6 +28,8 @@ function Engine.create()
    local e = {
 	  turn = 0,
       selected_unit = nil,
+      current_player_idx = nil,
+      total_players = 0,
 	  gui = {
 		 map_x = 0,
 		 map_y = 0,
@@ -115,24 +117,44 @@ end
 function Engine:set_objectives(objectives) self.objectives = objectives end
 
 function Engine:set_players(players)
-   self.players = players
    local player_for = {}
-
+   local total_players = 0
    for i, p in pairs(players) do
       player_for[p.id] = p
+      total_players = total_players + 1
    end
    self.player_for = player_for
+   self.total_players = total_players
+   self:_set_current_player(1)
+end
+
+function Engine:_set_current_player(order)
+   local player
+   for i, p in pairs(self.player_for) do
+      if (p.data.order == order) then
+         player = p
+      end
+   end
+   assert(player)
+   self.current_player = player
+   self.current_player_idx = order
+   print(string.format("current player: %s(%d)",  player.id, player.data.order))
 end
 
 
 function Engine:current_turn() return self.turn end
 function Engine:end_turn()
-   self.turn = self.turn + 1
-   print("current turm: " .. self.turn)
-   for k, unit in pairs(self.all_units) do
-      unit:_refresh_movements()
-   end
    self:unselect_unit()
+   if (self.current_player_idx == self.total_players) then
+      self.turn = self.turn + 1
+      for k, unit in pairs(self.all_units) do
+         unit:_refresh_movements()
+      end
+      print("current turm: " .. self.turn)
+      self:_set_current_player(1)
+   else
+      self:_set_current_player(self.current_player_idx + 1)
+   end
 end
 
 function Engine:current_weather()
@@ -244,9 +266,11 @@ end
 
 
 function Engine:select_unit(u)
-   u.data.selected = true
-   self.selected_unit = u
-   u:update_actions_map()
+   if (u.player == self.current_player) then
+      u.data.selected = true
+      self.selected_unit = u
+      u:update_actions_map()
+   end
 end
 
 
