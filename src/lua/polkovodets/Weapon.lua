@@ -35,7 +35,7 @@ function Weapon.create(engine, data)
    local nation = assert(data.nation)
    local attacks = assert(data.attack)
 
-   assert(unit_lib.weapons.classes[w_class])
+   assert(unit_lib.weapons.classes[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
    assert(unit_lib.weapons.types[w_type])
    local category = assert(unit_lib.weapons.categories[w_category], "category " .. w_category .. " is not available")
    assert(unit_lib.weapons.movement_types[movement_type])

@@ -231,7 +231,11 @@ function Unit:move_to(dst_tile)
    dst_tile.unit = self
    self.tile = dst_tile
    self:_update_orientation(dst_tile, src_tile)
-   self.data.state = 'marching'
+   if (self.definition.unit_type == 'ut_land') then
+      self.data.state = 'marching'
+   elseif (self.definition.unit_type == 'ut_air') then
+      self.data.state = 'flying'
+   end
    self:update_actions_map()
 end
 

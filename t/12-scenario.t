@@ -15,7 +15,7 @@ local engine = Engine.create()
 DummyRenderer.create(engine, 640, 480)
 
 local scenario = Scenario.create(engine)
-scenario:load('Test2')
+scenario:load('Test')
 ok(engine:get_scenario())
 ok(engine:get_map())
 

@@ -16,8 +16,8 @@ ok(map)
 
 map:load('data/db/scenarios/Test/map01')
 
-is(#map.tiles, 10)
-is(#map.tiles[1], 10)
+is(#map.tiles, 15)
+is(#map.tiles[1], 15)
 local first_tile = map.tiles[1][1]
 ok(first_tile)
 
