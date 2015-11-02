@@ -75,6 +75,11 @@ function Unit:_update_layer()
    self.data.layer = layer
 end
 
+function Unit:get_movement_layer()
+   local unit_type = self.definition.unit_type.id
+   return (unit_type == 'ut_air') and 'air' or 'surface'
+end
+
 function Unit:get_layer() return self.data.layer end
 
 function Unit:draw(sdl_renderer, x, y, context)
@@ -293,6 +298,12 @@ function Unit:merge_at(dst_tile)
    core_unit:update_actions_map()
 end
 
+function Unit:land_to(tile)
+   self:move_to(tile)
+   self.data.state = 'landed'
+   self.data.allow_move = false
+end
+
 
 function Unit:_enemy_near(tile)
    local layer = self.data.layer
@@ -312,7 +323,10 @@ function Unit:update_actions_map()
    local actions_map = {}
 
    local merge_candidates = {}
-   local layer = self.data.layer
+   local landing_candidates = {}
+
+   local layer = self:get_movement_layer()
+   local unit_type = self.definition.unit_type.id
 
    local get_move_map = function()
       local inspect_queue = {}
@@ -354,9 +368,16 @@ function Unit:update_actions_map()
       local fuel_limit = Vector.create(self:available_movement())
       for src_tile, dst_tile, costs in get_nearest_tile() do
          local other_unit = dst_tile:get_unit(layer)
+
+         -- inspect for further merging
          if (other_unit and other_unit.player == self.player) then
             table.insert(merge_candidates, dst_tile)
          end
+         -- inspect for further landing
+         if (unit_type == 'ut_air' and dst_tile.data.terrain_type.id == 'a') then
+            table.insert(landing_candidates, dst_tile)
+         end
+
          local can_move = not (other_unit and other_unit.player ~= self.player)
          if (can_move) then
             -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
@@ -423,9 +444,20 @@ function Unit:update_actions_map()
       return merge_map
    end
 
-   actions_map.move = get_move_map()
-   actions_map.merge = get_merge_map()
-   actions_map.attack = {}
+   local get_landing_map = function()
+      local map = {}
+      for idx, tile in pairs(landing_candidates) do
+         if (tile ~= self.tile) then
+            map[tile.uniq_id] = true
+         end
+      end
+      return map
+   end
+
+   actions_map.move    = get_move_map()
+   actions_map.merge   = get_merge_map()
+   actions_map.landing = get_landing_map()
+   actions_map.attack  = {}
    -- actions_map.attack = get_attack_map()
 
    self.data.actions_map = actions_map

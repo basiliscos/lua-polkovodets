@@ -63,6 +63,7 @@ function Renderer.create(engine, window, sdl_renderer)
                                        ['move'        ] = 2,
                                        ['merge'       ] = 3,
                                        ['attack'      ] = 4,
+                                       ['land'        ] = 5,
                                     }
                                  },
 
@@ -266,9 +267,11 @@ function Renderer:_action_kind(tile)
          kind = 'merge'
       elseif (actions_map.attack[tile.uniq_id]) then
          kind = 'attack'
+      elseif (actions_map.landing[tile.uniq_id]) then
+         kind = 'land'
       -- move to the tile if it is free
       -- hilight it the tile, even if there is our unit, i.e. we can pass *through* it
-      elseif (actions_map.move[tile.uniq_id] and not(tile:get_unit(u:get_layer()))) then
+      elseif (actions_map.move[tile.uniq_id] and not(tile:get_unit(u:get_movement_layer()))) then
          kind = 'move'
       end
    end

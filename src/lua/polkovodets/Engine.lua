@@ -299,8 +299,9 @@ function Engine:click_on_tile(x,y, action)
    if (self.selected_unit) then
       local u = self.selected_unit
       local method_for = {
-         move = 'move_to',
+         move  = 'move_to',
          merge = 'merge_at',
+         land  = 'land_to',
       }
       local method = method_for[action]
       if (method) then
