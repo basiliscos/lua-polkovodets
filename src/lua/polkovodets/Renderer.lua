@@ -195,12 +195,13 @@ function Renderer:_draw_map()
    local u = engine:get_selected_unit()
    local context = {
       selected_unit = u,
+      active_layer = engine.active_layer,
       subordinated = {}, -- k: tile_id, v: unit
    }
 
    local active_x, active_y = table.unpack(self.active_tile)
    local active_tile = map.tiles[active_x][active_y]
-   local hilight_unit = u or (active_tile and active_tile.unit)
+   local hilight_unit = u or (active_tile and active_tile:get_unit(engine.active_layer))
    if (hilight_unit) then
       for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
          local tile = subordinated_unit.tile
@@ -267,7 +268,7 @@ function Renderer:_action_kind(tile)
          kind = 'attack'
       -- move to the tile if it is free
       -- hilight it the tile, even if there is our unit, i.e. we can pass *through* it
-      elseif (actions_map.move[tile.uniq_id] and not(tile.unit)) then
+      elseif (actions_map.move[tile.uniq_id] and not(tile:get_unit(u:get_layer()))) then
          kind = 'move'
       end
    end
@@ -342,6 +343,8 @@ function Renderer:main_loop()
       elseif (t == SDL.event.KeyUp) then
          if (e.keysym.sym == SDL.key.e) then
             engine:end_turn()
+         elseif (e.keysym.sym == SDL.key.t) then
+            engine:toggle_layer()
          end
       elseif (t == SDL.event.MouseMotion) then
          self:_recalc_active_tile()

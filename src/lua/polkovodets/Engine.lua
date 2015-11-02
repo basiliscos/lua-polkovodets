@@ -30,6 +30,7 @@ function Engine.create()
       selected_unit = nil,
       current_player_idx = nil,
       total_players = 0,
+      active_layer = 'surface',
 	  gui = {
 		 map_x = 0,
 		 map_y = 0,
@@ -289,9 +290,10 @@ end
 function Engine:click_on_tile(x,y, action)
    local tile = self.map.tiles[x][y]
    if (action == 'default') then
-      if (tile.unit) then
+      local unit = tile:get_any_unit(self.active_layer)
+      if (unit) then
          self:unselect_unit()
-         self:select_unit(tile.unit)
+         self:select_unit(unit)
       end
    end
    if (self.selected_unit) then
@@ -306,6 +308,13 @@ function Engine:click_on_tile(x,y, action)
          self:click_on_tile(x, y, 'default')
       end
    end
+end
+
+function Engine:toggle_layer()
+   local current = self.active_layer
+   current = (current == 'air') and 'surface' or 'air'
+   print("active layer " .. current)
+   self.active_layer = current
 end
 
 return Engine

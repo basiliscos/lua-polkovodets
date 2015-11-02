@@ -62,25 +62,42 @@ function Unit.create(engine, data, player)
       }
    }
    setmetatable(o, Unit)
-   tile.unit = o
+   o:_update_layer()
+   tile:set_unit(o, o.data.layer)
    o:_refresh_movements()
    table.insert(player.units, o)
    return o
 end
 
-function Unit:draw(sdl_renderer, x, y)
+function Unit:_update_layer()
+   local unit_type = self.definition.unit_type.id
+   local layer = self.data.state == 'flying' and 'air' or 'surface'
+   self.data.layer = layer
+end
+
+function Unit:get_layer() return self.data.layer end
+
+function Unit:draw(sdl_renderer, x, y, context)
    local terrain = self.engine.map.terrain
    local hex_h = terrain.hex_height
    local hex_w = terrain.hex_width
    local hex_x_offset = terrain.hex_x_offset
 
+   local magnet_to = context.magnet_to or 'center'
    local texture = self.definition:get_icon(self.data.state)
    local format, access, w, h = texture:query()
+   local scale = (context.size == 'normal') and 1.0 or 0.6
+   local x_shift = (hex_w - w*scale)/2
+   local y_shift = (magnet_to == 'center')
+      and (hex_h - h*scale)/2
+      or (magnet_to == 'top')
+      and 0                         -- pin unit to top
+      or (hex_h - h*scale)          -- pin unit to bottom
    local dst = {
-      x = x + math.modf((hex_w - w)/2),
-      y = y + math.modf((hex_h - h)/2),
-      w = w,
-      h = h,
+      x = math.modf(x + x_shift),
+      y = math.modf(y + y_shift),
+      w = math.modf(w * scale),
+      h = math.modf(h * scale),
    }
    local orientation = self.data.orientation
    assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
@@ -222,26 +239,31 @@ function Unit:move_to(dst_tile)
    local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
    local src_tile = self.tile
    self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
-   self.tile.unit = nil
+   self.tile:set_unit(nil, self.data.layer)
    -- print(inspect(costs))
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
       local cost = costs.data[weapon_instance.uniq_id]
       weapon_instance.data.movement = weapon_instance.data.movement - cost
    end
-   dst_tile.unit = self
-   self.tile = dst_tile
-   self:_update_orientation(dst_tile, src_tile)
+
+   -- update state
    local unit_type = self.definition.unit_type.id
    if (unit_type == 'ut_land') then
       self.data.state = 'marching'
    elseif (unit_type == 'ut_air') then
       self.data.state = 'flying'
    end
+   self:_update_layer()
+
+   dst_tile:set_unit(self, self.data.layer)
+   self.tile = dst_tile
+   self:_update_orientation(dst_tile, src_tile)
    self:update_actions_map()
 end
 
 function Unit:merge_at(dst_tile)
-   local other_unit = assert(dst_tile.unit)
+   local layer = self.data.layer
+   local other_unit = assert(dst_tile:get_unit(layer))
    self:move_to(dst_tile)
 
    local weight_for = {
@@ -265,16 +287,18 @@ function Unit:merge_at(dst_tile)
    table.insert(core_unit.data.attached, aux_unit)
 
    -- aux unit is now attached, remove from map
-   aux_unit.tile.unit = nil
+   aux_unit.tile:set_unit(nil, layer)
    aux_unit.tile = nil
-   dst_tile.unit = core_unit
+   dst_tile:set_unit(core_unit, layer)
    core_unit:update_actions_map()
 end
 
 
 function Unit:_enemy_near(tile)
+   local layer = self.data.layer
    for adj_tile in self.engine:get_adjastent_tiles(tile) do
-      local has_enemy = adj_tile.unit and adj_tile.unit.player ~= self.player
+      local enemy = adj_tile:get_unit(layer)
+      local has_enemy = enemy and enemy.player ~= self.player
       if (has_enemy) then return true end
    end
    return false
@@ -288,6 +312,7 @@ function Unit:update_actions_map()
    local actions_map = {}
 
    local merge_candidates = {}
+   local layer = self.data.layer
 
    local get_move_map = function()
       local inspect_queue = {}
@@ -328,10 +353,11 @@ function Unit:update_actions_map()
       local fuel_at = {};  -- k: tile_id, v: movement_costs table
       local fuel_limit = Vector.create(self:available_movement())
       for src_tile, dst_tile, costs in get_nearest_tile() do
-         if (dst_tile.unit and dst_tile.unit.player == self.player) then
+         local other_unit = dst_tile:get_unit(layer)
+         if (other_unit and other_unit.player == self.player) then
             table.insert(merge_candidates, dst_tile)
          end
-         local can_move = not (dst_tile.unit and dst_tile.unit.player ~= self.player)
+         local can_move = not (other_unit and other_unit.player ~= self.player)
          if (can_move) then
             -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
             fuel_at[dst_tile.uniq_id] = costs
@@ -361,7 +387,8 @@ function Unit:update_actions_map()
       while (#examine_queue > 0) do
          local tile = table.remove(examine_queue, 1)
          visited_tiles[tile.uniq_id] = true
-         if (tile.unit and tile.unit.player ~= self.player) then
+         local other_unit = tile:get_unit(layer)
+         if (other_unit and other_unit.player ~= self.player) then
             attack_map[tile.uniq_id] = true
          end
          for adj_tile in engine:get_adjastent_tiles(tile, visited_tiles) do
@@ -381,7 +408,7 @@ function Unit:update_actions_map()
       local my_attached = self.data.attached
       local my_unit_type = self.definition.unit_type.id
       for k, tile in pairs(merge_candidates) do
-         local other_unit = tile.unit
+         local other_unit = tile:get_unit(layer)
          if (other_unit.definition.unit_type.id == my_unit_type) then
             local expected_quantity = 1 + 1 + #my_attached + #other_unit.data.attached
             local other_size = other_unit.definition.data.size

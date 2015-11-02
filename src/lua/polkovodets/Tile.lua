@@ -39,8 +39,12 @@ function Tile.create(engine, data)
 
    local o = {
       uniq_id = Tile.uniq_id(data.x, data.y),
-	  engine = engine,
-	  data = data,
+	  engine  = engine,
+	  data    = data,
+      layers  = {
+         air     = nil,
+         surface = nil,
+      },
    }
    setmetatable(o, Tile)
    return o
@@ -48,6 +52,23 @@ end
 
 function Tile.uniq_id(x,y)
    return string.format("tile[%d:%d]", x, y)
+end
+
+function Tile:set_unit(unit, layer)
+   print("layer = " .. layer)
+   assert(layer == 'surface' or layer == 'air')
+   self.layers[layer] = unit
+end
+
+function Tile:get_unit(layer)
+   assert(layer == 'surface' or layer == 'air')
+   return self.layers[layer]
+end
+
+function Tile:get_any_unit(priority_layer)
+   assert(priority_layer == 'surface' or priority_layer == 'air')
+   local fallback_layer = (priority_layer == 'air') and 'surface' or 'air'
+   return self.layers[priority_layer] or self.layers[fallback_layer]
 end
 
 
@@ -89,7 +110,8 @@ function Tile:draw(sdl_renderer, x, y, context)
 
    -- draw nation flag in city, unless there is unit (then unit flag will be drawn)
    local nation = self.data.nation
-   if (nation and not(self.unit)) then
+   local units_on_tile = (self.layers.surface and 1 or 0) + (self.layers.air and 1 or 0)
+   if (nation and (units_on_tile == 0)) then
 	  -- print("flag for " .. nation.data.name)
 	  local nation_flag_width = nation.flag.w
 	  local nation_flag_height = nation.flag.h
@@ -105,9 +127,18 @@ function Tile:draw(sdl_renderer, x, y, context)
       assert(sdl_renderer:copy(icon_texture, self.grid_rectange, dst))
    end
 
-   -- draw unit
-   if (self.unit) then
-      self.unit:draw(sdl_renderer, x, y)
+   -- draw 1 unit (air or surface), always noremal sized
+   if (units_on_tile == 1) then
+      local normal_unit = self.layers.surface or self.layers.air
+      normal_unit:draw(sdl_renderer, x, y, {size = 'normal'})
+   elseif (units_on_tile == 2) then -- draw 2 units: small and large
+      local active_layer = context.active_layer
+      local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
+      local normal_unit = self.layers[active_layer]
+      normal_unit:draw(sdl_renderer, x, y, {size = 'normal'})
+      local small_unit = self.layers[inactive_layer]
+      local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
+      small_unit:draw(sdl_renderer, x, y, {size = 'small', magnet_to = magnet_to})
    end
 end
 
