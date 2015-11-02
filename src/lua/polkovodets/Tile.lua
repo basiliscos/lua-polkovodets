@@ -55,7 +55,6 @@ function Tile.uniq_id(x,y)
 end
 
 function Tile:set_unit(unit, layer)
-   print("layer = " .. layer)
    assert(layer == 'surface' or layer == 'air')
    self.layers[layer] = unit
 end

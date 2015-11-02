@@ -30,7 +30,7 @@ ok(engine.unit_lib.units.definitions)
 
 subtest("move rus infantry",
         function()
-           local inf = map.tiles[8][4].unit
+           local inf = map.tiles[8][4]:get_unit('surface')
            ok(inf)
            local marched_weapons = inf:_marched_weapons()
            ok(marched_weapons)
