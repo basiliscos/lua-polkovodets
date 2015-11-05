@@ -31,9 +31,14 @@ function Weapon.create(engine, data)
    local movement_type = assert(data.move_type)
    local target_type = assert(data.target_type)
    assert(data.movement >= 0)
-   assert(data.range >= 0)
    local nation = assert(data.nation)
    local attacks = assert(data.attack)
+
+   assert(data.range)
+   for k, v in ipairs(data.range) do
+      v = tonumber(v)
+      assert(v >= 0, k .. " range should be non-negative")
+   end
 
    assert(unit_lib.weapons.classes[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
    assert(unit_lib.weapons.types[w_type])

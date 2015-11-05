@@ -77,7 +77,6 @@ function UnitLib:load(unit_file)
    local weapon_definitions = {}
    for k, data in pairs(Parser.create(definitions_dir .. '/' .. weapons_file):get_raw_data()) do
       data.movement = tonumber(data.movement)
-      data.range = tonumber(data.range)
       local w = Weapon.create(engine, data)
       weapon_definitions[w.id] = w
    end
