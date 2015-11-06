@@ -150,23 +150,27 @@ function Unit:draw(sdl_renderer, x, y, context)
    ))
 end
 
+-- returns list of weapon instances for the current unit as well as for all it's attached units
+function Unit:_united_staff()
+   local unit_list = {self}
+   for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
+
+   local united_staff = {}
+   for idx, unit in pairs(unit_list) do
+      for idx2, weapon_instance in pairs(unit.data.staff) do
+         table.insert(united_staff, weapon_instance)
+      end
+   end
+   return united_staff
+end
+
 -- retunrs a table of weapon instances, which are will be marched,
 -- i.e. as if they already packed into transporters
 -- includes attached units too.
 function Unit:_marched_weapons()
    local list = {}
 
-   local unit_list = {self}
-   for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
-
-   local united_staff = {}
-   for idx, unit in pairs(unit_list) do
-      --print("unit = " .. inspect(unit))
-      for idx2, weapon_instance in pairs(unit.data.staff) do
-         table.insert(united_staff, weapon_instance)
-      end
-   end
-
+   local united_staff = self:_united_staff()
    -- k:  type of weapon movement, which are capable to transport, w: quantity
    local transport_for = {}
 
@@ -403,18 +407,45 @@ function Unit:update_actions_map()
       local attack_map = {}
       local visited_tiles = {} -- cache
       local start_tile = self.tile
+
+      local max_range = -1
+      local weapon_capabilites = {} -- k1: layer, value: table with k2:range, and value: list of weapons
+      local united_staff = self:_united_staff()
+      for idx, weapon_instance in pairs(united_staff) do
+         for layer, range in pairs(weapon_instance.weapon.data.range) do
+            -- we use range +1 to avoid zero-based indices
+            for r = 0, range do
+               local layer_capabilites = weapon_capabilites[layer] or {}
+               local range_capabilites = layer_capabilites[r + 1] or {}
+               table.insert(range_capabilites, weapon_instance)
+               -- print("rc = " .. inspect(range_capabilites))
+               layer_capabilites[r + 1] = range_capabilites
+               weapon_capabilites[layer] = layer_capabilites
+            end
+
+            if (max_range < range) then max_range = range end
+         end
+      end
+      -- print("wc: " .. inspect(weapon_capabilites))
+      -- print("wc: " .. inspect(weapon_capabilites.surface[1]))
+
       local examine_queue = { start_tile }
-      local range = self.definition.data.range
       while (#examine_queue > 0) do
          local tile = table.remove(examine_queue, 1)
+         local distance = start_tile:distance_to(tile)
          visited_tiles[tile.uniq_id] = true
-         local other_unit = tile:get_unit(layer)
-         if (other_unit and other_unit.player ~= self.player) then
-            attack_map[tile.uniq_id] = true
+
+         local enemy_units = tile:get_all_units(function(unit) return unit.player ~= self.player end)
+         for idx, enemy_unit in pairs(enemy_units) do
+            local enemy_layer = enemy_unit:get_layer()
+            local weapon_instances = weapon_capabilites[enemy_layer][distance+1]
+            if (weapon_instances) then
+               attack_map[tile.uniq_id] = { layer = enemy_layer, weapon_instances = weapon_instances }
+            end
          end
          for adj_tile in engine:get_adjastent_tiles(tile, visited_tiles) do
             local distance = start_tile:distance_to(adj_tile)
-            if ((distance <= range) or (range == 0 and distance == 1)) then
+            if (distance <= max_range) then
                table.insert(examine_queue, adj_tile)
             end
          end
@@ -457,11 +488,10 @@ function Unit:update_actions_map()
    actions_map.move    = get_move_map()
    actions_map.merge   = get_merge_map()
    actions_map.landing = get_landing_map()
-   actions_map.attack  = {}
-   -- actions_map.attack = get_attack_map()
+   actions_map.attack  = get_attack_map()
 
    self.data.actions_map = actions_map
-   -- print(inspect(actions_map))
+   -- print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)

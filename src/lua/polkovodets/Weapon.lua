@@ -35,9 +35,11 @@ function Weapon.create(engine, data)
    local attacks = assert(data.attack)
 
    assert(data.range)
-   for k, v in ipairs(data.range) do
+   local range = {}
+   for k, v in pairs(data.range) do
       v = tonumber(v)
       assert(v >= 0, k .. " range should be non-negative")
+      range[k] = v
    end
 
    assert(unit_lib.weapons.classes[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
@@ -67,6 +69,7 @@ function Weapon.create(engine, data)
       attacks       = attacks,
       flags         = flags,
       data          = {
+         range    = range,
          movement = data.movement,
       },
    }

@@ -70,6 +70,14 @@ function Tile:get_any_unit(priority_layer)
    return self.layers[priority_layer] or self.layers[fallback_layer]
 end
 
+function Tile:get_all_units(filter)
+   local units = {}
+   for idx, unit in pairs(self.layers) do
+      if (filter(unit)) then table.insert(units, unit) end
+   end
+   return units
+end
+
 
 function Tile:draw(sdl_renderer, x, y, context)
    assert(sdl_renderer)
