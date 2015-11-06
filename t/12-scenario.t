@@ -87,6 +87,20 @@ subtest("move rus infantry",
         end
 )
 
+subtest("move rus aircraft",
+        function()
+           local aircraft = map.tiles[9][7]:get_unit('surface')
+           ok(aircraft)
+           is(aircraft:get_layer(), 'surface')
+           aircraft:update_actions_map()
+
+           local enemy_tank = map.tiles[4][9]:get_unit('surface')
+           ok(enemy_tank)
+           ok(aircraft.data.actions_map.move[map.tiles[4][9].uniq_id])
+        end
+)
+
+
 -- no requnired units on the map
 -- local unit_rus_art = map.tiles[7][5].unit
 -- ok(unit_rus_art)

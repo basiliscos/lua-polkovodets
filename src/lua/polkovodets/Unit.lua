@@ -310,7 +310,7 @@ end
 
 
 function Unit:_enemy_near(tile)
-   local layer = self.data.layer
+   local layer = self:get_movement_layer()
    for adj_tile in self.engine:get_adjastent_tiles(tile) do
       local enemy = adj_tile:get_unit(layer)
       local has_enemy = enemy and enemy.player ~= self.player
@@ -382,7 +382,7 @@ function Unit:update_actions_map()
             table.insert(landing_candidates, dst_tile)
          end
 
-         local can_move = not (other_unit and other_unit.player ~= self.player)
+         local can_move = not (other_unit and other_unit.player ~= self.player and other_unit:get_layer() == layer)
          if (can_move) then
             -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
             fuel_at[dst_tile.uniq_id] = costs
