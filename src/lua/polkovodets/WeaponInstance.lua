@@ -32,8 +32,9 @@ function WeaponInstance.create(engine, weapon_id, unit_id, quantity)
       weapon = weapon,
       uniq_id = uniq_id,
       data = {
-         movement = movement,
-         quantity = quantity,
+         can_attack = true,
+         movement   = movement,
+         quantity   = quantity,
       }
    }
    setmetatable(o, WeaponInstance)
@@ -51,7 +52,10 @@ function WeaponInstance:is_capable(flag_mask)
 end
 
 function WeaponInstance:update_state(new_state)
-
+   local attacks_first = self:is_capable('ATTACKS_FIRST')
+   if (new_state == 'marching' and attacks_first) then
+      self.data.can_attack = false
+   end
 end
 
 return WeaponInstance

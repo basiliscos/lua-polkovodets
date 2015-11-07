@@ -425,18 +425,20 @@ function Unit:update_actions_map()
       local weapon_capabilites = {} -- k1: layer, value: table with k2:range, and value: list of weapons
       local united_staff = self:_united_staff()
       for idx, weapon_instance in pairs(united_staff) do
-         for layer, range in pairs(weapon_instance.weapon.data.range) do
-            -- we use range +1 to avoid zero-based indices
-            for r = 0, range do
-               local layer_capabilites = weapon_capabilites[layer] or {}
-               local range_capabilites = layer_capabilites[r + 1] or {}
-               table.insert(range_capabilites, weapon_instance)
-               -- print("rc = " .. inspect(range_capabilites))
-               layer_capabilites[r + 1] = range_capabilites
-               weapon_capabilites[layer] = layer_capabilites
-            end
+         if (weapon_instance.data.can_attack) then
+            for layer, range in pairs(weapon_instance.weapon.data.range) do
+               -- we use range +1 to avoid zero-based indices
+               for r = 0, range do
+                  local layer_capabilites = weapon_capabilites[layer] or {}
+                  local range_capabilites = layer_capabilites[r + 1] or {}
+                  table.insert(range_capabilites, weapon_instance)
+                  -- print("rc = " .. inspect(range_capabilites))
+                  layer_capabilites[r + 1] = range_capabilites
+                  weapon_capabilites[layer] = layer_capabilites
+               end
 
-            if (max_range < range) then max_range = range end
+               if (max_range < range) then max_range = range end
+            end
          end
       end
       -- print("wc: " .. inspect(weapon_capabilites))

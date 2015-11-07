@@ -99,7 +99,7 @@ subtest("move rus aircraft",
            ok(aircraft.data.actions_map.move[map.tiles[4][9].uniq_id])
 
            aircraft:move_to(map.tiles[4][9])
-           print(inspect(aircraft.data.actions_map.attack))
+           -- print(inspect(aircraft.data.actions_map.attack))
            is_deeply(aircraft.data.actions_map.attack[map.tiles[4][9].uniq_id],
                      {
                         surface = {
@@ -111,7 +111,7 @@ subtest("move rus aircraft",
            local rus_at = map.tiles[5][9]:get_unit('surface')
            ok(rus_at)
            rus_at:update_actions_map()
-           print(inspect(rus_at.data.actions_map.attack))
+           -- print(inspect(rus_at.data.actions_map.attack))
            is_deeply(rus_at.data.actions_map.attack[map.tiles[4][9].uniq_id],
                      {
                         surface = {
@@ -125,7 +125,7 @@ subtest("move rus aircraft",
            local ger_artillery = map.tiles[4][7]:get_unit('surface')
            ok(ger_artillery)
            ger_artillery:update_actions_map()
-           print(inspect(ger_artillery.data.actions_map.attack))
+           -- print(inspect(ger_artillery.data.actions_map.attack))
            is_deeply(ger_artillery.data.actions_map.attack[map.tiles[4][8].uniq_id],
                      {
                         surface = {
@@ -149,6 +149,38 @@ subtest("move rus aircraft",
            aircraft:land_to(map.tiles[3][4])
            is(aircraft.data.state, 'landed')
            is(aircraft:get_layer(), 'surface')
+        end
+)
+
+
+subtest("check attack first on movements",
+        function()
+           local ger_inf = map.tiles[3][7]:get_unit('surface')
+           ok(ger_inf)
+           ger_inf:update_actions_map()
+           ger_inf:move_to(map.tiles[6][5])
+
+           local rus_art = map.tiles[8][5]:get_unit('surface')
+           ok(rus_art)
+           rus_art:update_actions_map()
+           -- print(inspect(rus_art.data.actions_map.attack))
+           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].uniq_id],
+                     {
+                        surface = {
+                           ["fire/artillery"] = { "3:10", "3:11", "3:9" }
+                        }
+                     }
+           )
+           rus_art:move_to(map.tiles[6][3])
+           rus_art:update_actions_map()
+           -- print(inspect(rus_art.data.actions_map.attack))
+           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].uniq_id],
+                     {
+                        surface = {
+                           ["fire/artillery"] = { "3:10", "3:9" }
+                        }
+                     }
+           )
         end
 )
 
