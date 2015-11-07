@@ -97,6 +97,43 @@ subtest("move rus aircraft",
            local enemy_tank = map.tiles[4][9]:get_unit('surface')
            ok(enemy_tank)
            ok(aircraft.data.actions_map.move[map.tiles[4][9].uniq_id])
+
+           aircraft:move_to(map.tiles[4][9])
+           print(inspect(aircraft.data.actions_map.attack))
+           is_deeply(aircraft.data.actions_map.attack[map.tiles[4][9].uniq_id],
+                     {
+                        surface = {
+                           ["fire/bombing"] = { "15:37", "15:38" }
+                        }
+                     }
+           )
+
+           local rus_at = map.tiles[5][9]:get_unit('surface')
+           ok(rus_at)
+           rus_at:update_actions_map()
+           print(inspect(rus_at.data.actions_map.attack))
+           is_deeply(rus_at.data.actions_map.attack[map.tiles[4][9].uniq_id],
+                     {
+                        surface = {
+                            battle = { "7:17" }
+                        }
+                     }
+           )
+           rus_at:move_to(map.tiles[4][8])
+
+           local ger_artillery = map.tiles[4][7]:get_unit('surface')
+           ok(ger_artillery)
+           ger_artillery:update_actions_map()
+           print(inspect(ger_artillery.data.actions_map.attack))
+           is_deeply(ger_artillery.data.actions_map.attack[map.tiles[4][8].uniq_id],
+                     {
+                        surface = {
+                           battle = { "5:27", "5:28", "5:29" },
+                           ["fire/artillery"] = { "5:27", "5:28", "5:29" }
+                        }
+                     }
+           )
+           is(ger_artillery:get_attack_kind(map.tiles[4][8]), 'fire/artillery')
         end
 )
 

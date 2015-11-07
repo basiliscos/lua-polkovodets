@@ -482,6 +482,7 @@ function Unit:update_actions_map()
                      -- print(fire_kind .. " by " .. weapon_instance.uniq_id)
                      local fired_weapons = layer_attack_details[fire_kind] or {}
                      table.insert(fired_weapons, weapon_instance.uniq_id)
+                     table.sort(fired_weapons)
                      layer_attack_details[fire_kind] = fired_weapons
                   end
                end
