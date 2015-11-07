@@ -181,54 +181,17 @@ subtest("check attack first on movements",
                         }
                      }
            )
+           rus_art:refresh()
+           rus_art:update_actions_map()
+           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].uniq_id],
+                     {
+                        surface = {
+                           ["fire/artillery"] = { "3:10", "3:11", "3:9" }
+                        }
+                     }
+           )
+
         end
 )
-
-
--- no requnired units on the map
--- local unit_rus_art = map.tiles[7][5].unit
--- ok(unit_rus_art)
--- is(unit_rus_art:available_movement(), 1)
-
--- local unit_rus_inf = map.tiles[8][5].unit
--- ok(unit_rus_inf)
--- is(unit_rus_inf:available_movement(), 3)
-
--- local unit_rus_tank = map.tiles[8][4].unit
--- ok(unit_rus_tank)
--- is(unit_rus_tank:available_movement(), 6)
-
--- local tile_83 = map.tiles[8][3]
--- unit_rus_tank:update_actions_map()
--- is(unit_rus_tank:available_movement(), 6)
--- is(unit_rus_tank.data.fuel, 55)
--- unit_rus_tank:move_to(tile_83)
--- is(unit_rus_tank:available_movement(), 0)
--- is(unit_rus_tank.data.fuel, 54)
--- engine:end_turn()
-
--- is(unit_rus_tank:available_movement(), 6)
--- unit_rus_tank:update_actions_map()
--- unit_rus_tank:move_to(map.tiles[4][6])
--- engine:end_turn()
--- unit_rus_tank:update_actions_map()
-
--- subtest("tank actions",
---         function()
---            local actions_map = unit_rus_tank.data.actions_map
---            ok(actions_map.move[map.tiles[3][6].uniq_id])
---            ok(actions_map.move[map.tiles[9][3].uniq_id])
---            ok(not actions_map.move[map.tiles[2][4].uniq_id])
---            ok(not actions_map.move[map.tiles[2][5].uniq_id])
---            ok(not actions_map.move[map.tiles[2][6].uniq_id])
---            ok(not actions_map.move[map.tiles[4][8].uniq_id])
-
---            ok(actions_map.attack[map.tiles[3][7].uniq_id])
---            ok(actions_map.attack[map.tiles[4][7].uniq_id])
---            ok(not actions_map.attack[map.tiles[3][6].uniq_id])
---            ok(not actions_map.attack[map.tiles[3][5].uniq_id])
---         end
--- )
-
 
 done_testing()

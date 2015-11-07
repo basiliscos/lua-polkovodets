@@ -66,7 +66,7 @@ function Unit.create(engine, data, player)
    o:_update_state(data.state)
    o:_update_layer()
    tile:set_unit(o, o.data.layer)
-   o:_refresh_movements()
+   o:refresh()
    table.insert(player.units, o)
    return o
 end
@@ -209,11 +209,11 @@ function Unit:_marched_weapons()
 end
 
 
-function Unit:_refresh_movements()
+function Unit:refresh()
    local result = {}
    self.data.allow_move = true
-   for idx, weapon_instance in pairs(self:_marched_weapons()) do
-      weapon_instance:refresh_movements()
+   for idx, weapon_instance in pairs(self:_united_staff()) do
+      weapon_instance:refresh()
    end
 end
 

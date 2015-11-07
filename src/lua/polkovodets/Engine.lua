@@ -149,7 +149,7 @@ function Engine:end_turn()
    if (self.current_player_idx == self.total_players) then
       self.turn = self.turn + 1
       for k, unit in pairs(self.all_units) do
-         unit:_refresh_movements()
+         unit:refresh()
       end
       print("current turm: " .. self.turn)
       self:_set_current_player(1)

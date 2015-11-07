@@ -43,8 +43,9 @@ end
 
 function WeaponInstance:quantity() return self.data.quantity end
 
-function WeaponInstance:refresh_movements()
+function WeaponInstance:refresh()
    self.data.movement = self.weapon.data.movement
+   self.data.can_attack = true
 end
 
 function WeaponInstance:is_capable(flag_mask)
