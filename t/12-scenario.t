@@ -143,6 +143,12 @@ subtest("move rus aircraft",
            ger_artillery:switch_attack_priorities()
            is(ger_artillery:get_attack_kind(map.tiles[4][8]), 'fire/artillery')
 
+           engine:end_turn()
+           engine:end_turn()
+           aircraft:update_actions_map()
+           aircraft:land_to(map.tiles[3][4])
+           is(aircraft.data.state, 'landed')
+           is(aircraft:get_layer(), 'surface')
         end
 )
 

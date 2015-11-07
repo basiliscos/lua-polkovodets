@@ -63,6 +63,7 @@ function Unit.create(engine, data, player)
       }
    }
    setmetatable(o, Unit)
+   o:_update_state(data.state)
    o:_update_layer()
    tile:set_unit(o, o.data.layer)
    o:_refresh_movements()
@@ -74,6 +75,13 @@ function Unit:_update_layer()
    local unit_type = self.definition.unit_type.id
    local layer = self.data.state == 'flying' and 'air' or 'surface'
    self.data.layer = layer
+end
+
+function Unit:_update_state(new_state)
+   self.data.state = new_state
+   local unit_type = self.definition.unit_type.id
+
+   return (unit_type == 'ut_air') and 'air' or 'surface'
 end
 
 function Unit:get_movement_layer()
@@ -258,11 +266,13 @@ function Unit:move_to(dst_tile)
 
    -- update state
    local unit_type = self.definition.unit_type.id
+   local new_state
    if (unit_type == 'ut_land') then
-      self.data.state = self:_enemy_near(dst_tile) and 'defending' or 'marching'
+      new_state = self:_enemy_near(dst_tile) and 'defending' or 'marching'
    elseif (unit_type == 'ut_air') then
-      self.data.state = 'flying'
+      new_state = 'flying'
    end
+   self:_update_state(new_state)
    self:_update_layer()
 
    dst_tile:set_unit(self, self.data.layer)
@@ -305,7 +315,8 @@ end
 
 function Unit:land_to(tile)
    self:move_to(tile)
-   self.data.state = 'landed'
+   self:_update_state('landed')
+   self:_update_layer()
    self.data.allow_move = false
 end
 
