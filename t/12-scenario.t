@@ -120,6 +120,7 @@ subtest("move rus aircraft",
                      }
            )
            rus_at:move_to(map.tiles[4][8])
+           is(rus_at.data.state, 'defending')
 
            local ger_artillery = map.tiles[4][7]:get_unit('surface')
            ok(ger_artillery)
