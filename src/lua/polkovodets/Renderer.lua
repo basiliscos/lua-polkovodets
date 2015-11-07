@@ -59,11 +59,14 @@ function Renderer.create(engine, window, sdl_renderer)
                                     path = 'cursors.bmp',
                                     size = 22,
                                     actions = {
-                                       ['default'     ] = 1,
-                                       ['move'        ] = 2,
-                                       ['merge'       ] = 3,
-                                       ['attack'      ] = 4,
-                                       ['land'        ] = 5,
+                                       ['default'       ] = 1,
+                                       ['move'          ] = 2,
+                                       ['merge'         ] = 3,
+                                       ['battle'        ] = 6,
+                                       ['fire/artillery'] = 4,
+                                       ['fire/anti-air' ] = 7,
+                                       ['fire/bombing'  ] = 5,
+                                       ['land'          ] = 8,
                                     }
                                  },
 
@@ -266,7 +269,7 @@ function Renderer:_action_kind(tile)
       if (actions_map.merge[tile.uniq_id]) then
          kind = 'merge'
       elseif (actions_map.attack[tile.uniq_id]) then
-         kind = 'attack'
+         kind = u:get_attack_kind(tile)
       elseif (actions_map.landing[tile.uniq_id]) then
          kind = 'land'
       -- move to the tile if it is free

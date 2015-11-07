@@ -429,7 +429,40 @@ function Unit:update_actions_map()
       -- print("wc: " .. inspect(weapon_capabilites))
       -- print("wc: " .. inspect(weapon_capabilites.surface[1]))
 
-      local examine_queue = { start_tile }
+
+      local get_fire_kinds = function(weapon_instance, distance, enemy_unit)
+         local fire_kinds = {}
+         local enemy_layer = enemy_unit:get_layer()
+         local same_layer = (enemy_layer == layer)
+         if (weapon_instance:is_capable('RANGED_FIRE') and same_layer) then
+            table.insert(fire_kinds, 'fire/artillery')
+         end
+         if ((distance == 1) and same_layer) then
+            table.insert(fire_kinds, 'battle')
+         end
+         if (not same_layer) then
+            table.insert(fire_kinds, ((layer == 'surface')
+                               and 'fire/anti-air'
+                               or  'fire/bombing'
+                                     )
+            )
+         end
+         if ((distance == 0) and (enemy_layer == layer)) then
+            table.insert(fire_kinds, 'battle')
+         end
+         return fire_kinds
+      end
+
+      local examine_queue = {}
+      local already_added = {}
+      local add_to_queue = function(tile)
+         if (not already_added[tile.uniq_id]) then
+            table.insert(examine_queue, tile)
+            already_added[tile.uniq_id] = true
+         end
+      end
+
+      add_to_queue(start_tile)
       while (#examine_queue > 0) do
          local tile = table.remove(examine_queue, 1)
          local distance = start_tile:distance_to(tile)
@@ -438,15 +471,28 @@ function Unit:update_actions_map()
          local enemy_units = tile:get_all_units(function(unit) return unit.player ~= self.player end)
          for idx, enemy_unit in pairs(enemy_units) do
             local enemy_layer = enemy_unit:get_layer()
-            local weapon_instances = weapon_capabilites[enemy_layer][distance+1]
+            local weapon_instances = (weapon_capabilites[enemy_layer] or {})[distance+1]
             if (weapon_instances) then
-               attack_map[tile.uniq_id] = { layer = enemy_layer, weapon_instances = weapon_instances }
+               local attack_details = attack_map[tile.uniq_id] or {}
+               local layer_attack_details = attack_details[enemy_layer] or {}
+               for k, weapon_instance in pairs(weapon_instances) do
+                  local fire_kinds = get_fire_kinds(weapon_instance, distance, enemy_unit)
+                  -- print(inspect(fire_kinds))
+                  for k, fire_kind in pairs(fire_kinds) do
+                     -- print(fire_kind .. " by " .. weapon_instance.uniq_id)
+                     local fired_weapons = layer_attack_details[fire_kind] or {}
+                     table.insert(fired_weapons, weapon_instance.uniq_id)
+                     layer_attack_details[fire_kind] = fired_weapons
+                  end
+               end
+               attack_details[enemy_layer] = layer_attack_details
+               attack_map[tile.uniq_id] = attack_details
             end
          end
          for adj_tile in engine:get_adjastent_tiles(tile, visited_tiles) do
             local distance = start_tile:distance_to(adj_tile)
             if (distance <= max_range) then
-               table.insert(examine_queue, adj_tile)
+               add_to_queue(adj_tile)
             end
          end
       end
@@ -491,7 +537,7 @@ function Unit:update_actions_map()
    actions_map.attack  = get_attack_map()
 
    self.data.actions_map = actions_map
-   -- print(inspect(actions_map.attack))
+   print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)
@@ -569,6 +615,46 @@ function Unit:subordinate(subject)
       table.insert(self.data.subordinated, subject)
       print("manager unit " .. subject.id .. " managed by " .. self.id)
    end
+end
+
+function Unit:get_attack_kind(tile)
+   local kind
+
+   local attack_layers = self.data.actions_map.attack[tile.uniq_id]
+   local same_layer = self:get_layer()
+   local opposite_layer = (same_layer == 'surface') and 'air' or 'surface'
+   local attack_layer = attack_layers[same_layer]
+   if (not attack_layer) then                         -- non ambigious case
+      attack_layer = attack_layers[opposite_layer]
+      if (attack_layer['fire/bombing']) then kind = 'fire/bombing'
+      elseif (attack_layer['fire/anti-air']) then kind = 'fire/anti-air'
+      else
+         error("possible attack kinds for different layers are: 'fire/bombing' or 'fire/anti-air'")
+      end
+   else                                               -- ambigious case
+      local selected_attack, attack_score = nil, 0
+      local has_battle = attack_layer['battle']
+      local has_artillery = attack_layer['fire/artillery']
+      local number_of_possibilities = (has_battle and 1 or 0) + (has_artillery and 1 or 0)
+      if (number_of_possibilities == 1) then
+         kind = has_battle and 'battle' or 'fire/artillery'
+      elseif (number_of_possibilities == 2) then
+         local scores = { ['artillery'] = 0, ['battle'] = 0 }
+         for idx, weapon_instance in pairs(self.data.staff) do
+            local score_to = weapon_instance:is_capable('RANGED_FIRE')
+               and 'artillery'
+               or  'battle'
+            local score = scores[score_to] + 1
+            scores[score_to] = score
+         end
+         kind = (scores['battle'] >= scores['artillery'])
+            and 'battle'
+            or  'fire/artillery'
+      else
+         error("possible attack kinds for different layers are: 'fire/bombing' or 'fire/anti-air'")
+      end
+   end
+   return kind
 end
 
 return Unit
