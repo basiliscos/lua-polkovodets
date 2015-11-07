@@ -58,6 +58,7 @@ function Unit.create(engine, data, player)
          orientation  = orientation,
          attached     = {},
          subordinated = {},
+         attack_prio  = {['default'] = 10},
          managed_by   = data.managed_by,
       }
    }
@@ -618,6 +619,14 @@ function Unit:subordinate(subject)
    end
 end
 
+function Unit:switch_attack_priorities()
+   local prio = self.data.attack_prio
+   if (prio.default) then prio = {['artillery'] = 10}
+   elseif (prio.artillery) then prio = {['battle'] = 10}
+   else prio = {['default'] = 10} end
+   self.data.attack_prio = prio
+end
+
 function Unit:get_attack_kind(tile)
    local kind
 
@@ -640,7 +649,8 @@ function Unit:get_attack_kind(tile)
       if (number_of_possibilities == 1) then
          kind = has_battle and 'battle' or 'fire/artillery'
       elseif (number_of_possibilities == 2) then
-         local scores = { ['artillery'] = 0, ['battle'] = 0 }
+         local prio = self.data.attack_prio
+         local scores = { ['artillery'] = (prio.artillery or 0), ['battle'] = prio.battle or 0 }
          for idx, weapon_instance in pairs(self.data.staff) do
             local score_to = weapon_instance:is_capable('RANGED_FIRE')
                and 'artillery'
