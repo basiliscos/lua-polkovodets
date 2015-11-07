@@ -318,4 +318,10 @@ function Engine:toggle_layer()
    self.active_layer = current
 end
 
+function Engine:toggle_attack_priorities()
+   if (self.selected_unit) then
+      self.selected_unit:switch_attack_priorities()
+   end
+end
+
 return Engine

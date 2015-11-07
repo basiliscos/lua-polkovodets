@@ -351,6 +351,8 @@ function Renderer:main_loop()
             engine:end_turn()
          elseif (e.keysym.sym == SDL.key.t) then
             engine:toggle_layer()
+         elseif (e.keysym.sym == SDL.key.k) then
+            engine:toggle_attack_priorities()
          end
       elseif (t == SDL.event.MouseMotion) then
          self:_recalc_active_tile()
