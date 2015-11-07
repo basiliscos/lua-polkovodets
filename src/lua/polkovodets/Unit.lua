@@ -79,9 +79,10 @@ end
 
 function Unit:_update_state(new_state)
    self.data.state = new_state
-   local unit_type = self.definition.unit_type.id
-
-   return (unit_type == 'ut_air') and 'air' or 'surface'
+   local united_staff = self:_united_staff()
+   for idx, weapon_instance in pairs(united_staff) do
+      weapon_instance:update_state(new_state)
+   end
 end
 
 function Unit:get_movement_layer()

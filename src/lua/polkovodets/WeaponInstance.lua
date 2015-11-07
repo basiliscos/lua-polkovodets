@@ -50,4 +50,8 @@ function WeaponInstance:is_capable(flag_mask)
    return self.weapon:is_capable(flag_mask)
 end
 
+function WeaponInstance:update_state(new_state)
+
+end
+
 return WeaponInstance
