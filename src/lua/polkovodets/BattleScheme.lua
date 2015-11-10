@@ -81,7 +81,7 @@ function BattleScheme.create(engine)
    local block_c = function(id) return _BlockCondition.create(id) end
    local relation_c = function(v1, op, v2) return { kind = 'Relation', operator = op, v1 = v1, v2 = v2} end
    local negation_c = function(e) return { kind = 'Negation', e = e } end
-   local l_relation_c = function(e1, op, e2) return { kind = "LogicalRelation", operator = op, e1 = e1, e2 = e2} end
+   local l_operation_c = function(e1, op, e2) return { kind = "LogicalOperation", operator = op, e1 = e1, e2 = e2} end
 
    -- Lexical Elements
    local Space = lpeg.S(" ")^0
@@ -100,16 +100,16 @@ function BattleScheme.create(engine)
          = Relation
          + lpeg.V("Block_Negation")
          + lpeg.V("Negation")
-         + (Space * lpeg.P('(') * lpeg.V("Expr") * lpeg.P(')'))
-         + lpeg.V("Logical_Expr"),
+         + (Space * lpeg.P('(') * Space * lpeg.V("Expr") * Space * lpeg.P(')'))
+         + lpeg.V("Logical_Operation"),
       Block_Negation
          = (lpeg.P('!')^1 * Space * Block) / negation_c,
       Negation
          = (lpeg.P('!')^1 * Space * lpeg.V('Expr')) / negation_c,
-      Logical_Expr
-         = lpeg.P('(') * lpeg.V('Expr') * Space
-            * lpeg.C(lpeg.P('&&') + lpeg.P('&&')) * Space * lpeg.V('Expr')
-         * lpeg.P(')') / l_relation_c,
+      Logical_Operation
+         = lpeg.P('(') * Space * lpeg.V('Expr') * Space
+             * lpeg.C(lpeg.P('&&') + lpeg.P('&&')) * Space * lpeg.V('Expr')
+         * Space * lpeg.P(')') / l_operation_c,
    }
 
    o.condition_grammar = condition_grammar

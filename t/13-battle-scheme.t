@@ -37,7 +37,7 @@ subtest("parse condition",
                       local r = bs:_parse_condition("(!block('1.1') && !block('2.2'))")
                       print(inspect(r))
                       ok(r)
-                      is(r.kind, 'LogicalRelation')
+                      is(r.kind, 'LogicalOperation')
                       is(r.operator, '&&')
                       is(r.e2.e.id, '2.2')
                    end
@@ -48,7 +48,7 @@ subtest("parse condition",
                       local r = bs:_parse_condition("(!block('1.1') && !block('2.2'))")
                       print(inspect(r))
                       ok(r)
-                      is(r.kind, 'LogicalRelation')
+                      is(r.kind, 'LogicalOperation')
                       is(r.operator, '&&')
                       is(r.e2.e.id, '2.2')
                    end
@@ -75,6 +75,19 @@ subtest("parse condition",
                       is(r.v1.property, 'state')
                       is(r.v2.kind, 'Literal')
                       is(r.v2.value, 'A')
+                   end
+           )
+
+           subtest("tripple and",
+                   function()
+                      local r = bs:_parse_condition("((I.state == 'A' && P.state == 'D') && (I.orientation != P.orientation))")
+                      print(inspect(r))
+                      ok(r)
+                      is(r.kind, 'LogicalOperation')
+                      is(r.operator, '&&')
+                      is(r.e2.operator, '!=')
+                      is(r.e2.v1.object, 'I')
+                      is(r.e2.v2.object, 'P')
                    end
            )
 
