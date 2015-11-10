@@ -79,7 +79,6 @@ function BattleScheme.create(engine)
    local property_c = function(o,v) return _PropertyCondition.create(o,v) end
    local literal_c = function(v) return { kind = 'Literal', value = v } end
    local block_c = function(id) return _BlockCondition.create(id) end
-   local method_c = function(o, m, ...) return { kind = 'Method', object = o, method = m, args = { ... } } end
    local relation_c = function(v1, op, v2) return { kind = 'Relation', operator = op, v1 = v1, v2 = v2} end
    local negation_c = function(e) return { kind = 'Negation', e = e } end
    local l_relation_c = function(e1, op, e2) return { kind = "LogicalRelation", operator = op, e1 = e1, e2 = e2} end
@@ -88,23 +87,23 @@ function BattleScheme.create(engine)
    local Space = lpeg.S(" ")^0
    local BareString = ((lpeg.R("09") + lpeg.R("az", "AZ") +lpeg.S("._"))^0)
    local Literal = (lpeg.P("'") * BareString * lpeg.P("'"))
-   local Arg = Literal
    local Object = (lpeg.P("I") + lpeg.P("P"))
    local Property = (lpeg.C(Object) * lpeg.P('.') * lpeg.C((lpeg.R("09") + lpeg.R("az", "AZ"))^1)) / property_c
-   local Method = (lpeg.C(Object) * lpeg.P('.') * lpeg.C(BareString) * lpeg.P('(') * Arg^0 * lpeg.P(')')) / method_c
-   local Value  = Literal/literal_c + Property + Method
+   local Value  = (lpeg.P("'") * (BareString/literal_c) * lpeg.P("'")) + Property
    local Block = (lpeg.P("block(") * (lpeg.P("'") * lpeg.C(BareString) * lpeg.P("'"))  * lpeg.P(")"))/ block_c
    local Relation = Value * Space * lpeg.C(lpeg.P("==") + lpeg.P("!=")) * Space * Value / relation_c
-   local Atom = Block + Relation
 
    -- Grammar
-   local G = lpeg.P{
+   local condition_grammar = lpeg.P{
       "Expr";
       Expr
-         = Atom
+         = Relation
+         + lpeg.V("Block_Negation")
          + lpeg.V("Negation")
          + (Space * lpeg.P('(') * lpeg.V("Expr") * lpeg.P(')'))
          + lpeg.V("Logical_Expr"),
+      Block_Negation
+         = (lpeg.P('!')^1 * Space * Block) / negation_c,
       Negation
          = (lpeg.P('!')^1 * Space * lpeg.V('Expr')) / negation_c,
       Logical_Expr
@@ -113,13 +112,13 @@ function BattleScheme.create(engine)
          * lpeg.P(')') / l_relation_c,
    }
 
-   o.grammar = G
+   o.condition_grammar = condition_grammar
 
    return o
 end
 
 function BattleScheme:_parse_condition(c)
-   local condition = self.grammar:match(c)
+   local condition = self.condition_grammar:match(c)
    return condition
 end
 

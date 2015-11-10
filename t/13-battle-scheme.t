@@ -24,6 +24,13 @@ subtest("parse condition",
                       is(r.e.id, '1.1')
                    end
            )
+           subtest("do not allow bare block",
+                   function()
+                      local r = bs:_parse_condition("block('1.3')")
+                      nok(r)
+                   end
+           )
+
 
            subtest("simple and",
                    function()
@@ -57,6 +64,28 @@ subtest("parse condition",
                       is(r.v1.property, 'orientation')
                    end
            )
+
+           subtest("check state",
+                   function()
+                      local r = bs:_parse_condition("I.state == 'A'")
+                      print(inspect(r))
+                      ok(r)
+                      is(r.kind, 'Relation')
+                      is(r.v1.object, 'I')
+                      is(r.v1.property, 'state')
+                      is(r.v2.kind, 'Literal')
+                      is(r.v2.value, 'A')
+                   end
+           )
+
+           subtest("non-valid cases",
+                   function()
+                      nok(bs:_parse_condition("I.state == A'"))
+                      nok(bs:_parse_condition('I.state == "A"'))
+                      nok(bs:_parse_condition("I.state() == 'A'"))
+                   end
+           )
+
         end
 )
 
