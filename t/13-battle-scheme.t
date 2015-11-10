@@ -21,9 +21,7 @@ subtest("parse condition",
                       is(r.kind, 'Negation')
                       ok(r.e)
                       is(r.e.kind, 'Block')
-                      ok(r.e.value)
-                      is(r.e.value.kind, 'Literal')
-                      is(r.e.value.value, '1.1')
+                      is(r.e.id, '1.1')
                    end
            )
 
@@ -34,7 +32,7 @@ subtest("parse condition",
                       ok(r)
                       is(r.kind, 'LogicalRelation')
                       is(r.operator, '&&')
-                      is(r.e2.e.value.value, '2.2')
+                      is(r.e2.e.id, '2.2')
                    end
            )
 
@@ -45,7 +43,7 @@ subtest("parse condition",
                       ok(r)
                       is(r.kind, 'LogicalRelation')
                       is(r.operator, '&&')
-                      is(r.e2.e.value.value, '2.2')
+                      is(r.e2.e.id, '2.2')
                    end
            )
 
@@ -55,6 +53,8 @@ subtest("parse condition",
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'Relation')
+                      is(r.v1.object, 'I')
+                      is(r.v1.property, 'orientation')
                    end
            )
         end

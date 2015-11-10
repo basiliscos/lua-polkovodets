@@ -45,13 +45,30 @@ local lpeg = require('lpeg')
 local BattleScheme = {}
 BattleScheme.__index = BattleScheme
 
+--[[ Property Condition class ]]--
 local _PropertyCondition = {}
 _PropertyCondition.__index = _PropertyCondition
 
-function _PropertyCondition.create(value)
-   return setmetatable({ kind = 'Property', value = value }, _PropertyCondition)
+function _PropertyCondition.create(object, prop)
+   local t = {
+      kind     = 'Property',
+      object   = object,
+      property = prop,
+   }
+   return setmetatable(t, _PropertyCondition)
 end
 
+--[[ Block Condition class ]]--
+local _BlockCondition = {}
+_BlockCondition.__index = _BlockCondition
+
+function _BlockCondition.create(id)
+   local t = {
+      kind = 'Block',
+      id   = id
+   }
+   return setmetatable(t, _BlockCondition)
+end
 
 
 function BattleScheme.create(engine)
@@ -59,11 +76,9 @@ function BattleScheme.create(engine)
    setmetatable(o, BattleScheme)
 
    -- capture functions
-   local property_c = function(v) return _PropertyCondition.create(v) end
-   local object_c = function(v) return { kind = 'Object', value = v } end
+   local property_c = function(o,v) return _PropertyCondition.create(o,v) end
    local literal_c = function(v) return { kind = 'Literal', value = v } end
-   local block_c = function(v) return { kind = 'Block', value = v } end
-   local value_c = function(...) return { kind = 'Value', value = {...} } end
+   local block_c = function(id) return _BlockCondition.create(id) end
    local method_c = function(o, m, ...) return { kind = 'Method', object = o, method = m, args = { ... } } end
    local relation_c = function(v1, op, v2) return { kind = 'Relation', operator = op, v1 = v1, v2 = v2} end
    local negation_c = function(e) return { kind = 'Negation', e = e } end
@@ -71,14 +86,14 @@ function BattleScheme.create(engine)
 
    -- Lexical Elements
    local Space = lpeg.S(" ")^0
-   local Property = ((lpeg.R("09") + lpeg.R("az", "AZ"))^1) / property_c
-   local Object = (lpeg.P("I") + lpeg.P("P")) / object_c
    local BareString = ((lpeg.R("09") + lpeg.R("az", "AZ") +lpeg.S("._"))^0)
-   local Literal = (lpeg.P("'") * (BareString/literal_c)  * lpeg.P("'"))
+   local Literal = (lpeg.P("'") * BareString * lpeg.P("'"))
    local Arg = Literal
-   local Method = Object * lpeg.P('.') * lpeg.C(BareString) * lpeg.P('(') * Arg^0 * lpeg.P(')') / method_c
-   local Value  = (Literal + (Object * lpeg.P('.') * Property) + Method) / value_c
-   local Block = (lpeg.P("block(") * Literal * lpeg.P(")"))/ block_c
+   local Object = (lpeg.P("I") + lpeg.P("P"))
+   local Property = (lpeg.C(Object) * lpeg.P('.') * lpeg.C((lpeg.R("09") + lpeg.R("az", "AZ"))^1)) / property_c
+   local Method = (lpeg.C(Object) * lpeg.P('.') * lpeg.C(BareString) * lpeg.P('(') * Arg^0 * lpeg.P(')')) / method_c
+   local Value  = Literal/literal_c + Property + Method
+   local Block = (lpeg.P("block(") * (lpeg.P("'") * lpeg.C(BareString) * lpeg.P("'"))  * lpeg.P(")"))/ block_c
    local Relation = Value * Space * lpeg.C(lpeg.P("==") + lpeg.P("!=")) * Space * Value / relation_c
    local Atom = Block + Relation
 
