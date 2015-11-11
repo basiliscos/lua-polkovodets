@@ -19,9 +19,9 @@ subtest("parse condition",
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'Negation')
-                      ok(r.e)
-                      is(r.e.kind, 'Block')
-                      is(r.e.id, '1.1')
+                      ok(r.expr)
+                      is(r.expr.kind, 'Block')
+                      is(r.expr.id, '1.1')
                    end
            )
            subtest("do not allow bare block",
@@ -39,7 +39,7 @@ subtest("parse condition",
                       ok(r)
                       is(r.kind, 'LogicalOperation')
                       is(r.operator, '&&')
-                      is(r.e2.e.id, '2.2')
+                      is(r.e2.expr.id, '2.2')
                    end
            )
 
@@ -50,7 +50,7 @@ subtest("parse condition",
                       ok(r)
                       is(r.kind, 'LogicalOperation')
                       is(r.operator, '&&')
-                      is(r.e2.e.id, '2.2')
+                      is(r.e2.expr.id, '2.2')
                    end
            )
 

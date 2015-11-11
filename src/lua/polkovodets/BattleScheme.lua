@@ -70,6 +70,58 @@ function _BlockCondition.create(id)
    return setmetatable(t, _BlockCondition)
 end
 
+--[[ Literal Condition class ]]--
+local _LiteralCondition = {}
+_LiteralCondition.__index = _LiteralCondition
+
+function _LiteralCondition.create(value)
+   local t = {
+      kind  = 'Literal',
+      value = value,
+   }
+   return setmetatable(t, _LiteralCondition)
+end
+
+--[[ Relation Condition class ]]--
+local _RelationCondition = {}
+_RelationCondition.__index = _RelationCondition
+
+function _RelationCondition.create(operator, v1, v2)
+   local t = {
+      kind  = 'Relation',
+      operator = operator,
+      v1       = v1,
+      v2       = v2,
+   }
+   return setmetatable(t, _RelationCondition)
+end
+
+--[[ Negation Condition class ]]--
+local _NegationCondition = {}
+_NegationCondition.__index = _NegationCondition
+
+function _NegationCondition.create(expr)
+   local t = {
+      kind = 'Negation',
+      expr = expr,
+   }
+   return setmetatable(t, _NegationCondition)
+end
+
+--[[ LogicalOperation Condition class ]]--
+local _LogicalOperationCondition = {}
+_LogicalOperationCondition.__index = _LogicalOperationCondition
+
+function _LogicalOperationCondition.create(operator, e1, e2)
+   local t = {
+      kind     = 'LogicalOperation',
+      operator = operator,
+      e1       = e1,
+      e2       = e2,
+   }
+   return setmetatable(t, _LogicalOperationCondition)
+end
+
 
 function BattleScheme.create(engine)
    local o = { engine = engine }
@@ -77,11 +129,11 @@ function BattleScheme.create(engine)
 
    -- capture functions
    local property_c = function(o,v) return _PropertyCondition.create(o,v) end
-   local literal_c = function(v) return { kind = 'Literal', value = v } end
+   local literal_c = function(v) return _LiteralCondition.create(v) end
    local block_c = function(id) return _BlockCondition.create(id) end
-   local relation_c = function(v1, op, v2) return { kind = 'Relation', operator = op, v1 = v1, v2 = v2} end
-   local negation_c = function(e) return { kind = 'Negation', e = e } end
-   local l_operation_c = function(e1, op, e2) return { kind = "LogicalOperation", operator = op, e1 = e1, e2 = e2} end
+   local relation_c = function(v1, op, v2) return  _RelationCondition.create(op, v1, v2) end
+   local negation_c = function(e) return _NegationCondition.create(e) end
+   local l_operation_c = function(e1, op, e2) return _LogicalOperationCondition.create(op, e1, e2) end
 
    -- Lexical Elements
    local Space = lpeg.S(" ")^0
