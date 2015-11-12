@@ -45,9 +45,23 @@ local lpeg = require('lpeg')
 local BattleScheme = {}
 BattleScheme.__index = BattleScheme
 
+
+-- condition classes
+
+--[[ Condition base class ]]--
+local _ConditionBase = {}
+_ConditionBase.__index = _ConditionBase
+
+function _ConditionBase:set_block(block)
+   assert(block)
+   self.block = block
+end
+
+
 --[[ Property Condition class ]]--
 local _PropertyCondition = {}
 _PropertyCondition.__index = _PropertyCondition
+setmetatable(_PropertyCondition, _ConditionBase)
 
 function _PropertyCondition.create(object, prop)
    local t = {
@@ -58,11 +72,14 @@ function _PropertyCondition.create(object, prop)
    return setmetatable(t, _PropertyCondition)
 end
 
--- condition classes
+function _PropertyCondition:validate()
+   assert((self.property == 'state') or (self.property == 'orientation'))
+end
 
 --[[ Block Condition class ]]--
 local _BlockCondition = {}
 _BlockCondition.__index = _BlockCondition
+setmetatable(_BlockCondition, _ConditionBase)
 
 function _BlockCondition.create(id)
    local t = {
@@ -72,9 +89,16 @@ function _BlockCondition.create(id)
    return setmetatable(t, _BlockCondition)
 end
 
+function _BlockCondition:validate()
+   local bs = self.block.battle_scheme
+   local block = bs:_lookup_block(self.id)
+   assert(block)
+end
+
 --[[ Literal Condition class ]]--
 local _LiteralCondition = {}
 _LiteralCondition.__index = _LiteralCondition
+setmetatable(_LiteralCondition, _ConditionBase)
 
 function _LiteralCondition.create(value)
    local t = {
@@ -83,10 +107,12 @@ function _LiteralCondition.create(value)
    }
    return setmetatable(t, _LiteralCondition)
 end
+function _LiteralCondition:validate() end
 
 --[[ Relation Condition class ]]--
 local _RelationCondition = {}
 _RelationCondition.__index = _RelationCondition
+setmetatable(_RelationCondition, _ConditionBase)
 
 function _RelationCondition.create(operator, v1, v2)
    local t = {
@@ -98,9 +124,15 @@ function _RelationCondition.create(operator, v1, v2)
    return setmetatable(t, _RelationCondition)
 end
 
+function _RelationCondition:validate()
+   self.v1:validate()
+   self.v2:validate()
+end
+
 --[[ Negation Condition class ]]--
 local _NegationCondition = {}
 _NegationCondition.__index = _NegationCondition
+setmetatable(_NegationCondition, _ConditionBase)
 
 function _NegationCondition.create(expr)
    local t = {
@@ -110,9 +142,14 @@ function _NegationCondition.create(expr)
    return setmetatable(t, _NegationCondition)
 end
 
+function _NegationCondition:validate()
+   return self.expr:validate()
+end
+
 --[[ LogicalOperation Condition class ]]--
 local _LogicalOperationCondition = {}
 _LogicalOperationCondition.__index = _LogicalOperationCondition
+setmetatable(_LogicalOperationCondition, _ConditionBase)
 
 function _LogicalOperationCondition.create(operator, e1, e2)
    local t = {
@@ -124,6 +161,10 @@ function _LogicalOperationCondition.create(operator, e1, e2)
    return setmetatable(t, _LogicalOperationCondition)
 end
 
+function _LogicalOperationCondition:validate()
+   self.e1:validate()
+   self.e2:validate()
+end
 
 -- Selector classes
 --[[ Selector class ]]--
@@ -165,9 +206,48 @@ function _SelectorOperation.create(operator, selectors)
    return setmetatable(t, _SelectorOperation)
 end
 
+local _Block = {}
+_Block.__index = _Block
+
+function _Block.create(battle_scheme, id, fire_type, condition,
+                       active_weapon_selector, passive_weapon_selector, action)
+   assert(id)
+   assert(fire_type)
+   assert(string.find(id, "%d+(%.?%d*)"))
+
+   local parent_id = string.find(id, "(%d+)(%.%d+)")
+   -- print("parent_id = " .. inspect(parent_id))
+   local o = {
+      id            = id,
+      parent_id     = parent_id,
+      battle_scheme = battle_scheme,
+      fire_type     = fire_type,
+      condition     = condition,
+      active        = active_weapon_selector,
+      passive       = passive_weapon_selector,
+      action        = action,
+   }
+   setmetatable(o, _Block)
+   if (condition) then condition:set_block(o) end
+   if (active) then active:set_block(o) end
+   if (passive) then passive:set_block(o) end
+   return o
+end
+
+function _Block:validate()
+   if (not self.parent_id) then
+      assert(self.fire_type)
+      assert(self.condition)
+      self.condition:validate()
+   end
+end
+
 
 function BattleScheme.create(engine)
-   local o = { engine = engine }
+   local o = {
+      engine = engine,
+      block_for = {} -- k: block_id, value _Block object
+   }
    setmetatable(o, BattleScheme)
 
    -- conditions
@@ -261,8 +341,19 @@ end
 
 function BattleScheme:_parse_selection(s)
    local selection = self.selection_grammar:match(s)
-   print(inspect(selection))
    return selection
 end
+
+function BattleScheme:_create_block(id, fire_type, condition,
+                                    active_weapon_selector, passive_weapon_selector, action)
+   local b = _Block.create(self, id, fire_type, condition, active_weapon_selector, passive_weapon_selector, action)
+   self.block_for[id] = b
+   return b
+end
+
+function BattleScheme:_lookup_block(id)
+   return self.block_for[id]
+end
+
 
 return BattleScheme

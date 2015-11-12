@@ -116,4 +116,16 @@ subtest("parse selection",
         end
 )
 
+
+subtest("blocks",
+        function()
+           local condition = bs:_parse_condition("I.orientation == P.orientation")
+           assert(condition)
+           local block = bs:_create_block('1', 'battle', condition)
+           ok(block)
+           block:validate()
+        end
+)
+
+
 done_testing()
