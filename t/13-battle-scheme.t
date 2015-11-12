@@ -98,7 +98,21 @@ subtest("parse condition",
                       nok(bs:_parse_condition("I.state() == 'A'"))
                    end
            )
+        end
+)
 
+subtest("parse selection",
+        function()
+           subtest("simple selector",
+                   function()
+                      ok(bs:_parse_selection("I.category('wc_artil')"))
+                      ok(bs:_parse_selection("!I.category('wc_tank')"))
+                      ok(bs:_parse_selection("P.category('wc_hweap') && P.category('wc_antitank')"))
+                      ok(bs:_parse_selection("P.category('wc_hweap') || P.category('wc_antitank')"))
+                      ok(bs:_parse_selection("I.category('wc_infant') || I.category('wc_hweap') || I.category('wc_antitank')"))
+                      ok(bs:_parse_selection("P.category('wc_infant') && !P.category('wc_tank')"))
+                   end
+           )
         end
 )
 
