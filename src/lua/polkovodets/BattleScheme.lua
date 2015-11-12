@@ -212,11 +212,13 @@ _Block.__index = _Block
 function _Block.create(battle_scheme, id, fire_type, condition,
                        active_weapon_selector, passive_weapon_selector, action)
    assert(id)
-   assert(fire_type)
-   assert(string.find(id, "%d+(%.?%d*)"))
+   assert(string.find(id, "%w+(%.?%w*)"))
 
-   local parent_id = string.find(id, "(%d+)(%.%d+)")
+   local parent_id = string.find(id, "(%w+)(%.%w+)")
    -- print("parent_id = " .. inspect(parent_id))
+   -- force using string types for id to avoid issues with lookup
+   -- in table by id
+   if (parent_id) then parent_id = tostring(parent_id) end
    local o = {
       id            = id,
       parent_id     = parent_id,
@@ -226,6 +228,7 @@ function _Block.create(battle_scheme, id, fire_type, condition,
       active        = active_weapon_selector,
       passive       = passive_weapon_selector,
       action        = action,
+      children      = {},
    }
    setmetatable(o, _Block)
    if (condition) then condition:set_block(o) end
@@ -239,14 +242,20 @@ function _Block:validate()
       assert(self.fire_type)
       assert(self.condition)
       self.condition:validate()
+   else
+      local parent_block = self.battle_scheme:_lookup_block(self.parent_id)
+      assert(parent_block)
+      assert(not self.fire_type)
+      if (self.condition) then self.condition:validate() end
    end
 end
 
 
 function BattleScheme.create(engine)
    local o = {
-      engine = engine,
-      block_for = {} -- k: block_id, value _Block object
+      engine      = engine,
+      block_for   = {}, -- all blocks, k: block_id, value _Block object
+      root_blocks = {}, -- blocks with parent = nil
    }
    setmetatable(o, BattleScheme)
 
@@ -346,8 +355,15 @@ end
 
 function BattleScheme:_create_block(id, fire_type, condition,
                                     active_weapon_selector, passive_weapon_selector, action)
+   assert(not self.block_for[id], "block " .. id .. " alredy exists")
    local b = _Block.create(self, id, fire_type, condition, active_weapon_selector, passive_weapon_selector, action)
    self.block_for[id] = b
+   if (not b.parent_id) then
+      table.insert(self.root_blocks, b)
+   else
+      local parent_block = self:_lookup_block(b.parent_id)
+      table.insert(parent_block.children, b)
+   end
    return b
 end
 

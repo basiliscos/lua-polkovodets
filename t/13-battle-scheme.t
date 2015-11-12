@@ -121,9 +121,18 @@ subtest("blocks",
         function()
            local condition = bs:_parse_condition("I.orientation == P.orientation")
            assert(condition)
-           local block = bs:_create_block('1', 'battle', condition)
-           ok(block)
-           block:validate()
+           local b_parent = bs:_create_block('1', 'battle', condition)
+           ok(b_parent)
+           b_parent:validate()
+
+           local b_child = bs:_create_block('1.1', nil,
+                                             bs:_parse_condition("I.category('wc_artil')"),
+                                             bs:_parse_condition("P.category('wc_hweap') || P.category('wc_antitank')"),
+                                             'fire'
+           )
+           ok(b_child)
+           b_child:validate()
+
         end
 )
 
