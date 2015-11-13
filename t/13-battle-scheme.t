@@ -15,7 +15,7 @@ subtest("parse condition",
         function()
            subtest("negation",
                    function()
-                      local r = bs:_parse_condition("!block('1.1')")
+                      local r = bs:_parse_condition('!block("1.1")')
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'Negation')
@@ -26,7 +26,7 @@ subtest("parse condition",
            )
            subtest("do not allow bare block",
                    function()
-                      local r = bs:_parse_condition("block('1.3')")
+                      local r = bs:_parse_condition('block("1.3")')
                       nok(r)
                    end
            )
@@ -34,7 +34,7 @@ subtest("parse condition",
 
            subtest("simple and",
                    function()
-                      local r = bs:_parse_condition("(!block('1.1') && !block('2.2'))")
+                      local r = bs:_parse_condition('(!block("1.1") && !block("2.2"))')
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'LogicalOperation')
@@ -45,7 +45,7 @@ subtest("parse condition",
 
            subtest("simple and",
                    function()
-                      local r = bs:_parse_condition("(!block('1.1') && !block('2.2'))")
+                      local r = bs:_parse_condition('(!block("1.1") && !block("2.2"))')
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'LogicalOperation')
@@ -56,7 +56,7 @@ subtest("parse condition",
 
            subtest("orientation eq",
                    function()
-                      local r = bs:_parse_condition("I.orientation == P.orientation")
+                      local r = bs:_parse_condition('I.orientation == P.orientation')
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'Relation')
@@ -67,7 +67,7 @@ subtest("parse condition",
 
            subtest("check state",
                    function()
-                      local r = bs:_parse_condition("I.state == 'A'")
+                      local r = bs:_parse_condition('I.state == "A"')
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'Relation')
@@ -80,7 +80,7 @@ subtest("parse condition",
 
            subtest("tripple and",
                    function()
-                      local r = bs:_parse_condition("((I.state == 'A' && P.state == 'D') && (I.orientation != P.orientation))")
+                      local r = bs:_parse_condition('((I.state == "A" && P.state == "D") && (I.orientation != P.orientation))')
                       print(inspect(r))
                       ok(r)
                       is(r.kind, 'LogicalOperation')
@@ -93,9 +93,9 @@ subtest("parse condition",
 
            subtest("non-valid cases",
                    function()
-                      nok(bs:_parse_condition("I.state == A'"))
-                      nok(bs:_parse_condition('I.state == "A"'))
-                      nok(bs:_parse_condition("I.state() == 'A'"))
+                      nok(bs:_parse_condition('I.state == A"'))
+                      nok(bs:_parse_condition("I.state == 'A'"))
+                      nok(bs:_parse_condition('I.state() == "A"'))
                    end
            )
         end
@@ -105,12 +105,12 @@ subtest("parse selection",
         function()
            subtest("simple selector",
                    function()
-                      ok(bs:_parse_selection("I.category('wc_artil')"))
-                      ok(bs:_parse_selection("!I.category('wc_tank')"))
-                      ok(bs:_parse_selection("P.category('wc_hweap') && P.category('wc_antitank')"))
-                      ok(bs:_parse_selection("P.category('wc_hweap') || P.category('wc_antitank')"))
-                      ok(bs:_parse_selection("I.category('wc_infant') || I.category('wc_hweap') || I.category('wc_antitank')"))
-                      ok(bs:_parse_selection("P.category('wc_infant') && !P.category('wc_tank')"))
+                      ok(bs:_parse_selection('I.category("wc_artil")'))
+                      ok(bs:_parse_selection('!I.category("wc_tank")'))
+                      ok(bs:_parse_selection('P.category("wc_hweap") && P.category("wc_antitank")'))
+                      ok(bs:_parse_selection('P.category("wc_hweap") || P.category("wc_antitank")'))
+                      ok(bs:_parse_selection('I.category("wc_infant") || I.category("wc_hweap") || I.category("wc_antitank")'))
+                      ok(bs:_parse_selection('P.category("wc_infant") && !P.category("wc_tank")'))
                    end
            )
         end
@@ -126,8 +126,8 @@ subtest("blocks",
            b_parent:validate()
 
            local b_child = bs:_create_block('1.1', nil,
-                                             bs:_parse_condition("I.category('wc_artil')"),
-                                             bs:_parse_condition("P.category('wc_hweap') || P.category('wc_antitank')"),
+                                             bs:_parse_condition('I.category("wc_artil")'),
+                                             bs:_parse_condition('P.category("wc_hweap") || P.category("wc_antitank")'),
                                              'fire'
            )
            ok(b_child)

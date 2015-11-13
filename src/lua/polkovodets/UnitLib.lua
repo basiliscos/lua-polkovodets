@@ -20,9 +20,11 @@ local UnitLib = {}
 UnitLib.__index = UnitLib
 
 local inspect = require('inspect')
+local BattleScheme = require 'polkovodets.BattleScheme'
 local Parser = require 'polkovodets.Parser'
 local Weapon = require 'polkovodets.Weapon'
 local UnitDefinition = require 'polkovodets.UnitDefinition'
+
 
 function UnitLib.create(engine)
    local o = {
@@ -122,6 +124,10 @@ function UnitLib:load(unit_file)
    end
    self.units.definitions = unit_definitions
 
+   -- load battle schema
+   local battle_scheme_file = parser:get_value('battle_scheme')
+   local battle_scheme = BattleScheme.create(engine)
+   battle_scheme:load(definitions_dir .. '/' .. battle_scheme_file)
 end
 
 return UnitLib

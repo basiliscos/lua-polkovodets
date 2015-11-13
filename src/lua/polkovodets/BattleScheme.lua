@@ -214,8 +214,13 @@ function _Block.create(battle_scheme, id, fire_type, condition,
    assert(id)
    assert(string.find(id, "%w+(%.?%w*)"))
 
-   local parent_id = string.find(id, "(%w+)(%.%w+)")
-   -- print("parent_id = " .. inspect(parent_id))
+   local parent_id
+   for value in string.gmatch(id, '%w+%.') do
+      parent_id = (parent_id or '') .. value
+   end
+   -- remove the last dot
+   if (parent_id) then parent_id = string.sub(parent_id, 0, #parent_id - 1) end
+   --print("parent_id = " .. inspect(parent_id))
    -- force using string types for id to avoid issues with lookup
    -- in table by id
    if (parent_id) then parent_id = tostring(parent_id) end
@@ -253,7 +258,7 @@ end
 
 function BattleScheme.create(engine)
    local o = {
-      engine      = engine,
+      -- engine      = engine,
       block_for   = {}, -- all blocks, k: block_id, value _Block object
       root_blocks = {}, -- blocks with parent = nil
    }
@@ -272,11 +277,11 @@ function BattleScheme.create(engine)
       -- Lexical Elements
       local Space = lpeg.S(" ")^0
       local BareString = ((lpeg.R("09") + lpeg.R("az", "AZ") +lpeg.S("._"))^0)
-      local Literal = (lpeg.P("'") * BareString * lpeg.P("'"))
+      local Literal = (lpeg.P('"') * BareString * lpeg.P('"'))
       local Object = (lpeg.P("I") + lpeg.P("P"))
       local Property = (lpeg.C(Object) * lpeg.P('.') * lpeg.C((lpeg.R("09") + lpeg.R("az", "AZ"))^1)) / property_c
-      local Value  = (lpeg.P("'") * (BareString/literal_c) * lpeg.P("'")) + Property
-      local Block = (lpeg.P("block(") * (lpeg.P("'") * lpeg.C(BareString) * lpeg.P("'"))  * lpeg.P(")"))/ block_c
+      local Value  = (lpeg.P('"') * (BareString/literal_c) * lpeg.P('"')) + Property
+      local Block = (lpeg.P("block(") * (lpeg.P('"') * lpeg.C(BareString) * lpeg.P('"'))  * lpeg.P(")"))/ block_c
       local Relation = Value * Space * lpeg.C(lpeg.P("==") + lpeg.P("!=")) * Space * Value / relation_c
 
       -- Grammar
@@ -319,10 +324,10 @@ function BattleScheme.create(engine)
       -- Lexical Elements
       local Space = lpeg.S(" ")^0
       local BareString = ((lpeg.R("09") + lpeg.R("az", "AZ") +lpeg.S("_"))^0)
-      local Literal = (lpeg.P("'") * BareString * lpeg.P("'"))
+      local Literal = (lpeg.P('"') * BareString * lpeg.P('"'))
       local Object = (lpeg.P("I") + lpeg.P("P"))
       local Selector = (lpeg.C(Object) * lpeg.P('.') * lpeg.C(BareString)
-                           * lpeg.P("('") * lpeg.C(BareString) * lpeg.P("')"))  / selector_c
+                           * lpeg.P('("') * lpeg.C(BareString) * lpeg.P('")'))  / selector_c
       local SelectorNegation = (lpeg.P('!') * Selector) / negation_c
       local SelectorAtom = Selector + SelectorNegation
 
@@ -371,5 +376,42 @@ function BattleScheme:_lookup_block(id)
    return self.block_for[id]
 end
 
+function BattleScheme:load(path)
+   local parser = Parser.create(path)
+   for idx, data in pairs(parser:get_raw_data()) do
+      local id = assert(data.block_id)
+      local fire_type = data.fire_type
+      local action = data.action
+      local condition_str = data.condition
+      local active_weapon_selector = data.active_weapon
+      local passive_weapon_selector = data.passive_weapon
+
+      local condition, active_weapon, passive_weapon
+      if (condition_str) then
+         condition = self:_parse_condition(condition_str)
+         assert(condition, "the condtion " .. condition_str .. " isn't valid")
+      end
+
+      if (active_weapon_selector) then
+         active_weapon = self:_parse_selection(active_weapon_selector)
+         assert(active_weapon, "active weapon " .. active_weapon_selector .. " isn't valid")
+      end
+
+      if (passive_weapon_selector) then
+         passive_weapon = self:_parse_selection(passive_weapon_selector)
+         assert(passive_weapon, "passive weapon " .. passive_weapon_selector .. " isn't valid")
+      end
+
+      local block = self:_create_block(
+         id,
+         fire_type,
+         condition,
+         active_weapon,
+         passive_weapon,
+         action
+      )
+   end
+   -- print(inspect(self.root_blocks))
+end
 
 return BattleScheme
