@@ -13,47 +13,6 @@ local bs = BattleScheme.create(engine)
 
 subtest("parse condition",
         function()
-           subtest("negation",
-                   function()
-                      local r = bs:_parse_condition('!block("1.1")')
-                      print(inspect(r))
-                      ok(r)
-                      is(r.kind, 'Negation')
-                      ok(r.expr)
-                      is(r.expr.kind, 'Block')
-                      is(r.expr.id, '1.1')
-                   end
-           )
-           subtest("do not allow bare block",
-                   function()
-                      local r = bs:_parse_condition('block("1.3")')
-                      nok(r)
-                   end
-           )
-
-
-           subtest("simple and",
-                   function()
-                      local r = bs:_parse_condition('(!block("1.1") && !block("2.2"))')
-                      print(inspect(r))
-                      ok(r)
-                      is(r.kind, 'LogicalOperation')
-                      is(r.operator, '&&')
-                      is(r.e2.expr.id, '2.2')
-                   end
-           )
-
-           subtest("simple and",
-                   function()
-                      local r = bs:_parse_condition('(!block("1.1") && !block("2.2"))')
-                      print(inspect(r))
-                      ok(r)
-                      is(r.kind, 'LogicalOperation')
-                      is(r.operator, '&&')
-                      is(r.e2.expr.id, '2.2')
-                   end
-           )
-
            subtest("orientation eq",
                    function()
                       local r = bs:_parse_condition('I.orientation == P.orientation')

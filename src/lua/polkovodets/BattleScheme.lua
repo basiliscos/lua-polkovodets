@@ -20,20 +20,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Formal grammar definition:
 
-Expr       ← ATOM / NEGATION / '(' EXPR ')' / L_RELATION
+Expr       ← RELATION / '(' EXPR ')' / L_RELATION
 L_RELATION ← Expr (('&&' / '||') Expr)*
-ATOM       ← BLOCK / RELATION
-BLOCK_REF  ← 'block(' BLOCK_ID ')'
 RELATION   ← VALUE ('==' / '!=') VALUE
-NEGATION   ← '!' Expr
 
-BLOCK_ID ← ('.' ? [0-9]+)+
 VALUE    ← LITERAL / OBJECT '.' PROPERTY / OBJECT '.' METHOD '(' (ARG (',' ARG)*)* ')'
 LITERAL  ← '[a-Z0-9_]+'
 OBJECT   ← 'I' | 'P'
 PROPERTY ← [a-Z0-9_]+
 ARG      ← LITERAL
-
 
 ]]--
 
@@ -74,25 +69,6 @@ end
 
 function _PropertyCondition:validate()
    assert((self.property == 'state') or (self.property == 'orientation'))
-end
-
---[[ Block Condition class ]]--
-local _BlockCondition = {}
-_BlockCondition.__index = _BlockCondition
-setmetatable(_BlockCondition, _ConditionBase)
-
-function _BlockCondition.create(id)
-   local t = {
-      kind = 'Block',
-      id   = id
-   }
-   return setmetatable(t, _BlockCondition)
-end
-
-function _BlockCondition:validate()
-   local bs = self.block.battle_scheme
-   local block = bs:_lookup_block(self.id)
-   assert(block)
 end
 
 --[[ Literal Condition class ]]--
@@ -214,16 +190,10 @@ function _Block.create(battle_scheme, id, fire_type, condition,
    assert(id)
    assert(string.find(id, "%w+(%.?%w*)"))
 
-   local parent_id
-   for value in string.gmatch(id, '%w+%.') do
-      parent_id = (parent_id or '') .. value
+   local parent_id_start, parent_id_end = string.find(id, '%w+%.')
+   if (parent_id_end) then
+      parent_id = string.sub(id, parent_id_start, parent_id_end - parent_id_start)
    end
-   -- remove the last dot
-   if (parent_id) then parent_id = string.sub(parent_id, 0, #parent_id - 1) end
-   --print("parent_id = " .. inspect(parent_id))
-   -- force using string types for id to avoid issues with lookup
-   -- in table by id
-   if (parent_id) then parent_id = tostring(parent_id) end
    local o = {
       id            = id,
       parent_id     = parent_id,
@@ -258,7 +228,7 @@ end
 
 function BattleScheme.create(engine)
    local o = {
-      -- engine      = engine,
+      engine      = engine,
       block_for   = {}, -- all blocks, k: block_id, value _Block object
       root_blocks = {}, -- blocks with parent = nil
    }
@@ -269,7 +239,6 @@ function BattleScheme.create(engine)
       -- capture functions
       local property_c = function(o,v) return _PropertyCondition.create(o,v) end
       local literal_c = function(v) return _LiteralCondition.create(v) end
-      local block_c = function(id) return _BlockCondition.create(id) end
       local relation_c = function(v1, op, v2) return  _RelationCondition.create(op, v1, v2) end
       local negation_c = function(e) return _NegationCondition.create(e) end
       local l_operation_c = function(e1, op, e2) return _LogicalOperationCondition.create(op, e1, e2) end
@@ -281,7 +250,6 @@ function BattleScheme.create(engine)
       local Object = (lpeg.P("I") + lpeg.P("P"))
       local Property = (lpeg.C(Object) * lpeg.P('.') * lpeg.C((lpeg.R("09") + lpeg.R("az", "AZ"))^1)) / property_c
       local Value  = (lpeg.P('"') * (BareString/literal_c) * lpeg.P('"')) + Property
-      local Block = (lpeg.P("block(") * (lpeg.P('"') * lpeg.C(BareString) * lpeg.P('"'))  * lpeg.P(")"))/ block_c
       local Relation = Value * Space * lpeg.C(lpeg.P("==") + lpeg.P("!=")) * Space * Value / relation_c
 
       -- Grammar
@@ -289,12 +257,9 @@ function BattleScheme.create(engine)
          "Expr";
          Expr
             = Relation
-            + lpeg.V("Block_Negation")
             + lpeg.V("Negation")
             + (Space * lpeg.P('(') * Space * lpeg.V("Expr") * Space * lpeg.P(')'))
             + lpeg.V("Logical_Operation"),
-         Block_Negation
-            = (lpeg.P('!')^1 * Space * Block) / negation_c,
          Negation
             = (lpeg.P('!')^1 * Space * lpeg.V('Expr')) / negation_c,
          Logical_Operation
