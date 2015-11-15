@@ -127,12 +127,12 @@ local _LogicalOperationCondition = {}
 _LogicalOperationCondition.__index = _LogicalOperationCondition
 setmetatable(_LogicalOperationCondition, _ConditionBase)
 
-function _LogicalOperationCondition.create(operator, e1, e2)
+function _LogicalOperationCondition.create(operator, relations)
+  print("o ==" .. operator)
    local t = {
-      kind     = 'LogicalOperation',
-      operator = operator,
-      e1       = e1,
-      e2       = e2,
+      kind      = 'LogicalOperation',
+      operator  = operator,
+      relations = relations,
    }
    return setmetatable(t, _LogicalOperationCondition)
 end
@@ -191,6 +191,7 @@ function _Block.create(battle_scheme, id, fire_type, condition,
    assert(string.find(id, "%w+(%.?%w*)"))
 
    local parent_id_start, parent_id_end = string.find(id, '%w+%.')
+   local parent_id
    if (parent_id_end) then
       parent_id = string.sub(id, parent_id_start, parent_id_end - parent_id_start)
    end
@@ -225,6 +226,12 @@ function _Block:validate()
    end
 end
 
+function _Block:matches(fire_type, i_unit, p_unit)
+  if (self.fire_type == fire_type) then
+    return self.condition:matches(i_unit, p_unit)
+  end
+end
+
 
 function BattleScheme.create(engine)
    local o = {
@@ -241,7 +248,15 @@ function BattleScheme.create(engine)
       local literal_c = function(v) return _LiteralCondition.create(v) end
       local relation_c = function(v1, op, v2) return  _RelationCondition.create(op, v1, v2) end
       local negation_c = function(e) return _NegationCondition.create(e) end
-      local l_operation_c = function(e1, op, e2) return _LogicalOperationCondition.create(op, e1, e2) end
+      local l_operation_c = function(...)
+         local args = { ... }
+         local operator = args[2]
+         local relations = {}
+         for idx, value in pairs(args) do
+            if (idx % 2 == 1) then table.insert(relations, value) end
+         end
+         return _LogicalOperationCondition.create(operator, relations)
+      end
 
       -- Lexical Elements
       local Space = lpeg.S(" ")^0
@@ -251,21 +266,20 @@ function BattleScheme.create(engine)
       local Property = (lpeg.C(Object) * lpeg.P('.') * lpeg.C((lpeg.R("09") + lpeg.R("az", "AZ"))^1)) / property_c
       local Value  = (lpeg.P('"') * (BareString/literal_c) * lpeg.P('"')) + Property
       local Relation = Value * Space * lpeg.C(lpeg.P("==") + lpeg.P("!=")) * Space * Value / relation_c
+      local RelationAtom = (lpeg.P('(') * Space * Relation * Space * lpeg.P(')')) + Relation
 
       -- Grammar
       local condition_grammar = lpeg.P{
          "Expr";
          Expr
-            = Relation
+            = lpeg.V("Logical_Operation")
             + lpeg.V("Negation")
-            + (Space * lpeg.P('(') * Space * lpeg.V("Expr") * Space * lpeg.P(')'))
-            + lpeg.V("Logical_Operation"),
+            + RelationAtom
+            + (Space * lpeg.P('(') * Space * lpeg.V("Expr") * Space * lpeg.P(')')),
          Negation
-            = (lpeg.P('!')^1 * Space * lpeg.V('Expr')) / negation_c,
+            = (lpeg.P('!') * Space * lpeg.V('Expr')) / negation_c,
          Logical_Operation
-            = lpeg.P('(') * Space * lpeg.V('Expr') * Space
-            * lpeg.C(lpeg.P('&&') + lpeg.P('&&')) * Space * lpeg.V('Expr')
-            * Space * lpeg.P(')') / l_operation_c,
+            = (RelationAtom * (Space * lpeg.C(lpeg.P('&&')) * Space * RelationAtom)^1) / l_operation_c,
       }
 
       o.condition_grammar = condition_grammar
@@ -309,7 +323,8 @@ function BattleScheme.create(engine)
 
       o.selection_grammar = selection_grammar
    end
-
+   -- make battle scheme available via Engine
+   engine.battle_scheme = o
    return o
 end
 
@@ -376,7 +391,16 @@ function BattleScheme:load(path)
          action
       )
    end
+   print("Battle scheme has been loaded, " .. #self.root_blocks .. " root blocks")
    -- print(inspect(self.root_blocks))
+end
+
+function BattleScheme:_find_block(initiator_unit, passive_unit, fire_type)
+  for idx, block in pairs(self.root_blocks) do
+    if (block:matches(fire_type, initiator_unit, passive_unit)) then
+      return block
+    end
+  end
 end
 
 return BattleScheme

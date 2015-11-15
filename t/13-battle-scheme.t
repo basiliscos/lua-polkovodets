@@ -39,14 +39,15 @@ subtest("parse condition",
 
            subtest("tripple and",
                    function()
-                      local r = bs:_parse_condition('((I.state == "A" && P.state == "D") && (I.orientation != P.orientation))')
-                      print(inspect(r))
+                      -- local r = bs:_parse_condition('(I.state == "A") && (P.state == "D") && (I.orientation != P.orientation)')
+                      local r = bs:_parse_condition('(I.state == "A") && (P.state == "D") && (I.orientation != P.orientation)')
+                      print("r == " .. inspect(r))
                       ok(r)
                       is(r.kind, 'LogicalOperation')
                       is(r.operator, '&&')
-                      is(r.e2.operator, '!=')
-                      is(r.e2.v1.object, 'I')
-                      is(r.e2.v2.object, 'P')
+                      is(r.relations[3].operator, '!=')
+                      is(r.relations[3].v1.object, 'I')
+                      is(r.relations[3].v2.object, 'P')
                    end
            )
 
@@ -57,6 +58,7 @@ subtest("parse condition",
                       nok(bs:_parse_condition('I.state() == "A"'))
                    end
            )
+
         end
 )
 
@@ -94,6 +96,5 @@ subtest("blocks",
 
         end
 )
-
 
 done_testing()
