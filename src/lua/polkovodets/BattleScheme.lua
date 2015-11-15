@@ -71,6 +71,12 @@ function _PropertyCondition:validate()
    assert((self.property == 'state') or (self.property == 'orientation'))
 end
 
+function _PropertyCondition:get_value(I_unit, P_unit)
+  local o = (self.object == 'I') and I_unit or P_unit
+  local value = o.data[self.property]
+  return value
+end
+
 --[[ Literal Condition class ]]--
 local _LiteralCondition = {}
 _LiteralCondition.__index = _LiteralCondition
@@ -84,6 +90,7 @@ function _LiteralCondition.create(value)
    return setmetatable(t, _LiteralCondition)
 end
 function _LiteralCondition:validate() end
+function _LiteralCondition:get_value(I_unit, P_unit) return self.value end
 
 --[[ Relation Condition class ]]--
 local _RelationCondition = {}
@@ -103,6 +110,15 @@ end
 function _RelationCondition:validate()
    self.v1:validate()
    self.v2:validate()
+end
+
+function _RelationCondition:matches(I_unit, P_unit)
+  local v1 = self.v1:get_value(I_unit, P_unit)
+  local v2 = self.v2:get_value(I_unit, P_unit)
+  assert(type(v1) == 'string')
+  assert(type(v2) == 'string')
+  if (self.operator == '==') then return v1 == v2
+  else return v1 ~= v2 end
 end
 
 --[[ Negation Condition class ]]--
@@ -128,7 +144,6 @@ _LogicalOperationCondition.__index = _LogicalOperationCondition
 setmetatable(_LogicalOperationCondition, _ConditionBase)
 
 function _LogicalOperationCondition.create(operator, relations)
-  print("o ==" .. operator)
    local t = {
       kind      = 'LogicalOperation',
       operator  = operator,
@@ -138,8 +153,21 @@ function _LogicalOperationCondition.create(operator, relations)
 end
 
 function _LogicalOperationCondition:validate()
-   self.e1:validate()
-   self.e2:validate()
+    for idx, relation in pairs(self.relations) do
+      relation:validate()
+    end
+end
+
+function _LogicalOperationCondition:matches(I_unit, P_unit)
+  local result = false
+  if (self.operator == '&&') then
+    result = #self.relations > 0
+    for idx, relation in pairs(self.relations) do
+      local r_match = relation:matches(I_unit, P_unit)
+      result = result and r_match
+    end
+  end
+  return result
 end
 
 -- Selector classes
