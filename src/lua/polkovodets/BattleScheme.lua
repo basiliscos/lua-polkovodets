@@ -117,8 +117,11 @@ function _RelationCondition:matches(I_unit, P_unit)
   local v2 = self.v2:get_value(I_unit, P_unit)
   assert(type(v1) == 'string')
   assert(type(v2) == 'string')
-  if (self.operator == '==') then return v1 == v2
-  else return v1 ~= v2 end
+  local result = (self.operator == '==')
+    and (v1 == v2)
+    or  (v1 ~= v2)
+  -- print("result " .. (result and 't' or 'f'))
+  return result
 end
 
 --[[ Negation Condition class ]]--
@@ -185,6 +188,53 @@ function _Selector.create(object, method, specification)
    return setmetatable(t, _Selector)
 end
 
+function _Selector:select_weapons(role, ctx)
+  -- select object and enemy data
+  local o = (self.object == 'I') and ctx.i or ctx.p
+  local e = (self.object == 'I') and ctx.p or ctx.i
+  assert(o)
+  assert(e)
+
+  local select_by_selector = function(weapon_instance)
+    if (self.method == 'category') then
+      return weapon_instance.weapon.category == self.specification
+    end
+  end
+
+  local select_by_filter = function(filter)
+    local instances = {}
+    local quantities = {}
+    for idx, wi in pairs(o.weapon_instances) do
+      if (select_by_selector(wi) and filter(wi)) then
+        table.insert(instances, wi)
+        quantities[wi.uniq_id] = o.current_quantities[wi.uniq_id]
+      end
+    end
+    -- print("selected by role " .. role .. " " .. inspect(instances))
+    return instances, quantities
+  end
+
+  -- For active weapon we additionally ensure that weapon is
+  -- capable to shoot on the required range.
+  -- for passive weapon we just ensure, that it (still) exists
+  local role_filter
+  if (role == 'active') then
+    local e_layer = e.layer
+    role_filter = function(weapon_instance)
+        local range_ok = weapon_instance.weapon.data.range[e_layer] >= ctx.range
+        local quantities_ok = o.current_quantities[weapon_instance.uniq_id] > 0
+        return range_ok and quantities_ok
+    end
+  else
+    role_filter = function(weapon_instance)
+        local quantities_ok = o.current_quantities[weapon_instance.uniq_id] > 0
+        return quantities_ok
+    end
+  end
+
+  return select_by_filter(role_filter)
+end
+
 --[[ SelectorNegation class ]]--
 local _SelectorNegation = {}
 _SelectorNegation.__index = _SelectorNegation
@@ -210,8 +260,26 @@ function _SelectorOperation.create(operator, selectors)
    return setmetatable(t, _SelectorOperation)
 end
 
+
+function _SelectorOperation:select_weapons(role, ctx)
+  local weapons = {}
+  local quantities = {}
+  if (self.operator == '||') then
+    for idx, selector in pairs(self.selectors) do
+      local weapon_instances, weapon_quantities = selector:select_weapons(role, ctx)
+      for idx2, wi in pairs(weapon_instances) do
+        table.insert(weapons, wi)
+        quantities[wi.uniq_id] = weapon_quantities[wi.uniq_id]
+      end
+    end
+  end
+  return weapons, quantities
+end
+
+--[[ Block class ]]--
 local _Block = {}
 _Block.__index = _Block
+
 
 function _Block.create(battle_scheme, id, fire_type, condition,
                        active_weapon_selector, passive_weapon_selector, action)
@@ -257,6 +325,63 @@ end
 function _Block:matches(fire_type, i_unit, p_unit)
   if (self.fire_type == fire_type) then
     return self.condition:matches(i_unit, p_unit)
+  end
+end
+
+function _Block:select_pair(ctx)
+  assert(self.parent_id)
+  local a_weapons, a_quantities = self.active:select_weapons('active', ctx)
+  if (#a_weapons > 0) then
+    local p_weapons, p_quantities = self.passive:select_weapons('passive', ctx)
+    if (#p_weapons > 0) then
+      return {
+        a = {
+          weapons    = a_weapons,
+          quantities = a_quantities
+        },
+        p = {
+          weapons    = p_weapons,
+          quantities = p_quantities,
+        },
+        action  = self.action,
+      }
+    end
+  end
+end
+
+function _Block:perform_battle(i_unit, p_unit, fire_type)
+  local range = i_unit.tile:distance_to(p_unit.tile)
+  local i_weapon_instances = i_unit:_united_staff()
+  local p_weapon_instances = p_unit:_united_staff()
+
+  -- prepare context
+  local ctx = {
+    range              = range,
+    i = {
+      layer              = i_unit.data.layer,
+      weapon_instances   = i_weapon_instances,
+      current_quantities = {},
+    },
+    p = {
+      layer              = p_unit.data.layer,
+      weapon_instances   = p_weapon_instances,
+      current_quantities = {},
+    },
+  }
+  -- initialize weapon quantities
+  for idx, wi in pairs(i_weapon_instances) do
+    ctx.i.current_quantities[wi.uniq_id] = wi.data.quantity
+  end
+  for idx, wi in pairs(p_weapon_instances) do
+    ctx.p.current_quantities[wi.uniq_id] = wi.data.quantity
+  end
+
+  for idx, block in pairs(self.children) do
+    print("trying block " .. block.id)
+    local pair = block:select_pair(ctx)
+    if (pair) then
+      print("matching pair = " .. inspect(pair))
+    end
   end
 end
 
@@ -425,6 +550,7 @@ end
 
 function BattleScheme:_find_block(initiator_unit, passive_unit, fire_type)
   for idx, block in pairs(self.root_blocks) do
+    print("examining " .. block.id)
     if (block:matches(fire_type, initiator_unit, passive_unit)) then
       return block
     end
