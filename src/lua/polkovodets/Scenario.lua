@@ -155,7 +155,7 @@ function Scenario:load(file)
    end
 
 
-   engine.all_units = all_units
+   engine:set_units(all_units)
    engine:set_scenario(self)
 end
 

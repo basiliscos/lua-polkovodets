@@ -129,6 +129,21 @@ function Engine:set_players(players)
    self:_set_current_player(1)
 end
 
+function Engine:set_units(units)
+  self.all_units = units
+  local unit_for = {}
+  for idx, unit in pairs(units) do
+    unit_for[unit.id] = unit
+  end
+  self.unit_for = unit_for
+end
+
+function Engine:get_unit(id)
+  local u = self.unit_for[id]
+  assert(u)
+  return u
+end
+
 function Engine:_set_current_player(order)
    local player
    for i, p in pairs(self.player_for) do

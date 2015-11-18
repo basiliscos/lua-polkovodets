@@ -36,6 +36,7 @@ ARG      ← LITERAL
 local Parser = require 'polkovodets.Parser'
 local inspect = require('inspect')
 local lpeg = require('lpeg')
+local _ = require ("moses")
 
 local BattleScheme = {}
 BattleScheme.__index = BattleScheme
@@ -334,14 +335,19 @@ function _Block:select_pair(ctx)
   if (#a_weapons > 0) then
     local p_weapons, p_quantities = self.passive:select_weapons('passive', ctx)
     if (#p_weapons > 0) then
+      -- by default all weapons shot, and no casualities
       return {
         a = {
-          weapons    = a_weapons,
-          quantities = a_quantities
+          weapons     = a_weapons,
+          quantities  = a_quantities,
+          shots       = _.clone(a_quantities),
+          casualities = _.map(a_quantities, function(k, v) return 0 end),
         },
         p = {
-          weapons    = p_weapons,
-          quantities = p_quantities,
+          weapons     = p_weapons,
+          quantities  = p_quantities,
+          shots       = _.clone(p_quantities),
+          casualities = _.map(p_quantities, function(k, v) return 0 end),
         },
         action  = self.action,
       }
@@ -381,6 +387,7 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
     local pair = block:select_pair(ctx)
     if (pair) then
       print("matching pair = " .. inspect(pair))
+      self.battle_scheme.engine.battle_formula:perform_battle(pair)
     end
   end
 end

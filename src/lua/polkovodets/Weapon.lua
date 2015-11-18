@@ -32,7 +32,18 @@ function Weapon.create(engine, data)
    local target_type = assert(data.target_type)
    assert(data.movement >= 0)
    local nation = assert(data.nation)
-   local attacks = assert(data.attack)
+
+   assert(data.attack)
+   local attacks = {}
+   for k, v in pairs(data.attack) do
+    attacks[k] = tonumber(v)
+   end
+
+   assert(data.defend)
+   local defends = {}
+   for k, v in pairs(data.defend) do
+    defends[k] = tonumber(v)
+   end
 
    assert(data.range)
    local range = {}
@@ -68,6 +79,7 @@ function Weapon.create(engine, data)
       movement_type = movement_type,
       target_type   = target_type,
       attacks       = attacks,
+      defends       = defends,
       flags         = flags,
       data          = {
          range    = range,
