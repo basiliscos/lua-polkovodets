@@ -204,15 +204,13 @@ function _Selector:select_weapons(role, ctx)
 
   local select_by_filter = function(filter)
     local instances = {}
-    local quantities = {}
     for idx, wi in pairs(o.weapon_instances) do
       if (select_by_selector(wi) and filter(wi)) then
         table.insert(instances, wi)
-        quantities[wi.uniq_id] = o.current_quantities[wi.uniq_id]
       end
     end
     -- print("selected by role " .. role .. " " .. inspect(instances))
-    return instances, quantities
+    return instances
   end
 
   -- For active weapon we additionally ensure that weapon is
@@ -223,12 +221,12 @@ function _Selector:select_weapons(role, ctx)
     local e_layer = e.layer
     role_filter = function(weapon_instance)
         local range_ok = weapon_instance.weapon.data.range[e_layer] >= ctx.range
-        local quantities_ok = o.current_quantities[weapon_instance.uniq_id] > 0
+        local quantities_ok = weapon_instance.data.quantity > 0
         return range_ok and quantities_ok
     end
   else
     role_filter = function(weapon_instance)
-        local quantities_ok = o.current_quantities[weapon_instance.uniq_id] > 0
+        local quantities_ok = weapon_instance.data.quantity > 0
         return quantities_ok
     end
   end
@@ -264,17 +262,15 @@ end
 
 function _SelectorOperation:select_weapons(role, ctx)
   local weapons = {}
-  local quantities = {}
   if (self.operator == '||') then
     for idx, selector in pairs(self.selectors) do
-      local weapon_instances, weapon_quantities = selector:select_weapons(role, ctx)
+      local weapon_instances = selector:select_weapons(role, ctx)
       for idx2, wi in pairs(weapon_instances) do
         table.insert(weapons, wi)
-        quantities[wi.uniq_id] = weapon_quantities[wi.uniq_id]
       end
     end
   end
-  return weapons, quantities
+  return weapons
 end
 
 --[[ Block class ]]--
@@ -331,23 +327,24 @@ end
 
 function _Block:select_pair(ctx)
   assert(self.parent_id)
-  local a_weapons, a_quantities = self.active:select_weapons('active', ctx)
+  local a_weapons= self.active:select_weapons('active', ctx)
   if (#a_weapons > 0) then
-    local p_weapons, p_quantities = self.passive:select_weapons('passive', ctx)
+    local p_weapons = self.passive:select_weapons('passive', ctx)
     if (#p_weapons > 0) then
       -- by default all weapons shot, and no casualities
+      local a_shots, p_shots = {}, {}
+      _.each(a_weapons, function(k, wi) a_shots[wi.uniq_id] = wi.data.quantity end)
+      _.each(p_weapons, function(k, wi) p_shots[wi.uniq_id] = wi.data.quantity end)
       return {
         a = {
           weapons     = a_weapons,
-          quantities  = a_quantities,
-          shots       = _.clone(a_quantities),
-          casualities = _.map(a_quantities, function(k, v) return 0 end),
+          shots       = a_shots,
+          casualities = _.map(a_shots, function(k, v) return 0 end),
         },
         p = {
           weapons     = p_weapons,
-          quantities  = p_quantities,
-          shots       = _.clone(p_quantities),
-          casualities = _.map(p_quantities, function(k, v) return 0 end),
+          shots       = p_shots,
+          casualities = _.map(p_shots, function(k, v) return 0 end),
         },
         action  = self.action,
       }
@@ -366,21 +363,12 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
     i = {
       layer              = i_unit.data.layer,
       weapon_instances   = i_weapon_instances,
-      current_quantities = {},
     },
     p = {
       layer              = p_unit.data.layer,
       weapon_instances   = p_weapon_instances,
-      current_quantities = {},
     },
   }
-  -- initialize weapon quantities
-  for idx, wi in pairs(i_weapon_instances) do
-    ctx.i.current_quantities[wi.uniq_id] = wi.data.quantity
-  end
-  for idx, wi in pairs(p_weapon_instances) do
-    ctx.p.current_quantities[wi.uniq_id] = wi.data.quantity
-  end
 
   for idx, block in pairs(self.children) do
     print("trying block " .. block.id)

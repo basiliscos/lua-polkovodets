@@ -63,8 +63,8 @@ end
 function BattleFormula:perform_battle(pair)
   print("performing " .. pair.action)
 
-  local available_active = _.clone(pair.a.weapons)
-  local available_passive = _.clone(pair.p.weapons)
+  local available_active = _.clone(pair.a.weapons, true)
+  local available_passive = _.clone(pair.p.weapons, true)
 
   local select_weapons = function()
     local iterator = function(state, value) -- ignored
@@ -80,12 +80,11 @@ function BattleFormula:perform_battle(pair)
   local update_availabiliy = function(a_idx, p_idx)
     local wi_a = available_active[a_idx]
     local wi_p = available_passive[p_idx]
-    if ( (pair.a.casualities[wi_a.uniq_id] == pair.a.quantities[wi_a.uniq_id])
-        or (pair.a.shots[wi_a.uniq_id])) then
+    if ((wi_a.data.quantity > 0) or (pair.a.shots[wi_a.uniq_id])) then
       table.remove(available_active, a_idx)
     end
 
-    if (pair.p.casualities[wi_p.uniq_id] == pair.p.quantities[wi_p.uniq_id]) then
+    if (wi_p.data.quantity > 0) then
       table.remove(available_passive, p_idx)
     end
   end
@@ -101,23 +100,21 @@ function BattleFormula:perform_battle(pair)
     local defence = wi_p.weapon.defends[attacks_from_layer]
     local attack = wi_a.weapon.attacks[p_target_type]
     local ad = attack/defence
-    print("ad = " .. ad)
+    -- print("ad = " .. ad)
     local targets = math.modf(ad)
     local p = probability_fn(ad)
     print(wi_a.uniq_id .. " hits " .. targets .. " target(s) with probability " .. p)
-    local quant_p = p_side.quantities[wi_p.uniq_id]
     local casualities_p = p_side.casualities[wi_p.uniq_id]
     -- active shoots to passive
-    while ((quant_p > 0) and (a_side.shots[wi_a.uniq_id] > 0)) do
+    while ((wi_p.data.quantity > 0) and (a_side.shots[wi_a.uniq_id] > 0)) do
       a_side.shots[wi_a.uniq_id] = a_side.shots[wi_a.uniq_id] - 1
       local r = math.random()
       if (r <= p) then
         casualities_p = casualities_p + 1
-        quant_p = quant_p - 1
+        wi_p.data.quantity = wi_p.data.quantity - 1
       end
     end
     p_side.casualities[wi_p.uniq_id] = casualities_p
-    p_side.quantities[wi_p.uniq_id] = quant_p
   end
 
   for a_idx, p_idx in select_weapons() do
@@ -136,6 +133,7 @@ function BattleFormula:perform_battle(pair)
         .. ", p:" .. inspect(pair.p.casualities))
   print("remaining shots a:" .. inspect(pair.a.shots)
         .. ", p:" .. inspect(pair.p.shots))
+  print(inspect(pair.a.weapons[1].data))
 end
 
 return BattleFormula
