@@ -190,7 +190,7 @@ function _Selector.create(object, method, specification)
 end
 
 function _Selector:select_weapons(role, ctx)
-  -- select object and enemy data
+  -- select object and  side and enemy data
   local o = (self.object == 'I') and ctx.i or ctx.p
   local e = (self.object == 'I') and ctx.p or ctx.i
   assert(o)
@@ -210,7 +210,7 @@ function _Selector:select_weapons(role, ctx)
       end
     end
     -- print("selected by role " .. role .. " " .. inspect(instances))
-    return instances
+    return instances, o
   end
 
   -- For active weapon we additionally ensure that weapon is
@@ -262,15 +262,22 @@ end
 
 function _SelectorOperation:select_weapons(role, ctx)
   local weapons = {}
+  local selected_side
   if (self.operator == '||') then
     for idx, selector in pairs(self.selectors) do
-      local weapon_instances = selector:select_weapons(role, ctx)
+      local weapon_instances, side = selector:select_weapons(role, ctx)
+      assert(side)
+      if (not selected_side) then
+        selected_side = side
+      else
+        assert(selected_side == side)
+      end
       for idx2, wi in pairs(weapon_instances) do
         table.insert(weapons, wi)
       end
     end
   end
-  return weapons
+  return weapons, selected_side
 end
 
 --[[ Block class ]]--
@@ -327,24 +334,22 @@ end
 
 function _Block:select_pair(ctx)
   assert(self.parent_id)
-  local a_weapons= self.active:select_weapons('active', ctx)
+  local a_weapons, a_side = self.active:select_weapons('active', ctx)
   if (#a_weapons > 0) then
-    local p_weapons = self.passive:select_weapons('passive', ctx)
+    local p_weapons, p_side = self.passive:select_weapons('passive', ctx)
     if (#p_weapons > 0) then
-      -- by default all weapons shot, and no casualities
-      local a_shots, p_shots = {}, {}
-      _.each(a_weapons, function(k, wi) a_shots[wi.uniq_id] = wi.data.quantity end)
-      _.each(p_weapons, function(k, wi) p_shots[wi.uniq_id] = wi.data.quantity end)
       return {
         a = {
           weapons     = a_weapons,
-          shots       = a_shots,
-          casualities = _.map(a_shots, function(k, v) return 0 end),
+          shots       = a_side.shots,
+          casualities = a_side.casualities,
+          side        = a_side,
         },
         p = {
           weapons     = p_weapons,
-          shots       = p_shots,
-          casualities = _.map(p_shots, function(k, v) return 0 end),
+          shots       = p_side.shots,
+          casualities = p_side.casualities,
+          side        = p_side,
         },
         action  = self.action,
       }
@@ -357,16 +362,24 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
   local i_weapon_instances = i_unit:_united_staff()
   local p_weapon_instances = p_unit:_united_staff()
 
-  -- prepare context
+  -- prepare context; by default all weapons do shot, and no casualities
+  local i_shots, p_shots = {}, {}
+  _.each(i_weapon_instances, function(k, wi) i_shots[wi.uniq_id] = wi.data.quantity end)
+  _.each(p_weapon_instances, function(k, wi) p_shots[wi.uniq_id] = wi.data.quantity end)
+
   local ctx = {
     range              = range,
     i = {
       layer              = i_unit.data.layer,
       weapon_instances   = i_weapon_instances,
+      shots              = i_shots,
+      casualities        = _.map(i_shots, function(k, v) return 0 end),
     },
     p = {
       layer              = p_unit.data.layer,
       weapon_instances   = p_weapon_instances,
+      shots              = p_shots,
+      casualities        = _.map(p_shots, function(k, v) return 0 end),
     },
   }
 
