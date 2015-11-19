@@ -199,6 +199,8 @@ function _Selector:select_weapons(role, ctx)
   local select_by_selector = function(weapon_instance)
     if (self.method == 'category') then
       return weapon_instance.weapon.category == self.specification
+    elseif ((self.method == 'target') and (self.specification == 'any')) then
+      return true
     end
   end
 
