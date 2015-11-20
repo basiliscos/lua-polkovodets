@@ -53,4 +53,50 @@ subtest("german tank vs russian AT",
   end
 )
 
+subtest("german tank vs russian tank",
+  function()
+    local map = get_fresh_map()
+    local bs = map.engine.battle_scheme
+
+    local rus_tank = map.tiles[6][9]:get_unit('surface')
+    ok(rus_tank)
+    rus_tank:update_actions_map()
+    rus_tank:move_to(map.tiles[5][10])
+    is(rus_tank.data.state, 'defending')
+
+    local ger_tank = map.tiles[4][9]:get_unit('surface')
+    ger_tank:update_actions_map()
+    ok(ger_tank)
+    local block = bs:_find_block(ger_tank, rus_tank, 'battle')
+    ok(block)
+    is(block.id, '1')
+    block:perform_battle(ger_tank, rus_tank, 'battle')
+  end
+)
+
+subtest("german tank vs russian Tank+AT",
+  function()
+    local map = get_fresh_map()
+    local bs = map.engine.battle_scheme
+
+    local rus_at = map.tiles[5][9]:get_unit('surface')
+    ok(rus_at)
+    rus_at:update_actions_map()
+
+    local rus_tank = map.tiles[6][9]:get_unit('surface')
+    ok(rus_tank)
+    rus_tank:update_actions_map()
+    rus_tank:merge_at(map.tiles[5][9])
+    is(rus_tank.data.state, 'defending')
+
+    local ger_tank = map.tiles[4][9]:get_unit('surface')
+    ger_tank:update_actions_map()
+    ok(ger_tank)
+    local block = bs:_find_block(ger_tank, rus_at, 'battle')
+    ok(block)
+    is(block.id, '1')
+    block:perform_battle(ger_tank, rus_tank, 'battle')
+   end
+)
+
 done_testing()

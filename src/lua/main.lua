@@ -24,6 +24,8 @@ local Map = require 'polkovodets.Map'
 local Renderer = require 'polkovodets.Renderer'
 local Scenario = require 'polkovodets.Scenario'
 
+math.randomseed( os.time() )
+
 assert(SDL.init({
 			 SDL.flags.Video,
 			 SDL.flags.Audio

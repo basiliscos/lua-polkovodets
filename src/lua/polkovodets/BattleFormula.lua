@@ -30,35 +30,26 @@ end
 local HIT_PROBABILITY_MAX = 0.98
 local HIT_PROBABILITY_MIN = 0.02
 
-local tanh = function(x)
-  if x == 0 then return 0.0 end
-  local neg = false
-  if x < 0 then x = -x; neg = true end
-  if x < 0.54930614433405 then
-    local y = x * x
-    x = x + x * y *
-        ((-0.96437492777225469787e0  * y +
-          -0.99225929672236083313e2) * y +
-          -0.16134119023996228053e4) /
-        (((0.10000000000000000000e1  * y +
-           0.11274474380534949335e3) * y +
-           0.22337720718962312926e4) * y +
-           0.48402357071988688686e4)
-  else
-    x = math.exp(x)
-    x = 1.0 - 2.0 / (x * x + 1.0)
-  end
-  if neg then x = -x end
-  return x
-end
-
-local probability_fn = function(v)
-  local tan_h = tanh(4*v - 4)
-  local p = 0.5 + tan_h * 0.5
+local _probability = function(v)
+  local p = 0.1 * (v^2.2)
   if (p > HIT_PROBABILITY_MAX) then return HIT_PROBABILITY_MAX end
   if (p < HIT_PROBABILITY_MIN) then return HIT_PROBABILITY_MIN end
   return p
 end
+
+local _perform_shot = function(p, shots, targets_per_shot, targets)
+  local initial_targets, initial_shots = targets, shots
+  local end_value =  ((targets_per_shot < 1) and 1 or targets_per_shot)
+  while((shots > 0) and (targets > 0)) do
+    shots = shots - 1
+    for h = 1,end_value do
+      local r = math.random()
+      if ((r <= p) and (targets > 0)) then targets = targets - 1 end
+    end
+  end
+  return initial_targets - targets, shots
+end
+
 
 function BattleFormula:perform_battle(pair)
   print("performing " .. pair.action)
@@ -99,22 +90,26 @@ function BattleFormula:perform_battle(pair)
     local attacks_from_layer = unit_a:get_layer()
     local defence = wi_p.weapon.defends[attacks_from_layer]
     local attack = wi_a.weapon.attacks[p_target_type]
+
+    -- do not simulat shoots
+    if (attack == 0) then return end
     local ad = attack/defence
-    -- print("ad = " .. ad)
+    print("ad = " .. ad .. " for units " .. wi_a.uniq_id.. "/" .. wi_p.uniq_id)
+    print("a = " .. attack .. ", d = " .. defence)
     local targets = math.modf(ad)
-    local p = probability_fn(ad)
+    local p = _probability(ad)
     print(wi_a.uniq_id .. " hits " .. targets .. " target(s) with probability " .. p)
-    local casualities_p = p_side.casualities[wi_p.uniq_id]
+
     -- active shoots to passive
-    while ((wi_p.data.quantity > 0) and (a_side.shots[wi_a.uniq_id] > 0)) do
-      a_side.shots[wi_a.uniq_id] = a_side.shots[wi_a.uniq_id] - 1
-      local r = math.random()
-      if (r <= p) then
-        casualities_p = casualities_p + 1
-        wi_p.data.quantity = wi_p.data.quantity - 1
-      end
-    end
-    p_side.casualities[wi_p.uniq_id] = casualities_p
+    local casuatities, remained_shots = _perform_shot(
+      p,
+      a_side.shots[wi_a.uniq_id],
+      targets,
+      wi_p.data.quantity
+    )
+    p_side.casualities[wi_p.uniq_id] = (p_side.casualities[wi_p.uniq_id] or 0) + casuatities
+    wi_p.data.quantity = wi_p.data.quantity - casuatities
+    a_side.shots[wi_a.uniq_id] = remained_shots
   end
 
   for a_idx, p_idx in select_weapons() do

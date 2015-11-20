@@ -121,7 +121,7 @@ function _RelationCondition:matches(I_unit, P_unit)
   local result = (self.operator == '==')
     and (v1 == v2)
     or  (v1 ~= v2)
-  -- print("result " .. (result and 't' or 'f'))
+  print("result " .. (result and 't' or 'f'))
   return result
 end
 
@@ -216,7 +216,7 @@ function _Selector:select_weapons(role, ctx)
   end
 
   -- For active weapon we additionally ensure that weapon is
-  -- capable to shoot on the required range.
+  -- capable to shoot on the required range and there are remained shots
   -- for passive weapon we just ensure, that it (still) exists
   local role_filter
   if (role == 'active') then
@@ -224,7 +224,8 @@ function _Selector:select_weapons(role, ctx)
     role_filter = function(weapon_instance)
         local range_ok = weapon_instance.weapon.data.range[e_layer] >= ctx.range
         local quantities_ok = weapon_instance.data.quantity > 0
-        return range_ok and quantities_ok
+        local shots_ok = o.shots[weapon_instance.uniq_id] > 0
+        return range_ok and quantities_ok and shots_ok
     end
   else
     role_filter = function(weapon_instance)
@@ -329,6 +330,8 @@ function _Block:validate()
 end
 
 function _Block:matches(fire_type, i_unit, p_unit)
+  assert(i_unit)
+  assert(p_unit)
   if (self.fire_type == fire_type) then
     return self.condition:matches(i_unit, p_unit)
   end
@@ -360,7 +363,9 @@ function _Block:select_pair(ctx)
 end
 
 function _Block:perform_battle(i_unit, p_unit, fire_type)
+  print("a")
   local range = i_unit.tile:distance_to(p_unit.tile)
+  print("b")
   local i_weapon_instances = i_unit:_united_staff()
   local p_weapon_instances = p_unit:_united_staff()
 
@@ -391,6 +396,8 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
     if (pair) then
       print("matching pair = " .. inspect(pair))
       self.battle_scheme.engine.battle_formula:perform_battle(pair)
+      print("casualities for I = " .. inspect(ctx.i.casualities))
+      print("casualities for P = " .. inspect(ctx.p.casualities))
     end
   end
 end
