@@ -303,27 +303,30 @@ end
 
 
 function Engine:click_on_tile(x,y, action)
-   local tile = self.map.tiles[x][y]
-   if (action == 'default') then
-      local unit = tile:get_any_unit(self.active_layer)
-      if (unit) then
-         self:unselect_unit()
-         self:select_unit(unit)
-      end
-   end
-   if (self.selected_unit) then
-      local u = self.selected_unit
-      local method_for = {
-         move  = 'move_to',
-         merge = 'merge_at',
-         land  = 'land_to',
-      }
-      local method = method_for[action]
-      if (method) then
-         u[method](u, tile)
-         self:click_on_tile(x, y, 'default')
-      end
-   end
+  print("action = " .. action)
+  local tile = self.map.tiles[x][y]
+  if (action == 'default') then
+    local unit = tile:get_any_unit(self.active_layer)
+    if (unit) then
+      self:unselect_unit()
+      self:select_unit(unit)
+    end
+  end
+  if (self.selected_unit) then
+    local u = self.selected_unit
+    local method_for = {
+      move               = 'move_to',
+      merge              = 'merge_at',
+      land               = 'land_to',
+      battle             = 'attack_on',
+      ["fire/artillery"] = 'attack_on'
+    }
+    local method = method_for[action]
+    if (method) then
+      u[method](u, tile, action)
+      self:click_on_tile(x, y, 'default')
+    end
+  end
 end
 
 function Engine:toggle_layer()

@@ -400,6 +400,7 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
       print("casualities for P = " .. inspect(ctx.p.casualities))
     end
   end
+  return ctx.i.casualities, ctx.p.casualities
 end
 
 
@@ -572,6 +573,12 @@ function BattleScheme:_find_block(initiator_unit, passive_unit, fire_type)
       return block
     end
   end
+end
+
+function BattleScheme:perform_battle(initiator_unit, passive_unit, fire_type)
+  local block = self:_find_block(initiator_unit, passive_unit, fire_type)
+  assert(block)
+  block:perform_battle(initiator_unit, passive_unit, fire_type)
 end
 
 return BattleScheme

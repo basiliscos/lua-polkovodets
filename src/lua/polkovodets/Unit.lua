@@ -321,6 +321,12 @@ function Unit:land_to(tile)
    self.data.allow_move = false
 end
 
+function Unit:attack_on(tile, fire_type)
+  local enemy_unit = tile:get_any_unit(self.engine.active_layer)
+  assert(enemy_unit)
+  self.engine.battle_scheme:perform_battle(self, enemy_unit, fire_type)
+end
+
 
 function Unit:_enemy_near(tile)
    local layer = self:get_movement_layer()

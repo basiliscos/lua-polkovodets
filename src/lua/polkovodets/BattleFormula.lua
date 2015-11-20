@@ -101,14 +101,14 @@ function BattleFormula:perform_battle(pair)
     print(wi_a.uniq_id .. " hits " .. targets .. " target(s) with probability " .. p)
 
     -- active shoots to passive
-    local casuatities, remained_shots = _perform_shot(
+    local casualities, remained_shots = _perform_shot(
       p,
       a_side.shots[wi_a.uniq_id],
       targets,
       wi_p.data.quantity
     )
-    p_side.casualities[wi_p.uniq_id] = (p_side.casualities[wi_p.uniq_id] or 0) + casuatities
-    wi_p.data.quantity = wi_p.data.quantity - casuatities
+    p_side.casualities[wi_p.uniq_id] = (p_side.casualities[wi_p.uniq_id] or 0) + casualities
+    wi_p.data.quantity = wi_p.data.quantity - casualities
     a_side.shots[wi_a.uniq_id] = remained_shots
   end
 

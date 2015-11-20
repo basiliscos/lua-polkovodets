@@ -41,15 +41,7 @@ subtest("german tank vs russian AT",
     local ger_tank = map.tiles[4][9]:get_unit('surface')
     ger_tank:update_actions_map()
     ok(ger_tank)
-    local block = bs:_find_block(ger_tank, rus_at, 'battle')
-    ok(block)
-    is(block.id, '1')
-    block:perform_battle(ger_tank, rus_at, 'battle')
-    for idx, wi in pairs(rus_at.data.staff) do
-      is(wi.data.quantity, 0, wi.uniq_id .. " has been killed")
-    end
-    -- print(inspect(ger_tank.data.staff))
-    ok(ger_tank.data.staff['19'].data.quantity < 220, "some tanks has been killed")
+    local ger_deaths, rus_deaths = bs:perform_battle(ger_tank, rus_at, 'battle')
   end
 )
 
@@ -67,10 +59,7 @@ subtest("german tank vs russian tank",
     local ger_tank = map.tiles[4][9]:get_unit('surface')
     ger_tank:update_actions_map()
     ok(ger_tank)
-    local block = bs:_find_block(ger_tank, rus_tank, 'battle')
-    ok(block)
-    is(block.id, '1')
-    block:perform_battle(ger_tank, rus_tank, 'battle')
+    local ger_deaths, rus_deaths = bs:perform_battle(ger_tank, rus_tank, 'battle')
   end
 )
 
@@ -92,10 +81,7 @@ subtest("german tank vs russian Tank+AT",
     local ger_tank = map.tiles[4][9]:get_unit('surface')
     ger_tank:update_actions_map()
     ok(ger_tank)
-    local block = bs:_find_block(ger_tank, rus_at, 'battle')
-    ok(block)
-    is(block.id, '1')
-    block:perform_battle(ger_tank, rus_tank, 'battle')
+    local ger_deaths, rus_deaths = bs:perform_battle(ger_tank, rus_tank, 'battle')
    end
 )
 
