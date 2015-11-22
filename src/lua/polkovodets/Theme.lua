@@ -56,12 +56,22 @@ function Theme.create(engine, data)
          }
       end
    end
-   
+
+   local move_arrow_texture = renderer:load_texture(theme_dir .. '/arrow-movement.png')
+   local format, access, move_w, move_h = move_arrow_texture:query()
+
    local o = {
       engine   = engine,
       renderer = renderer,
       data     = data,
       cursors  = cursors_path,
+      history  = {
+        move = {
+            w       = move_w,
+            h       = move_h ,
+            texture = move_arrow_texture,
+        }
+      },
       fonts    = {
          active_hex = active_hex_ttf,
       },

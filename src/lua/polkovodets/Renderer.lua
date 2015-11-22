@@ -19,11 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Renderer = {}
 Renderer.__index = Renderer
 
+local _ = require ("moses")
 local SDL	= require "SDL"
 local image = require "SDL.image"
 local inspect = require('inspect')
 local ttf = require "SDL.ttf"
+
 local Theme = require 'polkovodets.Theme'
+local Tile = require 'polkovodets.Tile'
 
 local SCROLL_TOLERANCE = 5
 local EVENT_DELAY = 50
@@ -162,81 +165,131 @@ end
 
 
 function Renderer:_draw_map()
-   local engine = self.engine
-   local map = engine:get_map()
-   local sdl_renderer = self.sdl_renderer
-   local terrain = map.terrain
+  local engine = self.engine
+  local map = engine:get_map()
+  local sdl_renderer = self.sdl_renderer
+  local terrain = map.terrain
 
-   local hex_x_offset = terrain.hex_x_offset
-   local hex_y_offset = terrain.hex_y_offset
-   local hex_h = terrain.hex_height
+  local hex_x_offset = terrain.hex_x_offset
+  local hex_y_offset = terrain.hex_y_offset
+  local hex_h = terrain.hex_height
+  local hex_w = terrain.hex_width
 
-   local start_map_x = engine.gui.map_x
-   local start_map_y = engine.gui.map_y
+  local start_map_x = engine.gui.map_x
+  local start_map_y = engine.gui.map_y
 
-   local map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
-   local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
+  local map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
+  local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
 
-   local coordinates = {}
-   do
-      local x = engine.gui.map_sx - ( start_map_x - engine.gui.map_x ) * hex_x_offset
-      local y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+  local coordinates = {}
+  do
+  local x = engine.gui.map_sx - ( start_map_x - engine.gui.map_x ) * hex_x_offset
+    local y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
 
-      for i = 1,map_sw do
-         local tx = i + start_map_x
-         local y_shift = (tx % 2 == 0) and  hex_y_offset or 0
-         for j = 1,map_sh do
-            local ty = j + start_map_y
-            if (tx <= map.width and ty <= map.height) then
-               local key = tx .. ":" .. ty
-               coordinates[key] = {x, y + y_shift}
-               y = y + hex_h
-            end
-         end
-         x = x + hex_x_offset
-         y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+    for i = 1,map_sw do
+      local tx = i + start_map_x
+      local y_shift = (tx % 2 == 0) and  hex_y_offset or 0
+      for j = 1,map_sh do
+      local ty = j + start_map_y
+      if (tx <= map.width and ty <= map.height) then
+        local key = Tile.uniq_id(tx, ty)
+        coordinates[key] = {x, y + y_shift}
+        y = y + hex_h
       end
-   end
+    end
+    x = x + hex_x_offset
+    y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+    end
+  end
 
-   local draw = function(draw_at_tile)
-      for i = 1,map_sw do
-         local tx = i + start_map_x
-         for j = 1,map_sh do
-            local ty = j + start_map_y
-            if (tx <= map.width and ty <= map.height) then
-              local key = tx .. ":" .. ty
-              local x, y = table.unpack(coordinates[key])
-               draw_at_tile(tx, ty, x, y)
-            end
-         end
-      end
-   end
-
-   local u = engine:get_selected_unit()
-   local context = {
-      selected_unit = u,
-      active_layer = engine.active_layer,
-      subordinated = {}, -- k: tile_id, v: unit
-   }
-
-   local active_x, active_y = table.unpack(self.active_tile)
-   local active_tile = map.tiles[active_x][active_y]
-   local hilight_unit = u or (active_tile and active_tile:get_unit(engine.active_layer))
-   if (hilight_unit) then
-      for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
-         local tile = subordinated_unit.tile
-         -- tile could be nil if unit is attached to some other
-         if (tile) then
-            context.subordinated[tile.id] = true
-         end
-      end
-   end
-
-   draw(function(tx, ty, x, y)
-         local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
-         tile:draw(sdl_renderer, x, y, context)
+  local draw = function(draw_at_tile)
+    for i = 1,map_sw do
+      local tx = i + start_map_x
+      for j = 1,map_sh do
+        local ty = j + start_map_y
+        if (tx <= map.width and ty <= map.height) then
+          local key = Tile.uniq_id(tx, ty)
+          local x, y = table.unpack(coordinates[key])
+          draw_at_tile(tx, ty, x, y)
         end
-   )
+      end
+    end
+  end
+
+  local u = engine:get_selected_unit()
+  local context = {
+    selected_unit = u,
+    active_layer = engine.active_layer,
+    subordinated = {}, -- k: tile_id, v: unit
+  }
+
+  local active_x, active_y = table.unpack(self.active_tile)
+  local active_tile = map.tiles[active_x][active_y]
+  local hilight_unit = u or (active_tile and active_tile:get_unit(engine.active_layer))
+  if (hilight_unit) then
+    for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
+      local tile = subordinated_unit.tile
+      -- tile could be nil if unit is attached to some other
+      if (tile) then
+        context.subordinated[tile.id] = true
+      end
+    end
+  end
+
+  draw(function(tx, ty, x, y)
+    local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
+    tile:draw(sdl_renderer, x, y, context)
+  end)
+
+  -- draw current turn current unit history
+  if (u) then
+    local records = _.select(engine.history:get_records(engine:current_turn()), function(k, v)
+      local unit_id = v.context.unit_id
+      return (unit_id and unit_id == u.id)
+    end)
+    for idx, record in pairs(records) do
+      if (record.action == 'unit/move') then
+        local src_tile = map:lookup_tile(record.context.src_tile)
+        local dst_tile = map:lookup_tile(record.context.dst_tile)
+        local src_coord = coordinates[src_tile.id]
+        local dst_coord = coordinates[dst_tile.id]
+        local dx = dst_coord[1] - src_coord[1]
+        local dy = dst_coord[2] - src_coord[2]
+        --[[
+          Assuming that original arrow points to top, i.e. has (0, -1) vector,
+          because coordinates origin (0,0) is top right corner of the window
+        ]]
+        local angle = math.acos(-dy/math.sqrt(dx^2 + dy^2))
+        if (dx < 0) then angle = -1 * angle end
+        angle = math.deg(angle)
+        -- print("angle " .. angle)
+        local arrow = self.theme.history.move
+        local delta_x, delta_y = 0, 0
+        if ((angle ~= 0) and (angle ~= 180)) then
+          delta_x = (dx > 0) and hex_x_offset or 0
+          delta_y = (dy > 0) and hex_y_offset or 0
+        else
+          delta_x = math.modf(hex_w/2 - arrow.w/2)
+          delta_y = (dy < 0) and math.modf(-hex_y_offset/2) or math.modf(hex_h -hex_y_offset/2)
+        end
+        -- print("dx = " .. delta_x .. " , dy = " .. delta_y)
+        local dst = {
+          x = src_coord[1] + delta_x,
+          y = src_coord[2] + delta_y,
+          w = arrow.w,
+          h = arrow.h,
+        }
+        assert(sdl_renderer:copyEx({
+          texture     = arrow.texture,
+          source      = nil,
+          destination = dst,
+          angle       = angle,
+          nil,                                          -- default center
+        }))
+      end
+    end
+    -- print("selected unit actions = " .. inspect(records))
+  end
 end
 
 

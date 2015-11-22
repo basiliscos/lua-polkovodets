@@ -296,20 +296,20 @@ function Unit:move_to(dst_tile)
   end
   -- print("routing via " .. inspect(_.map(route, function(k, v) return v.id end)))
 
-  local tile_from = src_tile
+  local prev_tile = src_tile
   for idx, tile in pairs(route) do
-    -- print(self.id .. " moves on " .. tile.id)
+    -- print(self.id .. " moves on " .. tile.id .. " from " .. prev_tile.id)
     -- TODO: check for ambush and mines
     local ctx = {
       unit_id  = self.id,
       dst_tile = tile.id,
-      src_tile = tile_from.id,
+      src_tile = prev_tile.id,
     }
     self.engine.history:record_player_action('unit/move', ctx, true, {})
-    tile_from = dst_tile
-    dst_tile = tile
+    prev_tile = tile
   end
-  print("history = " .. inspect(self.engine.history.records_at))
+  dst_tile = prev_tile
+  -- print("history = " .. inspect(self.engine.history.records_at))
 
   self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
   self.tile:set_unit(nil, self.data.layer)

@@ -33,51 +33,60 @@ end
 
 
 function Map:load(map_file)
-   local path = map_file
-   print('loading map at ' .. path)
-   local parser = Parser.create(path)
-   self.width = tonumber(parser:get_value('width'))
-   self.height = tonumber(parser:get_value('height'))
-   print("map size: " .. self.width .. "x" .. self.height)
-   assert(self.width > 3, "map width must me > 3")
-   assert(self.height > 3, "map height must me > 3")
+  local path = map_file
+  print('loading map at ' .. path)
+  local parser = Parser.create(path)
+  self.width = tonumber(parser:get_value('width'))
+  self.height = tonumber(parser:get_value('height'))
+  print("map size: " .. self.width .. "x" .. self.height)
+  assert(self.width > 3, "map width must me > 3")
+  assert(self.height > 3, "map height must me > 3")
 
-   local terrain_file = parser:get_value('terrain_db')
-   assert(terrain_file)
+  local terrain_file = parser:get_value('terrain_db')
+  assert(terrain_file)
 
-   local engine = self.engine
-   local terrain = Terrain.create(engine)
-   terrain:load(terrain_file)
-   self.terrain = terrain
+  local engine = self.engine
+  local terrain = Terrain.create(engine)
+  terrain:load(terrain_file)
+  self.terrain = terrain
 
-   local tiles_data = parser:get_list_value('tiles')
-   local tile_names = parser:get_list_value('names')
+  local tiles_data = parser:get_list_value('tiles')
+  local tile_names = parser:get_list_value('names')
 
-   -- 2 dimentional array, [x:y]
-   local tiles = {}
-   for x = 1,self.width do
-	  local column = {}
-	  for y = 1,self.height do
-		 local idx = (y-1) * self.width + x
-		 local datum = tiles_data[idx]
-		 local terrain_name = string.sub(datum,1,1)
-		 local image_idx = tonumber(string.sub(datum,2, -1))
-		 local terrain_type = terrain:get_type(terrain_name)
-         local name = tile_names[idx] or terrain_name
-		 local tile_data = {
-			x = x,
-			y = y,
-			name = name,
-			terrain_name = terrain_name,
-			image_idx = image_idx,
-			terrain_type = terrain_type,
-		 }
-		 column[ y ] = Tile.create(engine, tile_data)
-	  end
-	  tiles[x] = column
-   end
-   self.tiles = tiles
-   -- print(inspect(tiles[1][1]))
+  -- 2 dimentional array, [x:y]
+  local tiles = {}
+  local tile_for = {} -- key: tile_id, value: tile object
+  for x = 1,self.width do
+    local column = {}
+    for y = 1,self.height do
+      local idx = (y-1) * self.width + x
+      local datum = tiles_data[idx]
+      local terrain_name = string.sub(datum,1,1)
+      local image_idx = tonumber(string.sub(datum,2, -1))
+      local terrain_type = terrain:get_type(terrain_name)
+      local name = tile_names[idx] or terrain_name
+      local tile_data = {
+        x = x,
+        y = y,
+        name = name,
+        terrain_name = terrain_name,
+        image_idx = image_idx,
+        terrain_type = terrain_type,
+      }
+      local tile = Tile.create(engine, tile_data)
+      column[ y ] = tile
+      tile_for[tile.id] = tile
+    end
+    tiles[x] = column
+  end
+  self.tiles = tiles
+  self.tile_for = tile_for
+  -- print(inspect(tiles[1][1]))
+end
+
+function Map:lookup_tile(id)
+  local tile = assert(self.tile_for[id])
+  return tile
 end
 
 return Map

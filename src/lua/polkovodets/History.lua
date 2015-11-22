@@ -58,4 +58,8 @@ function History:record_player_action(action, context, success, results)
   self.records_at[turn_no] = turn_records
 end
 
+function History:get_records(turn_no)
+  return self.records_at[turn_no] or {}
+end
+
 return History
