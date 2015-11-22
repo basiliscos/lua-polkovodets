@@ -177,7 +177,8 @@ function Renderer:_draw_map()
    local map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
    local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
 
-   local draw = function(draw_at_tile)
+   local coordinates = {}
+   do
       local x = engine.gui.map_sx - ( start_map_x - engine.gui.map_x ) * hex_x_offset
       local y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
 
@@ -187,12 +188,27 @@ function Renderer:_draw_map()
          for j = 1,map_sh do
             local ty = j + start_map_y
             if (tx <= map.width and ty <= map.height) then
-               draw_at_tile(tx, ty, x, y + y_shift)
+               local key = tx .. ":" .. ty
+               coordinates[key] = {x, y + y_shift}
                y = y + hex_h
             end
          end
          x = x + hex_x_offset
          y = engine.gui.map_sy - ( start_map_y - engine.gui.map_y ) * hex_h
+      end
+   end
+
+   local draw = function(draw_at_tile)
+      for i = 1,map_sw do
+         local tx = i + start_map_x
+         for j = 1,map_sh do
+            local ty = j + start_map_y
+            if (tx <= map.width and ty <= map.height) then
+              local key = tx .. ":" .. ty
+              local x, y = table.unpack(coordinates[key])
+               draw_at_tile(tx, ty, x, y)
+            end
+         end
       end
    end
 
