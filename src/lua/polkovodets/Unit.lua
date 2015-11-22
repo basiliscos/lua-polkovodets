@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Unit = {}
 Unit.__index = Unit
 
+local _ = require ("moses")
 local inspect = require('inspect')
 local SDL = require "SDL"
 local Vector = require 'polkovodets.Vector'
@@ -255,31 +256,84 @@ function Unit:_update_orientation(dst_tile, src_tile)
 end
 
 function Unit:move_to(dst_tile)
-   local costs = assert(self.data.actions_map.move[dst_tile.id])
-   local src_tile = self.tile
-   self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
-   self.tile:set_unit(nil, self.data.layer)
-   -- print(inspect(costs))
-   for idx, weapon_instance in pairs(self:_marched_weapons()) do
-      local cost = costs.data[weapon_instance.id]
-      weapon_instance.data.movement = weapon_instance.data.movement - cost
-   end
+  local costs = assert(self.data.actions_map.move[dst_tile.id])
+  local src_tile = self.tile
 
-   -- update state
-   local unit_type = self.definition.unit_type.id
-   local new_state
-   if (unit_type == 'ut_land') then
-      new_state = self:_enemy_near(dst_tile) and 'defending' or 'marching'
-   elseif (unit_type == 'ut_air') then
-      new_state = 'flying'
-   end
-   self:_update_state(new_state)
-   self:_update_layer()
+  -- calculate back route from dst_tile to src_tile
+  -- print(inspect(self.data.actions_map.move))
+  local route = { dst_tile }
+  local marched_weapons = self:_marched_weapons()
+  local move_costs = self.data.actions_map.move
+  local initial_costs = {}
+  for idx, wi in pairs(marched_weapons) do initial_costs[wi.id] = 0 end
+  move_costs[src_tile.id] = Vector.create(initial_costs)
 
-   dst_tile:set_unit(self, self.data.layer)
-   self.tile = dst_tile
-   self:_update_orientation(dst_tile, src_tile)
-   self:update_actions_map()
+  local get_prev_tile = function()
+    local current_tile = dst_tile
+    local iterator = function(state, value)
+      if (current_tile ~= src_tile) then
+        local min_tile = nil
+        local min_cost = math.huge
+        for adj_tile in self.engine:get_adjastent_tiles(current_tile) do
+          local costs = move_costs[adj_tile.id]
+          -- print("costs = " .. inspect(costs))
+          if (costs and costs:min() < min_cost) then
+            min_tile = adj_tile
+            min_cost = costs:min()
+          end
+        end
+        assert(min_tile)
+        current_tile = min_tile
+        -- print("prev tile " .. min_tile.id)
+        return (min_tile ~= src_tile) and min_tile or nil
+      end
+    end
+    return iterator, nil, true
+  end
+
+  for tile in get_prev_tile() do
+    table.insert(route, 1, tile)
+  end
+  -- print("routing via " .. inspect(_.map(route, function(k, v) return v.id end)))
+
+  local tile_from = src_tile
+  for idx, tile in pairs(route) do
+    -- print(self.id .. " moves on " .. tile.id)
+    -- TODO: check for ambush and mines
+    local ctx = {
+      unit_id  = self.id,
+      dst_tile = tile.id,
+      src_tile = tile_from.id,
+    }
+    self.engine.history:record_player_action('unit/move', ctx, true, {})
+    tile_from = dst_tile
+    dst_tile = tile
+  end
+  print("history = " .. inspect(self.engine.history.records_at))
+
+  self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
+  self.tile:set_unit(nil, self.data.layer)
+  -- print(inspect(costs))
+  for idx, weapon_instance in pairs(marched_weapons) do
+    local cost = costs.data[weapon_instance.id]
+    weapon_instance.data.movement = weapon_instance.data.movement - cost
+  end
+
+  -- update state
+  local unit_type = self.definition.unit_type.id
+  local new_state
+  if (unit_type == 'ut_land') then
+    new_state = self:_enemy_near(dst_tile) and 'defending' or 'marching'
+  elseif (unit_type == 'ut_air') then
+    new_state = 'flying'
+  end
+  self:_update_state(new_state)
+  self:_update_layer()
+
+  dst_tile:set_unit(self, self.data.layer)
+  self.tile = dst_tile
+  self:_update_orientation(dst_tile, src_tile)
+  self:update_actions_map()
 end
 
 function Unit:merge_at(dst_tile)

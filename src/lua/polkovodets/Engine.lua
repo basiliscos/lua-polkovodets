@@ -22,6 +22,7 @@ Engine.__index = Engine
 
 local inspect = require('inspect')
 local Tile = require 'polkovodets.Tile'
+local History = require 'polkovodets.History'
 
 
 function Engine.create()
@@ -47,6 +48,7 @@ function Engine.create()
 	  }
    }
    setmetatable(e,Engine)
+   e.history = History.create(e)
    return e
 end
 
@@ -155,6 +157,10 @@ function Engine:_set_current_player(order)
    self.current_player = player
    self.current_player_idx = order
    print(string.format("current player: %s(%d)",  player.id, player.data.order))
+end
+
+function Engine:get_current_player()
+  return self.current_player
 end
 
 
