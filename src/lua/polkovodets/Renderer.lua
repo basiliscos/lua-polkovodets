@@ -253,39 +253,41 @@ function Renderer:_draw_map()
         local dst_tile = map:lookup_tile(record.context.dst_tile)
         local src_coord = coordinates[src_tile.id]
         local dst_coord = coordinates[dst_tile.id]
-        local dx = dst_coord[1] - src_coord[1]
-        local dy = dst_coord[2] - src_coord[2]
-        --[[
-          Assuming that original arrow points to top, i.e. has (0, -1) vector,
-          because coordinates origin (0,0) is top right corner of the window
-        ]]
-        local angle = math.acos(-dy/math.sqrt(dx^2 + dy^2))
-        if (dx < 0) then angle = -1 * angle end
-        angle = math.deg(angle)
-        -- print("angle " .. angle)
-        local arrow = self.theme.history.move
-        local delta_x, delta_y = 0, 0
-        if ((angle ~= 0) and (angle ~= 180)) then
-          delta_x = (dx > 0) and hex_x_offset or 0
-          delta_y = (dy > 0) and hex_y_offset or 0
-        else
-          delta_x = math.modf(hex_w/2 - arrow.w/2)
-          delta_y = (dy < 0) and math.modf(-hex_y_offset/2) or math.modf(hex_h -hex_y_offset/2)
+        if (src_coord and dst_coord) then
+          local dx = dst_coord[1] - src_coord[1]
+          local dy = dst_coord[2] - src_coord[2]
+          --[[
+            Assuming that original arrow points to top, i.e. has (0, -1) vector,
+            because coordinates origin (0,0) is top right corner of the window
+          ]]
+          local angle = math.acos(-dy/math.sqrt(dx^2 + dy^2))
+          if (dx < 0) then angle = -1 * angle end
+          angle = math.deg(angle)
+          -- print("angle " .. angle)
+          local arrow = self.theme.history.move
+          local delta_x, delta_y = 0, 0
+          if ((angle ~= 0) and (angle ~= 180)) then
+            delta_x = (dx > 0) and hex_x_offset or 0
+            delta_y = (dy > 0) and hex_y_offset or 0
+          else
+            delta_x = math.modf(hex_w/2 - arrow.w/2)
+            delta_y = (dy < 0) and math.modf(-hex_y_offset/2) or math.modf(hex_h -hex_y_offset/2)
+          end
+          -- print("dx = " .. delta_x .. " , dy = " .. delta_y)
+          local dst = {
+            x = src_coord[1] + delta_x,
+            y = src_coord[2] + delta_y,
+            w = arrow.w,
+            h = arrow.h,
+          }
+          assert(sdl_renderer:copyEx({
+            texture     = arrow.texture,
+            source      = nil,
+            destination = dst,
+            angle       = angle,
+            nil,                                          -- default center
+          }))
         end
-        -- print("dx = " .. delta_x .. " , dy = " .. delta_y)
-        local dst = {
-          x = src_coord[1] + delta_x,
-          y = src_coord[2] + delta_y,
-          w = arrow.w,
-          h = arrow.h,
-        }
-        assert(sdl_renderer:copyEx({
-          texture     = arrow.texture,
-          source      = nil,
-          destination = dst,
-          angle       = angle,
-          nil,                                          -- default center
-        }))
       end
     end
     -- print("selected unit actions = " .. inspect(records))
