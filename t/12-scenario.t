@@ -54,13 +54,13 @@ subtest("move rus infantry",
            ok(move_cost)
            is_deeply(move_cost.data,
                      {
-                        ["1:1"]  = 1,
-                        ["1:14"] = 1,
-                        ["1:18"] = 1,
-                        ["1:2"]  = 1,
-                        ["1:3"]  = 1,
-                        ["1:4"]  = 1,
-                        ["1:5"]  = 1,
+                      ["u:1/w:1"]  = 1,
+                      ["u:1/w:14"] = 1,
+                      ["u:1/w:18"] = 1,
+                      ["u:1/w:2"]  = 1,
+                      ["u:1/w:3"]  = 1,
+                      ["u:1/w:4"]  = 1,
+                      ["u:1/w:5"]  = 1,
                      },
                      "move cost to 7:4 is correct"
            )
@@ -69,21 +69,21 @@ subtest("move rus infantry",
            ok(available_movement)
            is_deeply(available_movement,
                      {
-                        ["1:1"]  = 5,
-                        ["1:14"] = 3,
-                        ["1:18"] = 4,
-                        ["1:2"]  = 3,
-                        ["1:3"]  = 3,
-                        ["1:4"]  = 3,
-                        ["1:5"]  = 3,
+                        ["u:1/w:1"]  = 5,
+                        ["u:1/w:14"] = 3,
+                        ["u:1/w:18"] = 4,
+                        ["u:1/w:2"]  = 3,
+                        ["u:1/w:3"]  = 3,
+                        ["u:1/w:4"]  = 3,
+                        ["u:1/w:5"]  = 3
                      },
                      "available movements are correct"
            )
            inf:update_actions_map()
            -- print(inspect(inf.data.actions_map.move))
-           ok(inf.data.actions_map.move[map.tiles[5][4].uniq_id])
-           ok(inf.data.actions_map.move[map.tiles[9][7].uniq_id])
-           ok(inf.data.actions_map.merge[map.tiles[8][5].uniq_id])
+           ok(inf.data.actions_map.move[map.tiles[5][4].id])
+           ok(inf.data.actions_map.move[map.tiles[9][7].id])
+           ok(inf.data.actions_map.merge[map.tiles[8][5].id])
         end
 )
 
@@ -96,14 +96,14 @@ subtest("move rus aircraft",
 
            local enemy_tank = map.tiles[4][9]:get_unit('surface')
            ok(enemy_tank)
-           ok(aircraft.data.actions_map.move[map.tiles[4][9].uniq_id])
+           ok(aircraft.data.actions_map.move[map.tiles[4][9].id])
 
            aircraft:move_to(map.tiles[4][9])
            -- print(inspect(aircraft.data.actions_map.attack))
-           is_deeply(aircraft.data.actions_map.attack[map.tiles[4][9].uniq_id],
+           is_deeply(aircraft.data.actions_map.attack[map.tiles[4][9].id],
                      {
                         surface = {
-                           ["fire/bombing"] = { "15:37", "15:38" }
+                           ["fire/bombing"] = { "u:15/w:37", "u:15/w:38" }
                         }
                      }
            )
@@ -112,10 +112,10 @@ subtest("move rus aircraft",
            ok(rus_at)
            rus_at:update_actions_map()
            -- print(inspect(rus_at.data.actions_map.attack))
-           is_deeply(rus_at.data.actions_map.attack[map.tiles[4][9].uniq_id],
+           is_deeply(rus_at.data.actions_map.attack[map.tiles[4][9].id],
                      {
                         surface = {
-                            battle = { "7:17" }
+                            battle = { "u:7/w:17" }
                         }
                      }
            )
@@ -126,11 +126,11 @@ subtest("move rus aircraft",
            ok(ger_artillery)
            ger_artillery:update_actions_map()
            -- print(inspect(ger_artillery.data.actions_map.attack))
-           is_deeply(ger_artillery.data.actions_map.attack[map.tiles[4][8].uniq_id],
+           is_deeply(ger_artillery.data.actions_map.attack[map.tiles[4][8].id],
                      {
                         surface = {
-                           battle = { "5:27", "5:28", "5:29" },
-                           ["fire/artillery"] = { "5:27", "5:28", "5:29" }
+                          battle = { "u:5/w:27", "u:5/w:28", "u:5/w:29" },
+                          ["fire/artillery"] = { "u:5/w:27", "u:5/w:28", "u:5/w:29" }
                         }
                      }
            )
@@ -164,33 +164,32 @@ subtest("check attack first on movements",
            ok(rus_art)
            rus_art:update_actions_map()
            -- print(inspect(rus_art.data.actions_map.attack))
-           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].uniq_id],
+           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].id],
                      {
                         surface = {
-                           ["fire/artillery"] = { "3:10", "3:11", "3:9" }
+                           ["fire/artillery"] = { "u:3/w:10", "u:3/w:11", "u:3/w:9" }
                         }
                      }
            )
            rus_art:move_to(map.tiles[6][3])
            rus_art:update_actions_map()
            -- print(inspect(rus_art.data.actions_map.attack))
-           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].uniq_id],
+           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].id],
                      {
                         surface = {
-                           ["fire/artillery"] = { "3:10", "3:9" }
+                           ["fire/artillery"] = { "u:3/w:10", "u:3/w:9" }
                         }
                      }
            )
            rus_art:refresh()
            rus_art:update_actions_map()
-           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].uniq_id],
+           is_deeply(rus_art.data.actions_map.attack[map.tiles[6][5].id],
                      {
                         surface = {
-                           ["fire/artillery"] = { "3:10", "3:11", "3:9" }
+                           ["fire/artillery"] = { "u:3/w:10", "u:3/w:11", "u:3/w:9" }
                         }
                      }
            )
-
         end
 )
 

@@ -211,7 +211,7 @@ function Renderer:_draw_map()
          local tile = subordinated_unit.tile
          -- tile could be nil if unit is attached to some other
          if (tile) then
-            context.subordinated[tile.uniq_id] = true
+            context.subordinated[tile.id] = true
          end
       end
    end
@@ -266,15 +266,15 @@ function Renderer:_action_kind(tile)
       local tx, ty = table.unpack(tile)
       local tile = self.engine.map.tiles[tx][ty]
       local actions_map = u.data.actions_map
-      if (actions_map.merge[tile.uniq_id]) then
+      if (actions_map.merge[tile.id]) then
          kind = 'merge'
-      elseif (actions_map.attack[tile.uniq_id]) then
+      elseif (actions_map.attack[tile.id]) then
          kind = u:get_attack_kind(tile)
-      elseif (actions_map.landing[tile.uniq_id]) then
+      elseif (actions_map.landing[tile.id]) then
          kind = 'land'
       -- move to the tile if it is free
       -- hilight it the tile, even if there is our unit, i.e. we can pass *through* it
-      elseif (actions_map.move[tile.uniq_id] and not(tile:get_unit(u:get_movement_layer()))) then
+      elseif (actions_map.move[tile.id] and not(tile:get_unit(u:get_movement_layer()))) then
          kind = 'move'
       end
    end

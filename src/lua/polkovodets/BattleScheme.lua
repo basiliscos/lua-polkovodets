@@ -224,7 +224,7 @@ function _Selector:select_weapons(role, ctx)
     role_filter = function(weapon_instance)
         local range_ok = weapon_instance.weapon.data.range[e_layer] >= ctx.range
         local quantities_ok = weapon_instance.data.quantity > 0
-        local shots_ok = o.shots[weapon_instance.uniq_id] > 0
+        local shots_ok = o.shots[weapon_instance.id] > 0
         return range_ok and quantities_ok and shots_ok
     end
   else
@@ -371,8 +371,8 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
 
   -- prepare context; by default all weapons do shot, and no casualities
   local i_shots, p_shots = {}, {}
-  _.each(i_weapon_instances, function(k, wi) i_shots[wi.uniq_id] = wi.data.quantity end)
-  _.each(p_weapon_instances, function(k, wi) p_shots[wi.uniq_id] = wi.data.quantity end)
+  _.each(i_weapon_instances, function(k, wi) i_shots[wi.id] = wi.data.quantity end)
+  _.each(p_weapon_instances, function(k, wi) p_shots[wi.id] = wi.data.quantity end)
 
   local ctx = {
     range              = range,

@@ -199,7 +199,7 @@ function Engine:get_adjastent_tiles(tile, skip_tiles)
          {-1, 0}, }
 
    local near_tile = 0
-   -- print("starting from " .. tile.uniq_id)
+   -- print("starting from " .. tile.id)
    local iterator = function(state, value) -- ignored
       local found = false
       local nx, ny
@@ -216,7 +216,7 @@ function Engine:get_adjastent_tiles(tile, skip_tiles)
       end
       if (found) then
          local tile = map.tiles[nx][ny]
-         -- print("found: " .. tile.uniq_id .. " ( " .. near_tile .. " ) ")
+         -- print("found: " .. tile.id .. " ( " .. near_tile .. " ) ")
          found = false -- allow further iterations
          return tile
       end
@@ -303,7 +303,6 @@ end
 
 
 function Engine:click_on_tile(x,y, action)
-  print("action = " .. action)
   local tile = self.map.tiles[x][y]
   if (action == 'default') then
     local unit = tile:get_any_unit(self.active_layer)

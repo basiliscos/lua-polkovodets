@@ -71,7 +71,7 @@ function BattleFormula:perform_battle(pair)
   local update_availabiliy = function(a_idx, p_idx)
     local wi_a = available_active[a_idx]
     local wi_p = available_passive[p_idx]
-    if ((wi_a.data.quantity > 0) or (pair.a.shots[wi_a.uniq_id])) then
+    if ((wi_a.data.quantity > 0) or (pair.a.shots[wi_a.id])) then
       table.remove(available_active, a_idx)
     end
 
@@ -94,22 +94,22 @@ function BattleFormula:perform_battle(pair)
     -- do not simulat shoots
     if (attack == 0) then return end
     local ad = attack/defence
-    print("ad = " .. ad .. " for units " .. wi_a.uniq_id.. "/" .. wi_p.uniq_id)
+    print("ad = " .. ad .. " for " .. wi_a.id.. " vs " .. wi_p.id)
     print("a = " .. attack .. ", d = " .. defence)
     local targets = math.modf(ad)
     local p = _probability(ad)
-    print(wi_a.uniq_id .. " hits " .. targets .. " target(s) with probability " .. p)
+    print(wi_a.id .. " hits " .. targets .. " target(s) with probability " .. p)
 
     -- active shoots to passive
     local casualities, remained_shots = _perform_shot(
       p,
-      a_side.shots[wi_a.uniq_id],
+      a_side.shots[wi_a.id],
       targets,
       wi_p.data.quantity
     )
-    p_side.casualities[wi_p.uniq_id] = (p_side.casualities[wi_p.uniq_id] or 0) + casualities
+    p_side.casualities[wi_p.id] = (p_side.casualities[wi_p.id] or 0) + casualities
     wi_p.data.quantity = wi_p.data.quantity - casualities
-    a_side.shots[wi_a.uniq_id] = remained_shots
+    a_side.shots[wi_a.id] = remained_shots
   end
 
   for a_idx, p_idx in select_weapons() do

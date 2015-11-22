@@ -24,14 +24,14 @@ WeaponInstance.__index = WeaponInstance
 function WeaponInstance.create(engine, weapon_id, unit_id, quantity)
    assert(weapon_id)
    assert(unit_id)
+   local id = "u:" .. unit_id .. "/w:" .. weapon_id
    local unit_lib = engine.unit_lib
-   local uniq_id = unit_id .. ":" .. weapon_id
    local weapon = assert(unit_lib.weapons.definitions[weapon_id], " weapon " .. weapon_id .. " is not available")
    local movement = weapon.data.movement
    local o = {
+      id      = id,
       weapon  = weapon,
       unit_id = unit_id,
-      uniq_id = uniq_id,
       data = {
          can_attack = true,
          movement   = movement,

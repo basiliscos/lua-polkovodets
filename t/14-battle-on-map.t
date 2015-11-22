@@ -31,10 +31,10 @@ subtest("german tank vs russian AT",
     local rus_at = map.tiles[5][9]:get_unit('surface')
     ok(rus_at)
     rus_at:update_actions_map()
-    is_deeply(rus_at.data.actions_map.attack[map.tiles[4][9].uniq_id],
+    is_deeply(rus_at.data.actions_map.attack[map.tiles[4][9].id],
       {
         surface = {
-          battle = { "7:17" }
+          battle = { "u:7/w:17" }
         }
       }
     )

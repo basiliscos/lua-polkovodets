@@ -37,15 +37,16 @@ function Tile.create(engine, data)
    data.tile_x = tile_x
    data.tile_y = tile_y
 
+
    local o = {
-      uniq_id = Tile.uniq_id(data.x, data.y),
-	  engine  = engine,
-	  data    = data,
-      layers  = {
-         air     = nil,
-         surface = nil,
-      },
-   }
+    id      = Tile.uniq_id(data.x, data.y),
+    engine  = engine,
+    data    = data,
+    layers  = {
+      air     = nil,
+      surface = nil,
+    },
+  }
    setmetatable(o, Tile)
    return o
 end
@@ -103,12 +104,12 @@ function Tile:draw(sdl_renderer, x, y, context)
    if (context.selected_unit) then
       local u = context.selected_unit
       local movement_area = u.data.actions_map.move
-      if ((not movement_area[self.uniq_id]) and (u.tile.uniq_id ~= self.uniq_id)) then
+      if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
          local fog_texture = terrain:get_icon('fog')
          assert(sdl_renderer:copy(fog_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
       end
    end
-   if (context.subordinated[self.uniq_id]) then
+   if (context.subordinated[self.id]) then
       local managed_texture = terrain:get_icon('managed')
       assert(sdl_renderer:copy(managed_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
    end

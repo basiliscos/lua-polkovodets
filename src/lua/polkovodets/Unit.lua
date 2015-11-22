@@ -224,7 +224,7 @@ function Unit:available_movement()
    local data = {}
    local allow_move = self.data.allow_move
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
-      data[weapon_instance.uniq_id] = allow_move and weapon_instance.data.movement or 0
+      data[weapon_instance.id] = allow_move and weapon_instance.data.movement or 0
    end
    return data
 end
@@ -239,7 +239,7 @@ function Unit:move_cost(tile)
       local value = cost_for[movement_type][weather]
       if (value == 'A') then value = weapon_instance.weapon.data.movement -- all movement points
       elseif (value == 'X') then value = math.maxinteger end              -- impassable
-      costs[weapon_instance.uniq_id] = value
+      costs[weapon_instance.id] = value
    end
    return Vector.create(costs)
 end
@@ -255,13 +255,13 @@ function Unit:_update_orientation(dst_tile, src_tile)
 end
 
 function Unit:move_to(dst_tile)
-   local costs = assert(self.data.actions_map.move[dst_tile.uniq_id])
+   local costs = assert(self.data.actions_map.move[dst_tile.id])
    local src_tile = self.tile
    self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
    self.tile:set_unit(nil, self.data.layer)
    -- print(inspect(costs))
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
-      local cost = costs.data[weapon_instance.uniq_id]
+      local cost = costs.data[weapon_instance.id]
       weapon_instance.data.movement = weapon_instance.data.movement - cost
    end
 
@@ -383,7 +383,7 @@ function Unit:update_actions_map()
 
       -- initialize reachability with tile, on which the unit is already located
       local initial_costs = {}
-      for idx, wi in pairs(marched_weapons) do initial_costs[wi.uniq_id] = 0 end
+      for idx, wi in pairs(marched_weapons) do initial_costs[wi.id] = 0 end
       add_reachability_tile(self.tile, self.tile, Vector.create(initial_costs))
 
 
@@ -403,8 +403,8 @@ function Unit:update_actions_map()
 
          local can_move = not (other_unit and other_unit.player ~= self.player and other_unit:get_layer() == layer)
          if (can_move) then
-            -- print(string.format("%s -> %s : %d", src_tile.uniq_id, dst_tile.uniq_id, cost))
-            fuel_at[dst_tile.uniq_id] = costs
+            -- print(string.format("%s -> %s : %d", src_tile.id, dst_tile.id, cost))
+            fuel_at[dst_tile.id] = costs
             local has_enemy_near = self:_enemy_near(dst_tile)
             for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
                local adj_cost = self:move_cost(adj_tile)
@@ -418,7 +418,7 @@ function Unit:update_actions_map()
          end
       end
       -- do not move on the tile, where unit is already located
-      fuel_at[self.tile.uniq_id] = nil
+      fuel_at[self.tile.id] = nil
       return fuel_at
    end
 
@@ -477,9 +477,9 @@ function Unit:update_actions_map()
       local examine_queue = {}
       local already_added = {}
       local add_to_queue = function(tile)
-         if (not already_added[tile.uniq_id]) then
+         if (not already_added[tile.id]) then
             table.insert(examine_queue, tile)
-            already_added[tile.uniq_id] = true
+            already_added[tile.id] = true
          end
       end
 
@@ -487,28 +487,28 @@ function Unit:update_actions_map()
       while (#examine_queue > 0) do
          local tile = table.remove(examine_queue, 1)
          local distance = start_tile:distance_to(tile)
-         visited_tiles[tile.uniq_id] = true
+         visited_tiles[tile.id] = true
 
          local enemy_units = tile:get_all_units(function(unit) return unit.player ~= self.player end)
          for idx, enemy_unit in pairs(enemy_units) do
             local enemy_layer = enemy_unit:get_layer()
             local weapon_instances = (weapon_capabilites[enemy_layer] or {})[distance+1]
             if (weapon_instances) then
-               local attack_details = attack_map[tile.uniq_id] or {}
+               local attack_details = attack_map[tile.id] or {}
                local layer_attack_details = attack_details[enemy_layer] or {}
                for k, weapon_instance in pairs(weapon_instances) do
                   local fire_kinds = get_fire_kinds(weapon_instance, distance, enemy_unit)
                   -- print(inspect(fire_kinds))
                   for k, fire_kind in pairs(fire_kinds) do
-                     -- print(fire_kind .. " by " .. weapon_instance.uniq_id)
+                     -- print(fire_kind .. " by " .. weapon_instance.id)
                      local fired_weapons = layer_attack_details[fire_kind] or {}
-                     table.insert(fired_weapons, weapon_instance.uniq_id)
+                     table.insert(fired_weapons, weapon_instance.id)
                      table.sort(fired_weapons)
                      layer_attack_details[fire_kind] = fired_weapons
                   end
                end
                attack_details[enemy_layer] = layer_attack_details
-               attack_map[tile.uniq_id] = attack_details
+               attack_map[tile.id] = attack_details
             end
          end
          for adj_tile in engine:get_adjastent_tiles(tile, visited_tiles) do
@@ -535,8 +535,8 @@ function Unit:update_actions_map()
             local size_matches = my_size ~= other_size
             local any_manager = self:is_capable('MANAGE_LEVEL') or other_unit:is_capable('MANAGE_LEVEL')
             if (expected_quantity <= 3 and size_matches and not any_manager) then
-               merge_map[tile.uniq_id] = true
-               -- print("m " .. tile.uniq_id .. ":" .. my_size .. other_size)
+               merge_map[tile.id] = true
+               -- print("m " .. tile.id .. ":" .. my_size .. other_size)
             end
          end
       end
@@ -547,7 +547,7 @@ function Unit:update_actions_map()
       local map = {}
       for idx, tile in pairs(landing_candidates) do
          if (tile ~= self.tile) then
-            map[tile.uniq_id] = true
+            map[tile.id] = true
          end
       end
       return map
@@ -650,7 +650,7 @@ end
 function Unit:get_attack_kind(tile)
    local kind
 
-   local attack_layers = self.data.actions_map.attack[tile.uniq_id]
+   local attack_layers = self.data.actions_map.attack[tile.id]
    local same_layer = self:get_layer()
    local opposite_layer = (same_layer == 'surface') and 'air' or 'surface'
    local attack_layer = attack_layers[same_layer]

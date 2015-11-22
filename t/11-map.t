@@ -38,9 +38,9 @@ subtest("adjascent tiles",
            local adj_tiles_33 = {}
            local skip_odd_33 = {}
            for t in engine:get_adjastent_tiles(map.tiles[3][3]) do
-              table.insert(adj_tiles_33, t.uniq_id)
+              table.insert(adj_tiles_33, t.id)
               if (t.data.x % 2 == 0) then
-                 skip_odd_33[t.uniq_id] = true
+                 skip_odd_33[t.id] = true
               end
            end
            is_deeply(adj_tiles_33, {
@@ -54,7 +54,7 @@ subtest("adjascent tiles",
 
            local adj_tiles_33_revisited = {}
            for t in engine:get_adjastent_tiles(map.tiles[3][3], skip_odd_33) do
-              table.insert(adj_tiles_33_revisited, t.uniq_id)
+              table.insert(adj_tiles_33_revisited, t.id)
            end
            is_deeply(adj_tiles_33_revisited, {
                         "tile[3:2]",
@@ -63,7 +63,7 @@ subtest("adjascent tiles",
 
            local adj_tiles_43 = {}
            for t in engine:get_adjastent_tiles(map.tiles[4][3]) do
-              table.insert(adj_tiles_43, t.uniq_id)
+              table.insert(adj_tiles_43, t.id)
            end
            is_deeply(adj_tiles_43, {
                         "tile[3:3]",
@@ -81,8 +81,8 @@ subtest("distances",
            local start = map.tiles[5][3]
            is(start:distance_to(start), 0, "distance to self tile")
            for t in engine:get_adjastent_tiles(start) do
-              is(t:distance_to(start), 1, string.format("direct distance %s -> %s", t.uniq_id, start.uniq_id))
-              is(start:distance_to(t), 1, string.format("reverse distance %s -> %s", t.uniq_id, start.uniq_id))
+              is(t:distance_to(start), 1, string.format("direct distance %s -> %s", t.id, start.id))
+              is(start:distance_to(t), 1, string.format("reverse distance %s -> %s", t.id, start.id))
            end
 
            is(map.tiles[8][4]:distance_to(map.tiles[4][4]), 4)
