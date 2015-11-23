@@ -22,33 +22,40 @@ Tile.__index = Tile
 
 local inspect = require('inspect')
 
-function Tile.create(engine, data)
-   assert(data.image_idx)
-   assert(data.x)
-   assert(data.y)
-   assert(data.name)
-   assert(data.terrain_type)
-   assert(data.terrain_name)
+function Tile.create(engine, terrain, data)
+  assert(data.image_idx)
+  assert(data.x)
+  assert(data.y)
+  assert(data.name)
+  assert(data.terrain_type)
+  assert(data.terrain_name)
 
-   -- use adjusted tiles (hex) coordinates
-   local tile_x = data.x
-   local tile_y = data.y + math.modf((tile_x - 2) * 0.5)
+  -- use adjusted tiles (hex) coordinates
+  local tile_x = data.x
+  local tile_y = data.y + math.modf((tile_x - 2) * 0.5)
 
-   data.tile_x = tile_x
-   data.tile_y = tile_y
+  data.tile_x = tile_x
+  data.tile_y = tile_y
 
+  local virt_x = (data.x - 1) * terrain.hex_x_offset
+  local virt_y = ((data.y - 1) * terrain.hex_height)
+    + ( (data.x % 2 == 0) and terrain.hex_y_offset or 0)
 
-   local o = {
+  local o = {
     id      = Tile.uniq_id(data.x, data.y),
     engine  = engine,
     data    = data,
+    virtual = {
+      x = virt_x,
+      y = virt_y,
+    },
     layers  = {
       air     = nil,
       surface = nil,
     },
   }
-   setmetatable(o, Tile)
-   return o
+  setmetatable(o, Tile)
+  return o
 end
 
 function Tile.uniq_id(x,y)
@@ -80,11 +87,13 @@ function Tile:get_all_units(filter)
 end
 
 
-function Tile:draw(sdl_renderer, x, y, context)
+function Tile:draw(sdl_renderer, context)
    assert(sdl_renderer)
    local sx, sy = self.data.x, self.data.y
    -- print(inspect(self.data))
-   -- print("drawing tile [" .. sx .. ":" .. sy .. "] at (" .. x .. ":" .. y .. ")")
+   local x = self.virtual.x + context.screen.offset[1]
+   local y = self.virtual.y + context.screen.offset[2]
+   -- print("drawing " .. self.id .. " at (" .. x .. ":" .. y .. ")")
 
    local engine = self.engine
    local map = engine:get_map()

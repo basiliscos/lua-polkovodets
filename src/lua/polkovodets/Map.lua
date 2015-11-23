@@ -73,7 +73,7 @@ function Map:load(map_file)
         image_idx = image_idx,
         terrain_type = terrain_type,
       }
-      local tile = Tile.create(engine, tile_data)
+      local tile = Tile.create(engine, terrain, tile_data)
       column[ y ] = tile
       tile_for[tile.id] = tile
     end
