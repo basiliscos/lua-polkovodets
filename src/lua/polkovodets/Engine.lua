@@ -26,30 +26,30 @@ local History = require 'polkovodets.History'
 
 
 function Engine.create()
-   local e = {
-	  turn = 0,
-      selected_unit = nil,
-      current_player_idx = nil,
-      total_players = 0,
-      active_layer = 'surface',
-	  gui = {
-		 map_x = 0,
-		 map_y = 0,
-		 -- number of tiles drawn to screen
-		 map_sw = 0,
-		 map_sh = 0,
-		 -- position where to draw first tile
-		 map_sx = 0,
-		 map_sy = 0,
-
-	  },
-	  options = {
-		 show_grid = true,
-	  }
-   }
-   setmetatable(e,Engine)
-   e.history = History.create(e)
-   return e
+  local e = {
+    turn               = 0,
+    selected_unit      = nil,
+    current_player_idx = nil,
+    history_layer      = false,
+    total_players      = 0,
+    active_layer       = 'surface',
+    gui = {
+      map_x = 0,
+      map_y = 0,
+      -- number of tiles drawn to screen
+      map_sw = 0,
+      map_sh = 0,
+      -- position where to draw first tile
+      map_sx = 0,
+      map_sy = 0,
+    },
+    options = {
+      show_grid = true,
+    }
+  }
+  setmetatable(e,Engine)
+  e.history = History.create(e)
+  return e
 end
 
 
@@ -346,5 +346,14 @@ function Engine:toggle_attack_priorities()
       self.selected_unit:switch_attack_priorities()
    end
 end
+
+function Engine:toggle_history()
+  self.history_layer = not self.history_layer
+end
+
+function Engine:show_history()
+  return self.history_layer
+end
+
 
 return Engine

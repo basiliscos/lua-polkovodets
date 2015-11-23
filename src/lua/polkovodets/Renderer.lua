@@ -229,16 +229,30 @@ function Renderer:_draw_map()
   end)
 
   -- draw current turn current unit history
-  if (u) then
-    local records = _.select(engine.history:get_records(engine:current_turn()), function(k, v)
-      local unit_id = v.context.unit_id
-      return (unit_id and unit_id == u.id)
-    end)
-    for idx, record in pairs(records) do
-      if (record.action == 'unit/move') then
-        record:draw(sdl_renderer, context)
+  local get_shown_records = function()
+    local records = {}
+    local current_turn = engine:current_turn()
+    if (u) then
+      records = _.select(engine.history:get_records(current_turn), function(k, v)
+        local unit_id = v.context.unit_id
+        return (unit_id and unit_id == u.id)
+      end)
+    else
+      if (engine:show_history()) then
+        local last_opponent_turn = (engine.current_player_idx == engine.total_players) and current_turn or current_turn - 1
+        records = _.select(engine.history:get_records(last_opponent_turn), function(k, v)
+          local unit_id = v.context.unit_id
+          local unit = self.engine:get_unit(unit_id)
+          return unit.player ~= self.engine:get_current_player()
+        end)
       end
     end
+    return records
+  end
+
+  local records = get_shown_records()
+  for idx, record in pairs(records) do
+    record:draw(sdl_renderer, context)
   end
 end
 
@@ -370,6 +384,8 @@ function Renderer:main_loop()
             engine:end_turn()
          elseif (e.keysym.sym == SDL.key.t) then
             engine:toggle_layer()
+         elseif (e.keysym.sym == SDL.key.h) then
+            engine:toggle_history()
          elseif (e.keysym.sym == SDL.key.k) then
             engine:toggle_attack_priorities()
          end
