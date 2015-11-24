@@ -28,18 +28,8 @@ function Nation.create(engine, nation_data)
 
    local load_flag = function(short_path)
       local image_path = engine:get_gfx_dir() .. '/' .. short_path
-      local texture = engine.renderer:load_texture(image_path)
-      local format, access, w, h = texture:query()
-      return {
-         texture = texture,
-         w = w,
-         h = h,
-      }
+      return engine.renderer:load_texture(image_path)
    end
-
-   local image_path = engine:get_gfx_dir() .. '/' .. nation_data.icon_path
-   local texture = engine.renderer:load_texture(image_path)
-   local format, access, w, h = texture:query()
 
    local o = {
 	  engine    = engine,

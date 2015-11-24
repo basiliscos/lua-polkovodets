@@ -46,19 +46,13 @@ function Theme.create(engine, data)
       for idx2, efficiency in pairs({'high', 'avg', 'low'}) do
          local icon_name = size .. '-' .. efficiency .. '.png'
          local icon_path = theme_dir .. '/unit-state-icons/' .. icon_name
-         local texture = renderer:load_texture(icon_path)
-         local format, access, w, h = texture:query()
+         local image = renderer:load_texture(icon_path)
          local key = size .. '-' .. efficiency
-         unit_states[key] = {
-            w       = w,
-            h       = h,
-            texture = texture,
-         }
+         unit_states[key] = image
       end
    end
 
-   local move_arrow_texture = renderer:load_texture(theme_dir .. '/arrow-movement.png')
-   local format, access, move_w, move_h = move_arrow_texture:query()
+   local move_arrow_icon = renderer:load_texture(theme_dir .. '/arrow-movement.png')
 
    local o = {
       engine   = engine,
@@ -66,11 +60,7 @@ function Theme.create(engine, data)
       data     = data,
       cursors  = cursors_path,
       history  = {
-        move = {
-            w       = move_w,
-            h       = move_h ,
-            texture = move_arrow_texture,
-        }
+        move = move_arrow_icon,
       },
       fonts    = {
          active_hex = active_hex_ttf,

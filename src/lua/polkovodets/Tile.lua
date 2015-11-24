@@ -106,21 +106,21 @@ function Tile:draw(sdl_renderer, context)
    local hex_w = terrain.hex_width
 
    local dst = {x = x, y = y, w = hex_w, h = hex_h}
-   local texture = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
+   local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
    -- draw terrain
-   assert(sdl_renderer:copy(texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+   assert(sdl_renderer:copy(image.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
    if (context.selected_unit) then
       local u = context.selected_unit
       local movement_area = u.data.actions_map.move
       if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
-         local fog_texture = terrain:get_icon('fog')
-         assert(sdl_renderer:copy(fog_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+         local fog = terrain:get_icon('fog')
+         assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
       end
    end
    if (context.subordinated[self.id]) then
-      local managed_texture = terrain:get_icon('managed')
-      assert(sdl_renderer:copy(managed_texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+      local managed= terrain:get_icon('managed')
+      assert(sdl_renderer:copy(managed.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
    end
 
    local show_grid = engine.options.show_grid
@@ -140,8 +140,8 @@ function Tile:draw(sdl_renderer, context)
 
    -- draw grid
    if (show_grid) then
-      local icon_texture = terrain:get_icon('grid')
-      assert(sdl_renderer:copy(icon_texture, self.grid_rectange, dst))
+      local icon= terrain:get_icon('grid')
+      assert(sdl_renderer:copy(icon.texture, self.grid_rectange, dst))
    end
 
    -- draw 1 unit (air or surface), always noremal sized

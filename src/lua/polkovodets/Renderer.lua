@@ -25,6 +25,7 @@ local image = require "SDL.image"
 local inspect = require('inspect')
 local ttf = require "SDL.ttf"
 
+local Image = require 'polkovodets.utils.Image'
 local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
 
@@ -106,10 +107,10 @@ function Renderer:load_joint_texture(path, iterator_factory)
       -- print("rectangle: " .. inspect(rectangle))
       local sub_surface = assert(SDL.createRGBSurface(rectangle.w, rectangle.h))
       assert(surface:blit(sub_surface, rectangle));
-      local texture = assert(self.sdl_renderer:createTextureFromSurface(sub_surface))
-      table.insert(cache, texture)
+      local my_image = Image.create(self.sdl_renderer, sub_surface)
+      table.insert(cache, my_image)
    end
-   print(path .. ": " .. #cache .. " textures")
+   print(path .. ": " .. #cache .. " images")
    textures_cache[path] = cache
 end
 
@@ -158,9 +159,9 @@ function Renderer:load_texture(path)
 	  return textures_cache[path]
    end
    local surface = self:_load_image(path)
-   local texture = assert(self.sdl_renderer:createTextureFromSurface(surface))
-   textures_cache[path] = texture
-   return texture
+   local my_image = Image.create(self.sdl_renderer, surface)
+   textures_cache[path] = my_image
+   return my_image
 end
 
 
@@ -327,10 +328,10 @@ end
 function Renderer:_draw_cursor()
    local state, x, y = SDL.getMouseState()
    local kind = self:_action_kind(self.active_tile)
-   local texture = self.theme:get_cursor(kind)
+   local cursor = self.theme:get_cursor(kind)
    local cursor_size = self.theme.data.cursors.size
    local dst = { w = cursor_size, h = cursor_size, x = x, y = y }
-   assert(self.sdl_renderer:copy(texture, nil, dst))
+   assert(self.sdl_renderer:copy(cursor.texture, nil, dst))
 end
 
 

@@ -100,20 +100,19 @@ function Unit:draw(sdl_renderer, x, y, context)
    local hex_x_offset = terrain.hex_x_offset
 
    local magnet_to = context.magnet_to or 'center'
-   local texture = self.definition:get_icon(self.data.state)
-   local format, access, w, h = texture:query()
+   local image = self.definition:get_icon(self.data.state)
    local scale = (context.size == 'normal') and 1.0 or 0.6
-   local x_shift = (hex_w - w*scale)/2
+   local x_shift = (hex_w - image.w*scale)/2
    local y_shift = (magnet_to == 'center')
-      and (hex_h - h*scale)/2
+      and (hex_h - image.h*scale)/2
       or (magnet_to == 'top')
       and 0                         -- pin unit to top
       or (hex_h - h*scale)          -- pin unit to bottom
    local dst = {
       x = math.modf(x + x_shift),
       y = math.modf(y + y_shift),
-      w = math.modf(w * scale),
-      h = math.modf(h * scale),
+      w = math.modf(image.w * scale),
+      h = math.modf(image.h * scale),
    }
    local orientation = self.data.orientation
    assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
@@ -121,13 +120,13 @@ function Unit:draw(sdl_renderer, x, y, context)
                  (orientation == 'right') and SDL.rendererFlip.Horizontal
 
    if (self.data.selected) then
-      local frame_icon = terrain:get_icon('frame')
-      assert(sdl_renderer:copy(frame_icon, nil, {x = x, y = y, w = hex_w, h = hex_h}))
+      local frame = terrain:get_icon('frame')
+      assert(sdl_renderer:copy(frame.texture, nil, {x = x, y = y, w = hex_w, h = hex_h}))
    end
 
    assert(sdl_renderer:copyEx({
-             texture     = texture,
-             source      = {x = 0 , y = 0, w = w, h = h},
+             texture     = image.texture,
+             source      = {x = 0 , y = 0, w = image.w, h = image.h},
              destination = dst,
              nil,                                          -- no angle
              nil,                                          -- no center

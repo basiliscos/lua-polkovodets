@@ -63,8 +63,8 @@ function Terrain:load(terrain_file)
    load_icon('frame')
    load_icon('fog')
    load_icon('managed')
-   local fog_texture = self:get_icon('fog')
-   assert(fog_texture:setAlphaMod(40))
+   local fog_image = self:get_icon('fog')
+   assert(fog_image.texture:setAlphaMod(40))
 
    -- weather
    local weather_file = assert(parser:get_value('weather-types'))

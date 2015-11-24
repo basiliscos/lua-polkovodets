@@ -7,15 +7,25 @@ _DummyTexture.__index = _DummyTexture
 function _DummyTexture:setAlphaMod() return true end
 function _DummyTexture:query() return 'a', 'b', 10, 20 end
 
+local _DummyImage = {}
+_DummyImage.__index = _DummyImage
+
 function DummyRenderer.create(engine, width, height)
-   local o = {
-	  w = width,
-	  h = height,
-      textures = {},
-   }
-   setmetatable(o, DummyRenderer)
-   engine:set_renderer(o)
-   return o
+  local image = {
+    w = 0,
+    h = 0,
+    texture = setmetatable({}, _DummyTexture),
+  }
+  local o = {
+    w        = width,
+    h        = height,
+    textures = {},
+    image    = setmetatable(image, _DummyImage),
+  }
+  setmetatable(o, DummyRenderer)
+  engine:set_renderer(o)
+
+  return o
 end
 
 function DummyRenderer:get_size()
@@ -27,9 +37,7 @@ function DummyRenderer:load_joint_texture(path, frame)
 end
 
 function DummyRenderer:load_texture(path)
-   local o = { path = path }
-   setmetatable(o, _DummyTexture)
-   return o
+   return self.image
 end
 
 return DummyRenderer
