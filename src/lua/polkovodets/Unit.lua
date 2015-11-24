@@ -22,7 +22,7 @@ Unit.__index = Unit
 local _ = require ("moses")
 local inspect = require('inspect')
 local SDL = require "SDL"
-local Vector = require 'polkovodets.Vector'
+local Vector = require 'polkovodets.utils.Vector'
 
 
 function Unit.create(engine, data, player)
