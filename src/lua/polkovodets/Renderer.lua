@@ -190,6 +190,15 @@ function Renderer:_draw_map()
 
   local u = engine:get_selected_unit()
   local context = {
+    cache = {
+      drawn_battle_tiles = {},
+    },
+    tile_visibility_test = function(tile)
+      local x, y = tile.x, tile.y
+      local result
+        =   (x >= start_map_x and x <= map_sw)
+        and (x >= start_map_y and x <= map_sh)
+    end,
     tile_geometry = {
       w        = terrain.hex_width,
       h        = terrain.hex_height,

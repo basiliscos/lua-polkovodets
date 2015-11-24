@@ -25,7 +25,7 @@ local inspect = require('inspect')
 local _Record = {}
 _Record.__index = _Record
 
-function _Record.create(player, turn_no, action, context, success, resuls)
+function _Record.create(player, turn_no, action, context, success, results)
   local o = {
     player  = player,
     turn_no = turn_no,
@@ -82,6 +82,12 @@ function _Record:draw(sdl_renderer, context)
         destination = dst,
         angle       = angle,
       }))
+    end
+  elseif (self.action == 'battle') then
+    local tile_id = self.context.tile
+    if (not context.cache.drawn_battle_tiles[tile_id]) then
+      context.cache.drawn_battle_tiles[tile_id] = true
+
     end
   end
 end

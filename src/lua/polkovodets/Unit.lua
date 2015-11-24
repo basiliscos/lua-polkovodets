@@ -378,7 +378,19 @@ end
 function Unit:attack_on(tile, fire_type)
   local enemy_unit = tile:get_any_unit(self.engine.active_layer)
   assert(enemy_unit)
-  self.engine.battle_scheme:perform_battle(self, enemy_unit, fire_type)
+  local i_casualities, p_casualities = self.engine.battle_scheme:perform_battle(self, enemy_unit, fire_type)
+  local ctx = {
+    i_unit    = self.id,
+    p_unit    = enemy_unit.id,
+    fire_type = fire_type,
+    tile      = tile.id,
+  }
+  local results = {
+    i = { casualities = i_casualities },
+    p = { casualities = p_casualities },
+  }
+  self.engine.history:record_player_action('battle', ctx, true, results)
+  print(inspect(self.engine.history.records_at))
 end
 
 

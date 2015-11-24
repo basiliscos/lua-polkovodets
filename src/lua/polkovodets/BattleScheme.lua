@@ -578,7 +578,7 @@ end
 function BattleScheme:perform_battle(initiator_unit, passive_unit, fire_type)
   local block = self:_find_block(initiator_unit, passive_unit, fire_type)
   assert(block)
-  block:perform_battle(initiator_unit, passive_unit, fire_type)
+  return block:perform_battle(initiator_unit, passive_unit, fire_type)
 end
 
 return BattleScheme
