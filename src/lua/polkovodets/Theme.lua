@@ -52,15 +52,14 @@ function Theme.create(engine, data)
       end
    end
 
-   local move_arrow_icon = renderer:load_texture(theme_dir .. '/arrow-movement.png')
-
    local o = {
       engine   = engine,
       renderer = renderer,
       data     = data,
       cursors  = cursors_path,
       history  = {
-        move = move_arrow_icon,
+        move     = renderer:load_texture(theme_dir .. '/arrow-movement.png'),
+        battle   = renderer:load_texture(theme_dir .. '/battle-icon.png'),
       },
       fonts    = {
          active_hex = active_hex_ttf,

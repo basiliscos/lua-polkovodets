@@ -190,16 +190,15 @@ function Renderer:_draw_map()
   end
 
   local u = engine:get_selected_unit()
+  local tile_visibility_test = function(tile)
+    local x, y = tile.data.x, tile.data.y
+    local result
+      =   (x >= start_map_x and x <= map_sw)
+      and (y >= start_map_y and y <= map_sh)
+    return result
+  end
   local context = {
-    cache = {
-      drawn_battle_tiles = {},
-    },
-    tile_visibility_test = function(tile)
-      local x, y = tile.x, tile.y
-      local result
-        =   (x >= start_map_x and x <= map_sw)
-        and (x >= start_map_y and x <= map_sh)
-    end,
+    tile_visibility_test = tile_visibility_test,
     tile_geometry = {
       w        = terrain.hex_width,
       h        = terrain.hex_height,
@@ -240,24 +239,40 @@ function Renderer:_draw_map()
 
   -- draw current turn current unit history
   local get_shown_records = function()
-    local records = {}
-    local current_turn = engine:current_turn()
-    if (u) then
-      records = _.select(engine.history:get_records(current_turn), function(k, v)
+    local all_records = engine.history:get_actual_records()
+
+    local my_unit_movements = function(k, v)
+      if (u and v.action == 'unit/move') then
         local unit_id = v.context.unit_id
         return (unit_id and unit_id == u.id)
-      end)
-    else
-      if (engine:show_history()) then
-        local last_opponent_turn = (engine.current_player_idx == engine.total_players) and current_turn or current_turn - 1
-        records = _.select(engine.history:get_records(last_opponent_turn), function(k, v)
-          local unit_id = v.context.unit_id
-          local unit = self.engine:get_unit(unit_id)
-          return unit.player ~= self.engine:get_current_player()
-        end)
       end
     end
-    return records
+
+    local battles_cache = {}
+    local battles = function(k, v)
+      if ((v.action == 'battle') and (not battles_cache[v.context.tile])) then
+        local tile_id = v.context.tile
+        battles_cache[tile_id] = true
+        local tile = map:lookup_tile(tile_id)
+        assert(tile)
+        return tile_visibility_test(tile)
+      end
+    end
+
+    local opponent_movements = function(k, v)
+      if (v.action == 'unit/move') then
+        local unit_id = v.context.unit_id
+        local unit = self.engine:get_unit(unit_id)
+        local show = unit.player ~= self.engine:get_current_player()
+        return show
+      end
+    end
+
+    local records = _.select(all_records, my_unit_movements)
+    records = _.append(records, _.select(all_records,battles))
+    records = _.append(records, _.select(all_records, opponent_movements))
+    -- print(" records = " .. inspect(records))
+    return _.unique(records)
   end
 
   local records = get_shown_records()

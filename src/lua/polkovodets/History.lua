@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local History = {}
 History.__index = History
 
+local _ = require ("moses")
 local inspect = require('inspect')
 
 local _Record = {}
@@ -82,13 +83,22 @@ function _Record:draw(sdl_renderer, context)
         destination = dst,
         angle       = angle,
       }))
+      -- print("movement has been drawn")
     end
   elseif (self.action == 'battle') then
     local tile_id = self.context.tile
-    if (not context.cache.drawn_battle_tiles[tile_id]) then
-      context.cache.drawn_battle_tiles[tile_id] = true
-
-    end
+    local icon = context.theme.history.battle
+    local tile = context.map:lookup_tile(tile_id)
+    assert(sdl_renderer:copy(
+      icon.texture,
+      nil,
+      {
+        x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - icon.w,
+        y = tile.virtual.y + context.screen.offset[2],
+        w = icon.w,
+        h = icon.h,
+      })
+    )
   end
 end
 
@@ -114,8 +124,29 @@ function History:record_player_action(action, context, success, results)
   self.records_at[turn_no] = turn_records
 end
 
-function History:get_records(turn_no)
-  return self.records_at[turn_no] or {}
+function History:get_actual_records()
+  local engine = self.engine
+  local actual_turns = {} -- k: player.id, v: last turn
+  local turn_no = self.engine:current_turn()
+  local current_player = engine.current_player
+
+  for i, p in pairs(engine.player_for) do
+    local turn = (p.data.order <= current_player.data.order)
+      and turn_no
+       or turn_no -1
+    actual_turns[p.id] = turn
+  end
+
+  local records = _.select(self.records_at[turn_no] or {}, function(k, v)
+    return actual_turns[v.player] == turn_no
+  end)
+  if ((turn_no - 1) > 0) then
+    records = _.append(records, _.select(self.records_at[turn_no - 1] or {}, function(k, v)
+        return actual_turns[v.player.id] == turn_no - 1
+      end)
+    )
+  end
+  return records or {}
 end
 
 return History
