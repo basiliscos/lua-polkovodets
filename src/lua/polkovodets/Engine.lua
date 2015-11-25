@@ -23,7 +23,7 @@ Engine.__index = Engine
 local inspect = require('inspect')
 local Tile = require 'polkovodets.Tile'
 local History = require 'polkovodets.History'
-
+local Mediator = require("mediator")
 
 function Engine.create()
   local e = {
@@ -33,6 +33,7 @@ function Engine.create()
     history_layer      = false,
     total_players      = 0,
     active_layer       = 'surface',
+    mediator           = Mediator(),
     gui = {
       map_x = 0,
       map_y = 0,
@@ -54,37 +55,36 @@ end
 
 
 function Engine:set_map(map)
-   assert(self.renderer)
-   assert(map)
-   self.map = map
-
-   self:update_shown_map()
+  assert(self.renderer)
+  assert(map)
+  self.map = map
 end
 
 function Engine:update_shown_map()
-   local map = self.map
-   local gui = self.gui
-   gui.map_sx = -map.terrain.hex_x_offset
-   gui.map_sy = -map.terrain.hex_height
+  local map = self.map
+  local gui = self.gui
+  gui.map_sx = -map.terrain.hex_x_offset
+  gui.map_sy = -map.terrain.hex_height
 
-   -- calculate drawn number of tiles
-   local w, h = self.renderer:get_size()
-   local step = 0
-   local ptr = gui.map_sx
-   while(ptr < w) do
-	  step = step + 1
-	  ptr = ptr + map.terrain.hex_x_offset
-   end
-   gui.map_sw = step
+  -- calculate drawn number of tiles
+  local w, h = self.renderer:get_size()
+  local step = 0
+  local ptr = gui.map_sx
+  while(ptr < w) do
+    step = step + 1
+    ptr = ptr + map.terrain.hex_x_offset
+  end
+  gui.map_sw = step
 
-   step = 0
-   ptr = gui.map_sy
-   while(ptr < h) do
-	  step = step + 1
-	  ptr = ptr + map.terrain.hex_height
-   end
-   gui.map_sh = step
-   print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
+  step = 0
+  ptr = gui.map_sy
+  while(ptr < h) do
+    step = step + 1
+    ptr = ptr + map.terrain.hex_height
+  end
+  gui.map_sh = step
+  print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
+  self.mediator:publish({ "view.update" });
 end
 
 
@@ -101,8 +101,10 @@ function Engine:set_renderer(renderer)
 end
 
 function Engine:set_scenario(scenario)
-   self.turn = 1
-   self.scenario = scenario
+  self.turn = 1
+  self.scenario = scenario
+  self.mediator:publish({ "model.update" });
+  self:update_shown_map()
 end
 function Engine:get_scenario(scenario) return self.scenario end
 
@@ -177,6 +179,7 @@ function Engine:end_turn()
    else
       self:_set_current_player(self.current_player_idx + 1)
    end
+   self.mediator:publish({ "model.update" });
 end
 
 function Engine:current_weather()
@@ -297,14 +300,15 @@ end
 
 
 function Engine:unselect_unit()
-   if (self.selected_unit) then
-      self.selected_unit.data.selected = false
-   end
-   self.selected_unit = nil
+  if (self.selected_unit) then
+    self.selected_unit.data.selected = false
+  end
+  self.selected_unit = nil
+  self.mediator:publish({ "view.update" });
 end
 
 function Engine:get_selected_unit()
-   return self.selected_unit
+  return self.selected_unit
 end
 
 
@@ -332,23 +336,27 @@ function Engine:click_on_tile(x,y, action)
       self:click_on_tile(x, y, 'default')
     end
   end
+  self.mediator:publish({ "view.update" });
 end
 
 function Engine:toggle_layer()
-   local current = self.active_layer
-   current = (current == 'air') and 'surface' or 'air'
-   print("active layer " .. current)
-   self.active_layer = current
+  local current = self.active_layer
+  current = (current == 'air') and 'surface' or 'air'
+  print("active layer " .. current)
+  self.active_layer = current
+  self.mediator:publish({ "view.update" });
 end
 
 function Engine:toggle_attack_priorities()
-   if (self.selected_unit) then
-      self.selected_unit:switch_attack_priorities()
-   end
+  if (self.selected_unit) then
+    self.selected_unit:switch_attack_priorities()
+    self.mediator:publish({ "view.update" });
+  end
 end
 
 function Engine:toggle_history()
   self.history_layer = not self.history_layer
+  self.mediator:publish({ "view.update" });
 end
 
 function Engine:show_history()

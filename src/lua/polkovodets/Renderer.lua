@@ -33,56 +33,63 @@ local SCROLL_TOLERANCE = 5
 local EVENT_DELAY = 50
 
 function Renderer.create(engine, window, sdl_renderer)
-   assert(ttf.init())
-   local o = {
-      active_tile = {1, 1},
-	  size = table.pack(window:getSize()),
-      current_cursor = 0,
-	  engine = engine,
-	  window = window,
-	  sdl_renderer = sdl_renderer,
-	  textures_cache = {},
-      resources = {},
-      fonts = {},
-   }
-   -- hide system mouse pointer
-   assert(SDL.showCursor(false))
-   setmetatable(o, Renderer)
-   engine:set_renderer(o)
-   local theme = Theme.create(engine,
-                              {
-                                 name = 'default',
-                                 active_hex = {
-                                    outline_color = 0x0,
-                                    outline_width = 2,
-                                    color = 0xFFFFFF,
-                                    font_size = 15,
-                                    font = 'DroidSansMono.ttf'
-                                 },
-                                 cursors = {
-                                    path = 'cursors.bmp',
-                                    size = 22,
-                                    actions = {
-                                       ['default'       ] = 1,
-                                       ['move'          ] = 2,
-                                       ['merge'         ] = 3,
-                                       ['battle'        ] = 6,
-                                       ['fire/artillery'] = 4,
-                                       ['fire/anti-air' ] = 7,
-                                       ['fire/bombing'  ] = 5,
-                                       ['land'          ] = 8,
-                                    }
-                                 },
-
-                              }
-   )
-   o.theme = theme
-   return o
+  assert(ttf.init())
+  local o = {
+    active_tile    = {1, 1},
+    size           = table.pack(window:getSize()),
+    current_cursor = 0,
+    engine         = engine,
+    window         = window,
+    sdl_renderer   = sdl_renderer,
+    draw_function  = nil,
+    textures_cache = {},
+    resources      = {},
+    fonts          = {},
+    notications    = {
+      ['updated.view']  = true,
+      ['updated.model'] = true,
+    }
+  }
+  -- hide system mouse pointer
+  assert(SDL.showCursor(false))
+  setmetatable(o, Renderer)
+  engine:set_renderer(o)
+  local theme = Theme.create(engine,{
+    name          = 'default',
+    active_hex    = {
+      outline_color = 0x0,
+      outline_width = 2,
+      color         = 0xFFFFFF,
+      font_size     = 15,
+      font          = 'DroidSansMono.ttf'
+    },
+    cursors = {
+      path = 'cursors.bmp',
+      size = 22,
+      actions = {
+        ['default'       ] = 1,
+        ['move'          ] = 2,
+        ['merge'         ] = 3,
+        ['battle'        ] = 6,
+        ['fire/artillery'] = 4,
+        ['fire/anti-air' ] = 7,
+        ['fire/bombing'  ] = 5,
+        ['land'          ] = 8,
+      }
+    },
+  })
+  o.theme = theme
+  o:_prepare_drawer()
+  return o
 end
 
 
 function Renderer:get_size()
    return table.unpack(self.size)
+end
+
+function Renderer:notify(key, value)
+  self.notications[key] = value
 end
 
 
@@ -165,81 +172,84 @@ function Renderer:load_texture(path)
 end
 
 
-function Renderer:_draw_map()
+function Renderer:_prepare_drawer()
+
   local engine = self.engine
   local map = engine:get_map()
   local sdl_renderer = self.sdl_renderer
-  local terrain = map.terrain
+  local terrain
 
-  local start_map_x = engine.gui.map_x
-  local start_map_y = engine.gui.map_y
+  -- closure context
+  local start_map_x = 0
+  local start_map_y = 0
 
-  local map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
-  local map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
+  local map_sw = 0
+  local map_sh = 0
 
-  local draw = function(draw_at_tile)
-    for i = 1,map_sw do
-      local tx = i + start_map_x
-      for j = 1,map_sh do
-        local ty = j + start_map_y
-        if (tx <= map.width and ty <= map.height) then
-          draw_at_tile(tx, ty)
-        end
-      end
-    end
-  end
-
-  local u = engine:get_selected_unit()
-  local tile_visibility_test = function(tile)
-    local x, y = tile.data.x, tile.data.y
-    local result
-      =   (x >= start_map_x and x <= map_sw)
-      and (y >= start_map_y and y <= map_sh)
-    return result
-  end
   local context = {
-    tile_visibility_test = tile_visibility_test,
-    tile_geometry = {
+    theme         = self.theme,
+    subordinated  = {}, -- k: tile_id, v: unit
+  }
+
+  local actual_records = {}
+  local shown_records = {}
+
+  engine.mediator:subscribe({ "model.update" }, function()
+    map = engine:get_map()
+    terrain = map.terrain
+    context.tile_geometry = {
       w        = terrain.hex_width,
       h        = terrain.hex_height,
       x_offset = terrain.hex_x_offset,
       y_offset = terrain.hex_y_offset,
-    },
-    map           = map,
-    theme         = self.theme,
-    selected_unit = u,
-    screen        = {
+    }
+    context.map = map
+
+    -- update shown records
+    actual_records = engine.history:get_actual_records()
+
+    engine.mediator:publish({ "view.update" });
+  end)
+
+  engine.mediator:subscribe({ "view.update" }, function()
+    start_map_x = engine.gui.map_x
+    start_map_y = engine.gui.map_y
+
+    map_sw = (engine.gui.map_sw > map.width) and map.width or engine.gui.map_sw
+    map_sh = (engine.gui.map_sh > map.height) and map.height or engine.gui.map_sh
+
+    local tile_visibility_test = function(tile)
+      local x, y = tile.data.x, tile.data.y
+      local result
+        =   (x >= start_map_x and x <= map_sw)
+        and (y >= start_map_y and y <= map_sh)
+      return result
+    end
+    context.tile_visibility_test = tile_visibility_test
+    context.screen = {
       offset = {
         engine.gui.map_sx - (engine.gui.map_x * terrain.hex_x_offset),
         engine.gui.map_sy - (engine.gui.map_y * terrain.hex_height),
       }
-    },
-    active_layer = engine.active_layer,
-    subordinated = {}, -- k: tile_id, v: unit
-  }
+    }
+    context.active_layer = engine.active_layer
 
-  local active_x, active_y = table.unpack(self.active_tile)
-  local active_tile = map.tiles[active_x][active_y]
-  local hilight_unit = u or (active_tile and active_tile:get_unit(engine.active_layer))
-  if (hilight_unit) then
-    for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
-      local tile = subordinated_unit.tile
-      -- tile could be nil if unit is attached to some other
-      if (tile) then
-        context.subordinated[tile.id] = true
+    local u = engine:get_selected_unit()
+    context.selected_unit = u
+
+    local active_x, active_y = table.unpack(self.active_tile)
+    local active_tile = map.tiles[active_x][active_y]
+    local hilight_unit = u or (active_tile and active_tile:get_unit(engine.active_layer))
+    context.subordinated = {}
+    if (hilight_unit) then
+      for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
+        local tile = subordinated_unit.tile
+        -- tile could be nil if unit is attached to some other
+        if (tile) then
+          context.subordinated[tile.id] = true
+        end
       end
     end
-  end
-
-  -- draw landscape
-  draw(function(tx, ty)
-    local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
-    tile:draw(sdl_renderer, context)
-  end)
-
-  -- draw current turn current unit history
-  local get_shown_records = function()
-    local all_records = engine.history:get_actual_records()
 
     local my_unit_movements = function(k, v)
       if (u and v.action == 'unit/move') then
@@ -247,7 +257,6 @@ function Renderer:_draw_map()
         return (unit_id and unit_id == u.id)
       end
     end
-
     local battles_cache = {}
     local battles = function(k, v)
       if ((v.action == 'battle') and (not battles_cache[v.context.tile])) then
@@ -255,7 +264,7 @@ function Renderer:_draw_map()
         battles_cache[tile_id] = true
         local tile = map:lookup_tile(tile_id)
         assert(tile)
-        return tile_visibility_test(tile)
+        return true
       end
     end
 
@@ -268,16 +277,34 @@ function Renderer:_draw_map()
       end
     end
 
-    local records = _.select(all_records, my_unit_movements)
-    records = _.append(records, _.select(all_records,battles))
-    records = _.append(records, _.select(all_records, opponent_movements))
-    -- print(" records = " .. inspect(records))
-    return _.unique(records)
-  end
+    -- bttles are always shown
+    shown_records = _.select(actual_records, battles)
+    if (u) then
+      shown_records = _.append(shown_records, _.select(actual_records, my_unit_movements))
+    end
 
-  local records = get_shown_records()
-  for idx, record in pairs(records) do
-    record:draw(sdl_renderer, context)
+    if (engine:show_history()) then
+      shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
+    end
+
+
+  end);
+
+  self.draw_function = function()
+    for i = 1,map_sw do
+      local tx = i + start_map_x
+      for j = 1,map_sh do
+        local ty = j + start_map_y
+        if (tx <= map.width and ty <= map.height) then
+          local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
+          tile:draw(sdl_renderer, context)
+        end
+      end
+    end
+
+    for idx, record in pairs(shown_records) do
+      record:draw(sdl_renderer, context)
+    end
   end
 end
 
@@ -312,9 +339,12 @@ end
 
 
 function Renderer:_recalc_active_tile()
-   local state, x, y = SDL.getMouseState()
-   local active_tile = self.engine:pointer_to_tile(x,y)
-   if (active_tile) then self.active_tile = active_tile end
+  local state, x, y = SDL.getMouseState()
+  local active_tile = self.engine:pointer_to_tile(x,y)
+  if (active_tile and ((active_tile[1] ~= self.active_tile[1]) or (active_tile[2] ~= self.active_tile[2])) ) then
+    self.active_tile = active_tile
+    self.engine.mediator:publish({ "view.update" });
+  end
 end
 
 function Renderer:_action_kind(tile)
@@ -382,56 +412,56 @@ end
 
 function Renderer:_draw_world()
    self:_check_scroll(0, 0) -- check scroll by mouse position
-   self:_draw_map()
+   self.draw_function()
    self:_draw_active_hex_info()
    self:_draw_cursor()
 end
 
 
 function Renderer:main_loop()
-   local engine = self.engine
-   local running = true
-   local sdl_renderer = self.sdl_renderer
-   local kind = SDL.eventWindow
-   while (running) do
-	  local e = SDL.waitEvent(EVENT_DELAY)
-	  local t = e.type
-	  if t == SDL.event.Quit then
-		 running = false
-	  elseif (t == SDL.event.WindowEvent) then
-		 if (e.event == kind.Resized or e.event == kind.SizeChanged
-			 or e.event == kind.Minimized or e.event ==  kind.Maximized) then
-			self.size = table.pack(self.window:getSize())
-			engine:update_shown_map()
-		 end
-      elseif (t == SDL.event.KeyUp) then
-         if (e.keysym.sym == SDL.key.e) then
-            engine:end_turn()
-         elseif (e.keysym.sym == SDL.key.t) then
-            engine:toggle_layer()
-         elseif (e.keysym.sym == SDL.key.h) then
-            engine:toggle_history()
-         elseif (e.keysym.sym == SDL.key.k) then
-            engine:toggle_attack_priorities()
-         end
-      elseif (t == SDL.event.MouseMotion) then
-         self:_recalc_active_tile()
-      elseif (t == SDL.event.MouseButtonUp) then
-         self:_recalc_active_tile()
-         local x, y = table.unpack(self.active_tile)
-         if (e.button == SDL.mouseButton.Left) then
-            local action_kind = self:_action_kind(self.active_tile)
-            engine:click_on_tile(x,y, action_kind)
-         elseif(e.button == SDL.mouseButton.Right) then
-            engine:unselect_unit()
-         end
-      elseif (t == SDL.event.MouseWheel) then
-         self:_check_scroll(e.x, e.y) -- check scroll by mouse wheel
-	  end
-	  sdl_renderer:clear()
-	  self:_draw_world()
-	  sdl_renderer:present()
-   end
+  local engine = self.engine
+  local running = true
+  local sdl_renderer = self.sdl_renderer
+  local kind = SDL.eventWindow
+  while (running) do
+    local e = SDL.waitEvent(EVENT_DELAY)
+    local t = e.type
+    if t == SDL.event.Quit then
+      running = false
+    elseif (t == SDL.event.WindowEvent) then
+      if (e.event == kind.Resized or e.event == kind.SizeChanged
+      or e.event == kind.Minimized or e.event ==  kind.Maximized) then
+      self.size = table.pack(self.window:getSize())
+      engine:update_shown_map()
+      end
+    elseif (t == SDL.event.KeyUp) then
+      if (e.keysym.sym == SDL.key.e) then
+        engine:end_turn()
+      elseif (e.keysym.sym == SDL.key.t) then
+        engine:toggle_layer()
+      elseif (e.keysym.sym == SDL.key.h) then
+        engine:toggle_history()
+      elseif (e.keysym.sym == SDL.key.k) then
+        engine:toggle_attack_priorities()
+      end
+    elseif (t == SDL.event.MouseMotion) then
+      self:_recalc_active_tile()
+    elseif (t == SDL.event.MouseButtonUp) then
+      self:_recalc_active_tile()
+      local x, y = table.unpack(self.active_tile)
+      if (e.button == SDL.mouseButton.Left) then
+        local action_kind = self:_action_kind(self.active_tile)
+        engine:click_on_tile(x,y, action_kind)
+      elseif(e.button == SDL.mouseButton.Right) then
+        engine:unselect_unit()
+      end
+    elseif (t == SDL.event.MouseWheel) then
+      self:_check_scroll(e.x, e.y) -- check scroll by mouse wheel
+    end
+    sdl_renderer:clear()
+    self:_draw_world()
+    sdl_renderer:present()
+  end
 end
 
 

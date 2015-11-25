@@ -28,6 +28,7 @@ is(first_tile.data.image_idx, 14)
 is(first_tile.data.name, 'Clear')
 
 engine:set_map(map)
+engine:update_shown_map()
 is(engine.gui.map_sw, 16)
 is(engine.gui.map_sh, 11)
 is(engine.gui.map_sx, -45)

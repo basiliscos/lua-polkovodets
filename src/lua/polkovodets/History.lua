@@ -122,6 +122,7 @@ function History:record_player_action(action, context, success, results)
   local turn_records = self.records_at[turn_no] or {}
   table.insert(turn_records, record)
   self.records_at[turn_no] = turn_records
+  self.engine.mediator:publish({ "model.update" });
 end
 
 function History:get_actual_records()
