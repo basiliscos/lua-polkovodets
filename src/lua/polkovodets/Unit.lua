@@ -107,7 +107,7 @@ function Unit:draw(sdl_renderer, x, y, context)
       and (hex_h - image.h*scale)/2
       or (magnet_to == 'top')
       and 0                         -- pin unit to top
-      or (hex_h - h*scale)          -- pin unit to bottom
+      or (hex_h - image.h*scale)          -- pin unit to bottom
    local dst = {
       x = math.modf(x + x_shift),
       y = math.modf(y + y_shift),
