@@ -61,7 +61,10 @@ function Unit.create(engine, data, player)
          subordinated = {},
          attack_prio  = {['default'] = 10},
          managed_by   = data.managed_by,
-      }
+      },
+      drawing = {
+        fn = nil
+      },
    }
    setmetatable(o, Unit)
    o:_update_state(data.state)
@@ -93,71 +96,98 @@ end
 
 function Unit:get_layer() return self.data.layer end
 
-function Unit:draw(sdl_renderer, x, y, context)
-   local terrain = self.engine.map.terrain
-   local hex_h = terrain.hex_height
-   local hex_w = terrain.hex_width
-   local hex_x_offset = terrain.hex_x_offset
+function Unit:bind_ctx(context)
+  local x = context.tile.virtual.x + context.screen.offset[1]
+  local y = context.tile.virtual.y + context.screen.offset[2]
+  local terrain = self.engine.map.terrain
 
-   local magnet_to = context.magnet_to or 'center'
-   local image = self.definition:get_icon(self.data.state)
-   local scale = (context.size == 'normal') and 1.0 or 0.6
-   local x_shift = (hex_w - image.w*scale)/2
-   local y_shift = (magnet_to == 'center')
-      and (hex_h - image.h*scale)/2
-      or (magnet_to == 'top')
-      and 0                         -- pin unit to top
-      or (hex_h - image.h*scale)          -- pin unit to bottom
-   local dst = {
-      x = math.modf(x + x_shift),
-      y = math.modf(y + y_shift),
-      w = math.modf(image.w * scale),
-      h = math.modf(image.h * scale),
-   }
-   local orientation = self.data.orientation
-   assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
-   local flip = (orientation == 'left') and SDL.rendererFlip.none or
-                 (orientation == 'right') and SDL.rendererFlip.Horizontal
+  local hex_w = context.tile_geometry.w
+  local hex_h = context.tile_geometry.h
+  local hex_x_offset = context.tile_geometry.x_offset
 
-   if (self.data.selected) then
+  local magnet_to = context.unit[self.id].magnet_to or 'center'
+  local size = context.unit[self.id].size
+
+  local image = self.definition:get_icon(self.data.state)
+  local scale = (size == 'normal') and 1.0 or 0.6
+  local x_shift = (hex_w - image.w * scale)/2
+  local y_shift = (magnet_to == 'center')
+            and (hex_h - image.h*scale)/2
+            or (magnet_to == 'top')
+            and 0                         -- pin unit to top
+            or (hex_h - image.h*scale)    -- pin unit to bottom
+
+  local dst = {
+    x = math.modf(x + x_shift),
+    y = math.modf(y + y_shift),
+    w = math.modf(image.w * scale),
+    h = math.modf(image.h * scale),
+  }
+  local orientation = self.data.orientation
+  assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
+  local flip = (orientation == 'left') and SDL.rendererFlip.none or
+  (orientation == 'right') and SDL.rendererFlip.Horizontal
+
+
+  -- unit nation flag
+  local unit_flag = self.definition.nation.unit_flag
+
+  -- unit state
+  local size = self.definition.data.size
+  local efficiency = self.data.efficiency
+  local unit_state = self.engine.renderer.theme:get_unit_state_icon(size, efficiency)
+
+  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  self.drawing.fn = function()
+    -- draw selection frame
+    if (self.data.selected) then
       local frame = terrain:get_icon('frame')
       assert(sdl_renderer:copy(frame.texture, nil, {x = x, y = y, w = hex_w, h = hex_h}))
-   end
+    end
 
-   assert(sdl_renderer:copyEx({
-             texture     = image.texture,
-             source      = {x = 0 , y = 0, w = image.w, h = image.h},
-             destination = dst,
-             nil,                                          -- no angle
-             nil,                                          -- no center
-             flip        = flip,
-   }))
-   -- unit nation flag
-   local unit_flag = self.definition.nation.unit_flag
-   assert(sdl_renderer:copy(
-             unit_flag.texture,
-             nil,
-             {
-                x = x + hex_x_offset - unit_flag.w,
-                y = y + hex_h - unit_flag.h,
-                w = unit_flag.w,
-                h = unit_flag.h,
-             }
-   ))
-   -- unit state
-   local size = self.definition.data.size
-   local efficiency = self.data.efficiency
-   local unit_state = self.engine.renderer.theme:get_unit_state_icon(size, efficiency)
-   assert(sdl_renderer:copy(
-             unit_state.texture,
-             nil,
-             {
-                x = x + (hex_w - hex_x_offset),
-                y = y + hex_h - unit_state.h,
-                w = unit_state.w,
-                h = unit_state.h,
-             }
-   ))
+    -- draw unit
+    assert(sdl_renderer:copyEx({
+      texture     = image.texture,
+      source      = {x = 0 , y = 0, w = image.w, h = image.h},
+      destination = dst,
+      nil,                                          -- no angle
+      nil,                                          -- no center
+      flip        = flip,
+    }))
+
+    -- draw unit nation flag
+    assert(sdl_renderer:copy(
+      unit_flag.texture,
+      nil,
+      {
+        x = x + hex_x_offset - unit_flag.w,
+        y = y + hex_h - unit_flag.h,
+        w = unit_flag.w,
+        h = unit_flag.h,
+      }
+    ))
+
+    -- draw unit state
+    assert(sdl_renderer:copy(
+      unit_state.texture,
+      nil,
+      {
+        x = x + (hex_w - hex_x_offset),
+        y = y + hex_h - unit_state.h,
+        w = unit_state.w,
+        h = unit_state.h,
+      }
+    ))
+  end
+
+end
+
+function Unit:unbind_ctx()
+  self.drawing.fn = nil
+end
+
+function Unit:draw()
+  self.drawing.fn()
 end
 
 -- returns list of weapon instances for the current unit as well as for all it's attached units

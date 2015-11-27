@@ -188,12 +188,28 @@ function Renderer:_prepare_drawer()
 
   local context = {
     theme         = self.theme,
+    renderer      = self,
     subordinated  = {}, -- k: tile_id, v: unit
   }
 
+  local drawers = {}
+
   local actual_records = {}
   local shown_records = {}
+  local visible_area_iterator = function(callback)
+    for i = 1,map_sw do
+      local tx = i + start_map_x
+      for j = 1,map_sh do
+        local ty = j + start_map_y
+        if (tx <= map.width and ty <= map.height) then
+          local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
+          callback(tile)
+        end
+      end
+    end
+  end
 
+  -- model update handler
   engine.mediator:subscribe({ "model.update" }, function()
     map = engine:get_map()
     terrain = map.terrain
@@ -211,7 +227,9 @@ function Renderer:_prepare_drawer()
     engine.mediator:publish({ "view.update" });
   end)
 
+  -- view update handler
   engine.mediator:subscribe({ "view.update" }, function()
+    print("view.update")
     start_map_x = engine.gui.map_x
     start_map_y = engine.gui.map_y
 
@@ -287,24 +305,23 @@ function Renderer:_prepare_drawer()
       shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
     end
 
+    -- bind/unbind drawing context
+    _.each(drawers, function(k, v) v:unbind_ctx(context) end)
+    drawers = {}
+    -- self:bind_cxt(context)
+    visible_area_iterator(function(tile)
+      tile:bind_cxt(context)
+      table.insert(drawers, tile)
+    end)
+    _.each(shown_records, function(k, v)
+      v:bind_cxt(context)
+      table.insert(drawers, v)
+    end)
+  end)
 
-  end);
-
+  -- create draw function
   self.draw_function = function()
-    for i = 1,map_sw do
-      local tx = i + start_map_x
-      for j = 1,map_sh do
-        local ty = j + start_map_y
-        if (tx <= map.width and ty <= map.height) then
-          local tile = assert(map.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
-          tile:draw(sdl_renderer, context)
-        end
-      end
-    end
-
-    for idx, record in pairs(shown_records) do
-      record:draw(sdl_renderer, context)
-    end
+    _.each(drawers, function(k, v) v:draw() end)
   end
 end
 

@@ -22,31 +22,56 @@ Nation.__index = Nation
 local Parser = require 'polkovodets.Parser'
 
 function Nation.create(engine, nation_data)
-   assert(nation_data.id)
-   assert(nation_data.name)
-   assert(nation_data.icon_path)
+  assert(nation_data.id)
+  assert(nation_data.name)
+  assert(nation_data.icon_path)
 
-   local load_flag = function(short_path)
-      local image_path = engine:get_gfx_dir() .. '/' .. short_path
-      return engine.renderer:load_texture(image_path)
-   end
+  local load_flag = function(short_path)
+    local image_path = engine:get_gfx_dir() .. '/' .. short_path
+    return engine.renderer:load_texture(image_path)
+  end
 
-   local o = {
-	  engine    = engine,
-	  data      = nation_data,
-      flag      = load_flag(nation_data.icon_path),
-      unit_flag = load_flag(nation_data.unit_icon_path),
-   }
+  local o = {
+    engine    = engine,
+    data      = nation_data,
+    flag      = load_flag(nation_data.icon_path),
+    unit_flag = load_flag(nation_data.unit_icon_path),
+    drawing   = {
+      fn = nil
+    }
+  }
 
-   setmetatable(o, Nation)
-   return o
+  setmetatable(o, Nation)
+  return o
 end
 
-function Nation:draw_flag(sdl_renderer, x, y, objective)
-   local engine = self.engine
+function Nation:bind_ctx(context)
+  -- print("nation drawing context has been bounded")
+  local nation_flag_width = self.flag.w
+  local nation_flag_height = self.flag.h
+  local hex_w = context.tile_geometry.w
+  local hex_h = context.tile_geometry.h
+  local x = context.tile.virtual.x + context.screen.offset[1]
+  local y = context.tile.virtual.y + context.screen.offset[2]
+  local flag_x = x + math.modf((hex_w - nation_flag_width) / 2)
+  local flag_y = y + math.modf((hex_h - nation_flag_height - 2))
+  local dst = {x = flag_x, y = flag_y, w = self.flag.w, h = self.flag.h}
 
-   local dst = {x = x, y = y, w = self.flag.w, h = self.flag.h}
-   assert(sdl_renderer:copy(self.flag.texture, nil, dst))
+  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  self.drawing.fn = function()
+    assert(sdl_renderer:copy(self.flag.texture, nil, dst))
+  end
 end
+
+
+function Nation:draw()
+  assert(self.drawing.fn)
+  self.drawing.fn()
+end
+
+function Nation:unbind_ctx()
+  self.drawing.fn = nil
+end
+
 
 return Nation

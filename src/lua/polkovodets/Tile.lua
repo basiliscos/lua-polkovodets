@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Tile = {}
 Tile.__index = Tile
 
+local _ = require ("moses")
 local inspect = require('inspect')
 
 function Tile.create(engine, terrain, data)
@@ -53,6 +54,10 @@ function Tile.create(engine, terrain, data)
       air     = nil,
       surface = nil,
     },
+    drawing = {
+      fn      = nil,
+      objects = {},
+    }
   }
   setmetatable(o, Tile)
   return o
@@ -86,77 +91,100 @@ function Tile:get_all_units(filter)
    return units
 end
 
+function Tile:bind_cxt(context)
+  local sx, sy = self.data.x, self.data.y
+  -- print(inspect(self.data))
+  local x = self.virtual.x + context.screen.offset[1]
+  local y = self.virtual.y + context.screen.offset[2]
+  -- print("drawing " .. self.id .. " at (" .. x .. ":" .. y .. ")")
 
-function Tile:draw(sdl_renderer, context)
-   assert(sdl_renderer)
-   local sx, sy = self.data.x, self.data.y
-   -- print(inspect(self.data))
-   local x = self.virtual.x + context.screen.offset[1]
-   local y = self.virtual.y + context.screen.offset[2]
-   -- print("drawing " .. self.id .. " at (" .. x .. ":" .. y .. ")")
+  local engine = self.engine
+  local map = engine:get_map()
+  local terrain = map.terrain
+  local weather = engine:current_weather()
+  -- print(inspect(weather))
+  -- print(inspect(self.data.terrain_type.image))
 
-   local engine = self.engine
-   local map = engine:get_map()
-   local terrain = map.terrain
-   local weather = engine:current_weather()
-   -- print(inspect(weather))
-   -- print(inspect(self.data.terrain_type.image))
+  local hex_h = terrain.hex_height
+  local hex_w = terrain.hex_width
 
-   local hex_h = terrain.hex_height
-   local hex_w = terrain.hex_width
+  local dst = {x = x, y = y, w = hex_w, h = hex_h}
+  local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
-   local dst = {x = x, y = y, w = hex_w, h = hex_h}
-   local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
-   -- draw terrain
-   assert(sdl_renderer:copy(image.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
-   if (context.selected_unit) then
+  local show_grid = engine.options.show_grid
+
+  -- draw nation flag in city, unless there is unit (then unit flag will be drawn)
+  local nation = self.data.nation
+  local units_on_tile = (self.layers.surface and 1 or 0) + (self.layers.air and 1 or 0)
+
+  local tile_context = _.clone(context, true)
+  tile_context.tile = self
+  tile_context.unit = {}
+
+  local drawers = {}
+
+  if (nation and (units_on_tile == 0)) then table.insert(drawers, nation) end
+
+  if (units_on_tile == 1) then
+    local normal_unit = self.layers.surface or self.layers.air
+    tile_context.unit[normal_unit.id] = { size = 'normal' }
+    table.insert(drawers, normal_unit)
+  elseif (units_on_tile == 2) then -- draw 2 units: small and large
+    local active_layer = context.active_layer
+    local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
+    local normal_unit = self.layers[active_layer]
+    tile_context.unit[normal_unit.id] = { size = 'normal' }
+
+    local small_unit = self.layers[inactive_layer]
+    local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
+    tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
+  end
+
+  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  local draw_fn = function()
+    -- draw terrain
+    assert(sdl_renderer:copy(image.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+
+    -- hilight managed units, participants, fog of war
+    if (context.selected_unit) then
       local u = context.selected_unit
       local movement_area = u.data.actions_map.move
       if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
-         local fog = terrain:get_icon('fog')
-         assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+        local fog = terrain:get_icon('fog')
+        assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
       end
-   end
-   if (context.subordinated[self.id]) then
-      local managed= terrain:get_icon('managed')
+    end
+    if (context.subordinated[self.id]) then
+      local managed = terrain:get_icon('managed')
       assert(sdl_renderer:copy(managed.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
-   end
+    end
 
-   local show_grid = engine.options.show_grid
+    -- draw flag and unit(s)
+    _.each(self.drawing.objects, function(k, v) v:draw() end)
 
-   -- draw nation flag in city, unless there is unit (then unit flag will be drawn)
-   local nation = self.data.nation
-   local units_on_tile = (self.layers.surface and 1 or 0) + (self.layers.air and 1 or 0)
-   if (nation and (units_on_tile == 0)) then
-	  -- print("flag for " .. nation.data.name)
-	  local nation_flag_width = nation.flag.w
-	  local nation_flag_height = nation.flag.h
-	  local flag_x = x  + math.modf((hex_w - nation_flag_width) / 2)
-	  local flag_y = y + math.modf((hex_h - nation_flag_height - 2))
-	  local objective = self.data.objective
-	  nation:draw_flag(sdl_renderer, flag_x, flag_y, objective)
-   end
-
-   -- draw grid
-   if (show_grid) then
-      local icon= terrain:get_icon('grid')
+    -- draw grid
+    if (show_grid) then
+      local icon = terrain:get_icon('grid')
       assert(sdl_renderer:copy(icon.texture, self.grid_rectange, dst))
-   end
+    end
 
-   -- draw 1 unit (air or surface), always noremal sized
-   if (units_on_tile == 1) then
-      local normal_unit = self.layers.surface or self.layers.air
-      normal_unit:draw(sdl_renderer, x, y, {size = 'normal'})
-   elseif (units_on_tile == 2) then -- draw 2 units: small and large
-      local active_layer = context.active_layer
-      local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
-      local normal_unit = self.layers[active_layer]
-      normal_unit:draw(sdl_renderer, x, y, {size = 'normal'})
-      local small_unit = self.layers[inactive_layer]
-      local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
-      small_unit:draw(sdl_renderer, x, y, {size = 'small', magnet_to = magnet_to})
-   end
+  end
+
+  _.each(drawers, function(k, v) v:bind_ctx(tile_context) end)
+
+  self.drawing.objects = drawers
+  self.drawing.fn = draw_fn
+end
+
+function Tile:unbind_ctx()
+  self.drawing.fn = nil
+  _.each(self.drawing.objects, function(k, v) v:unbind_ctx() end)
+end
+
+function Tile:draw()
+  assert(self.drawing.fn)
+  self.drawing.fn()
 end
 
 function Tile:distance_to(other_tile)
