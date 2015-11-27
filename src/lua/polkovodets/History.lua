@@ -34,17 +34,21 @@ function _Record.create(player, turn_no, action, context, success, results)
     context = context,
     success = success,
     results = results,
+    drawing = {
+      fn = nil,
+    }
   }
   return setmetatable(o, _Record)
 end
 
-function _Record:draw(sdl_renderer, context)
-  assert(sdl_renderer)
+function _Record:bind_ctx(context)
   local hex_w = context.tile_geometry.w
   local hex_h = context.tile_geometry.h
   local hex_x_offset = context.tile_geometry.x_offset
   local hex_y_offset = context.tile_geometry.y_offset
 
+  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  local draw_fn
   if (self.action == 'unit/move') then
     local src_tile = context.map:lookup_tile(self.context.src_tile)
     local dst_tile = context.map:lookup_tile(self.context.dst_tile)
@@ -77,30 +81,46 @@ function _Record:draw(sdl_renderer, context)
         w = arrow.w,
         h = arrow.h,
       }
-      assert(sdl_renderer:copyEx({
-        texture     = arrow.texture,
-        source      = nil,
-        destination = dst,
-        angle       = angle,
-      }))
-      -- print("movement has been drawn")
+
+      draw_fn = function()
+        assert(sdl_renderer:copyEx({
+          texture     = arrow.texture,
+          source      = nil,
+          destination = dst,
+          angle       = angle,
+        }))
+        -- print("movement has been drawn")
+      end
     end
   elseif (self.action == 'battle') then
     local tile_id = self.context.tile
     local icon = context.theme.history.battle
     local tile = context.map:lookup_tile(tile_id)
-    assert(sdl_renderer:copy(
-      icon.texture,
-      nil,
-      {
-        x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - icon.w,
-        y = tile.virtual.y + context.screen.offset[2],
-        w = icon.w,
-        h = icon.h,
-      })
-    )
+    draw_fn = function()
+      assert(sdl_renderer:copy(
+        icon.texture,
+        nil,
+        {
+          x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - icon.w,
+          y = tile.virtual.y + context.screen.offset[2],
+          w = icon.w,
+          h = icon.h,
+        })
+      )
+    end
   end
+  self.drawing.fn = draw_fn
 end
+
+
+function _Record:draw()
+  self.drawing.fn()
+end
+
+function _Record:unbind_ctx()
+  self.drawing.fn = nil
+end
+
 
 
 function History.create(engine)

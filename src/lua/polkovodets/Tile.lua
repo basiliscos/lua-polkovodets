@@ -91,7 +91,7 @@ function Tile:get_all_units(filter)
    return units
 end
 
-function Tile:bind_cxt(context)
+function Tile:bind_ctx(context)
   local sx, sy = self.data.x, self.data.y
   -- print(inspect(self.data))
   local x = self.virtual.x + context.screen.offset[1]
