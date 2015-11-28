@@ -400,6 +400,7 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
       print("casualities for P = " .. inspect(ctx.p.casualities))
     end
   end
+  _.each(i_weapon_instances, function(k, wi) wi.data.can_attack = false end)
   return ctx.i.casualities, ctx.p.casualities
 end
 

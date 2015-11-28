@@ -472,6 +472,7 @@ function Unit:attack_on(tile, fire_type)
   }
   self.engine.history:record_player_action('battle', ctx, true, results)
   print(inspect(self.engine.history.records_at))
+  self:update_actions_map()
 end
 
 
@@ -706,6 +707,8 @@ function Unit:update_actions_map()
    actions_map.attack  = get_attack_map()
 
    self.data.actions_map = actions_map
+   self.engine.mediator:publish({ "view.update" });
+
    print(inspect(actions_map.attack))
 end
 
