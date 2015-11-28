@@ -200,9 +200,14 @@ function Unit:bind_ctx(context)
           battle             = 'attack_on',
           ["fire/artillery"] = 'attack_on'
         }
-        local method = assert(method_for[action])
-        actor[method](actor, self.tile, action)
-        return true
+        -- method might be absent in the case, when we move air unit into the
+        -- tile, occupied by other unit. Then unitst do not interact, and
+        -- action will be performed by underlying tile
+        local method = method_for[action]
+        if (method) then
+          actor[method](actor, self.tile, action)
+          return true
+        end
       end
     end
   end
@@ -217,6 +222,11 @@ function Unit:bind_ctx(context)
         action = 'merge'
       elseif (actions_map and actions_map.attack[tile_id]) then
         action = u:get_attack_kind(self.tile)
+      elseif (actions_map and actions_map.move[tile_id]) then
+        -- will be processed by tile
+        if (self:get_layer() ~= u:get_movement_layer()) then
+          return false
+        end
       end
       context.state.action = action
       return true

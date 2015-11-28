@@ -136,10 +136,12 @@ function Tile:bind_ctx(context)
     local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
     local normal_unit = self.layers[active_layer]
     tile_context.unit[normal_unit.id] = { size = 'normal' }
+    table.insert(drawers, normal_unit)
 
     local small_unit = self.layers[inactive_layer]
     local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
     tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
+    table.insert(drawers, small_unit)
   end
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
@@ -191,6 +193,12 @@ function Tile:bind_ctx(context)
         }
         local method = assert(method_for[action])
         actor[method](actor, self, action)
+        return true
+      end
+    elseif (event.button == 'right') then
+      local u = context.state.selected_unit
+      if (u) then
+        context.state.selected_unit = nil
         return true
       end
     end
