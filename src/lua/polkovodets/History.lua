@@ -35,7 +35,8 @@ function _Record.create(player, turn_no, action, context, success, results)
     success = success,
     results = results,
     drawing = {
-      fn = nil,
+      fn         = nil,
+      mouse_move = nil,
     }
   }
   return setmetatable(o, _Record)
@@ -49,6 +50,9 @@ function _Record:bind_ctx(context)
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   local draw_fn
+  local mouse_move
+
+
   if (self.action == 'unit/move') then
     local src_tile = context.map:lookup_tile(self.context.src_tile)
     local dst_tile = context.map:lookup_tile(self.context.dst_tile)
@@ -94,20 +98,47 @@ function _Record:bind_ctx(context)
     end
   elseif (self.action == 'battle') then
     local tile_id = self.context.tile
-    local icon = context.theme.history.battle
     local tile = context.map:lookup_tile(tile_id)
-    draw_fn = function()
+
+    local battle_icon = context.theme.history.battle
+    local icon_x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - battle_icon.w
+    local icon_y = tile.virtual.y + context.screen.offset[2]
+    local is_over_icon = function(x, y)
+      return ((x >= icon_x) and (x <= icon_x + battle_icon.w)
+          and (y >= icon_y) and (y <= icon_y + battle_icon.h))
+    end
+    local over_icon = is_over_icon(context.mouse.x, context.mouse.y)
+
+    local icon = over_icon and context.theme.history.battle_hilight or context.theme.history.battle
+
+    draw_fn = function(event)
       assert(sdl_renderer:copy(
         icon.texture,
         nil,
         {
-          x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - icon.w,
-          y = tile.virtual.y + context.screen.offset[2],
+          x = icon_x,
+          y = icon_y,
           w = icon.w,
           h = icon.h,
         })
       )
     end
+
+    mouse_move = function(event)
+      if (event.tile_id == tile_id) then
+        local now_over_battle_icon = is_over_icon(event.x, event.y)
+        if (now_over_battle_icon ~= over_icon) then
+          over_icon = now_over_battle_icon
+          context.renderer.engine.mediator:publish({ "view.update" })
+        end
+      end
+    end
+
+  end
+
+  if (mouse_move) then
+    context.renderer:add_handler('mouse_move', mouse_move)
+    self.drawing.mouse_move = mouse_move
   end
   self.drawing.fn = draw_fn
 end
@@ -117,8 +148,12 @@ function _Record:draw()
   self.drawing.fn()
 end
 
-function _Record:unbind_ctx()
+function _Record:unbind_ctx(context)
   self.drawing.fn = nil
+  if (self.drawing.mouse_move) then
+    context.renderer:remove_handler('mouse_move', self.drawing.mouse_move)
+    self.drawing.mouse_move = nil
+  end
 end
 
 

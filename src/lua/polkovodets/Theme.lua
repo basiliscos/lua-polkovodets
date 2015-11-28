@@ -58,8 +58,9 @@ function Theme.create(engine, data)
       data     = data,
       cursors  = cursors_path,
       history  = {
-        move     = renderer:load_texture(theme_dir .. '/arrow-movement.png'),
-        battle   = renderer:load_texture(theme_dir .. '/battle-icon.png'),
+        move           = renderer:load_texture(theme_dir .. '/arrow-movement.png'),
+        battle         = renderer:load_texture(theme_dir .. '/battle-icon.png'),
+        battle_hilight = renderer:load_texture(theme_dir .. '/battle-icon-hilighted.png'),
       },
       fonts    = {
          active_hex = active_hex_ttf,

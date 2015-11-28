@@ -275,6 +275,12 @@ function Renderer:_prepare_drawer()
     }
     context.active_layer = engine.active_layer
 
+    local mouse_state, x, y = SDL.getMouseState()
+    context.mouse = {
+      x = x,
+      y = y,
+    }
+
     local u = context.state.selected_unit
 
     local active_x, active_y = table.unpack(self.active_tile)
@@ -487,7 +493,7 @@ function Renderer:main_loop()
       end
     elseif (t == SDL.event.MouseMotion) then
       self:_recalc_active_tile()
-      local state, x, y = SDL.getMouseState
+      local state, x, y = SDL.getMouseState()
       local tile_x, tile_y = table.unpack(self.active_tile)
       local tile_id = self.engine:get_map().tiles[tile_x][tile_y].id
       local event = {
@@ -502,7 +508,7 @@ function Renderer:main_loop()
       end
     elseif (t == SDL.event.MouseButtonUp) then
       self:_recalc_active_tile()
-      local state, x, y = SDL.getMouseState
+      local state, x, y = SDL.getMouseState()
       local tile_x, tile_y = table.unpack(self.active_tile)
       local tile_id = self.engine:get_map().tiles[tile_x][tile_y].id
       local button = (e.button == SDL.mouseButton.Left)
