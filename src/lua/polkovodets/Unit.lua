@@ -446,6 +446,8 @@ function Unit:merge_at(dst_tile)
    aux_unit.tile:set_unit(nil, layer)
    aux_unit.tile = nil
    dst_tile:set_unit(core_unit, layer)
+
+   self.engine.renderer.state.selected_unit = core_unit
    core_unit:update_actions_map()
 end
 
