@@ -77,7 +77,7 @@ function Theme:get_unit_state_icon(size, efficiency)
 end
 
 function Theme:get_cursor(kind)
-   local idx = assert(self.data.cursors.actions[kind])
+   local idx = assert(self.data.cursors.actions[kind], "cursor " .. kind .. " not found")
    return self.renderer:get_joint_texture(self.cursors, idx)
 end
 

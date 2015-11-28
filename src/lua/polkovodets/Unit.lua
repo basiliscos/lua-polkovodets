@@ -184,7 +184,7 @@ function Unit:bind_ctx(context)
   local mouse_click = function(event)
     if (event.tile_id == self.tile.id) then
       -- may be we click on other unit to select it
-      if (context.state.cursor == 'default') then
+      if (context.state.action == 'default') then
         if (self.engine.current_player == self.player and event.button == 'left') then
           context.state.selected_unit = self
           print("selected unit " .. self.id)
@@ -193,7 +193,7 @@ function Unit:bind_ctx(context)
           return true
         end
       else
-        local action = context.state.cursor
+        local action = context.state.action
         local actor = assert(context.state.selected_unit)
         local method_for = {
           merge              = 'merge_at',
@@ -209,16 +209,16 @@ function Unit:bind_ctx(context)
 
   local mouse_move = function(event)
     if (event.tile_id == self.tile.id) then
-      local cursor = 'default'
+      local action = 'default'
       local tile_id = event.tile_id
       local u = context.state.selected_unit
       local actions_map = u and u.data.actions_map
       if (actions_map and actions_map.merge[tile_id]) then
-        cursor = 'merge'
+        action = 'merge'
       elseif (actions_map and actions_map.attack[tile_id]) then
-        cursor = u:get_attack_kind(self.tile)
+        action = u:get_attack_kind(self.tile)
       end
-      context.state.cursor = cursor
+      context.state.action = action
       return true
     end
   end

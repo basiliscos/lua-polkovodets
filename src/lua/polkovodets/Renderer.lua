@@ -50,7 +50,7 @@ function Renderer.create(engine, window, sdl_renderer)
       mouse_move  = {},
     },
     state          = {
-      cursor = 'default',
+      action = 'default',
     },
   }
   -- hide system mouse pointer
@@ -413,7 +413,7 @@ end
 
 function Renderer:_draw_cursor()
    local state, x, y = SDL.getMouseState()
-   local kind = self.state.cursor
+   local kind = self.state.action
    local cursor = self.theme:get_cursor(kind)
    local cursor_size = self.theme.data.cursors.size
    local dst = { w = cursor_size, h = cursor_size, x = x, y = y }

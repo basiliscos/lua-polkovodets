@@ -28,7 +28,6 @@ local Mediator = require("mediator")
 function Engine.create()
   local e = {
     turn               = 0,
-    selected_unit      = nil,
     current_player_idx = nil,
     history_layer      = false,
     total_players      = 0,
@@ -168,18 +167,18 @@ end
 
 function Engine:current_turn() return self.turn end
 function Engine:end_turn()
-   self:unselect_unit()
-   if (self.current_player_idx == self.total_players) then
-      self.turn = self.turn + 1
-      for k, unit in pairs(self.all_units) do
-         unit:refresh()
-      end
-      print("current turm: " .. self.turn)
-      self:_set_current_player(1)
-   else
-      self:_set_current_player(self.current_player_idx + 1)
-   end
-   self.mediator:publish({ "model.update" });
+  self.renderer.state.selected_unit = nil
+  if (self.current_player_idx == self.total_players) then
+    self.turn = self.turn + 1
+    for k, unit in pairs(self.all_units) do
+      unit:refresh()
+    end
+    print("current turm: " .. self.turn)
+    self:_set_current_player(1)
+  else
+    self:_set_current_player(self.current_player_idx + 1)
+  end
+  self.mediator:publish({ "model.update" });
 end
 
 function Engine:current_weather()
@@ -289,55 +288,6 @@ function Engine:pointer_to_tile(x,y)
    end
 end
 
-
-function Engine:select_unit(u)
-   if (u.player == self.current_player) then
-      u.data.selected = true
-      self.selected_unit = u
-      u:update_actions_map()
-   end
-end
-
-
-function Engine:unselect_unit()
-  if (self.selected_unit) then
-    self.selected_unit.data.selected = false
-  end
-  self.selected_unit = nil
-  self.mediator:publish({ "view.update" });
-end
-
-function Engine:get_selected_unit()
-  return self.selected_unit
-end
-
-
-function Engine:click_on_tile(x,y, action)
-  local tile = self.map.tiles[x][y]
-  if (action == 'default') then
-    local unit = tile:get_any_unit(self.active_layer)
-    if (unit) then
-      self:unselect_unit()
-      self:select_unit(unit)
-    end
-  end
-  if (self.selected_unit) then
-    local u = self.selected_unit
-    local method_for = {
-      move               = 'move_to',
-      merge              = 'merge_at',
-      land               = 'land_to',
-      battle             = 'attack_on',
-      ["fire/artillery"] = 'attack_on'
-    }
-    local method = method_for[action]
-    if (method) then
-      u[method](u, tile, action)
-      self:click_on_tile(x, y, 'default')
-    end
-  end
-  self.mediator:publish({ "view.update" });
-end
 
 function Engine:toggle_layer()
   local current = self.active_layer

@@ -175,7 +175,7 @@ function Tile:bind_ctx(context)
   local mouse_click = function(event)
     if (event.tile_id == self.id and event.button == 'left') then
       local u = context.state.selected_unit
-      if (context.state.cursor == 'default') then
+      if (context.state.action == 'default') then
         if (u and u.tile.id ~= self.id) then
           print("unselecting unit")
           context.state.selected_unit = nil
@@ -183,7 +183,7 @@ function Tile:bind_ctx(context)
           return true
         end
       else
-        local action = context.state.cursor
+        local action = context.state.action
         local actor = assert(context.state.selected_unit)
         local method_for = {
           move  = 'move_to',
@@ -199,13 +199,13 @@ function Tile:bind_ctx(context)
   local mouse_move = function(event)
     if (event.tile_id == self.id) then
       local u = context.state.selected_unit
-      local cursor = 'default'
+      local action = 'default'
       if (u and u.data.actions_map.landing[self.id]) then
-        cursor = 'land'
+        action = 'land'
       elseif (u and u.data.actions_map.move[self.id]) then
-        cursor = 'move'
+        action = 'move'
       end
-      context.state.cursor = cursor
+      context.state.action = action
       return true
     end
   end
