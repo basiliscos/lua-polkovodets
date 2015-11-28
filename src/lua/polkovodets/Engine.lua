@@ -84,7 +84,7 @@ function Engine:update_shown_map()
   end
   gui.map_sh = step
   print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
-  self.mediator:publish({ "view.update" });
+  self.mediator:publish({ "view.update" })
 end
 
 

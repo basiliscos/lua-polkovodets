@@ -53,7 +53,6 @@ function Unit.create(engine, data, player)
       data = {
          staff        = data.staff,
          state        = data.state,
-         selected     = false,
          allow_move   = true,
          efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
          orientation  = orientation,
@@ -63,7 +62,9 @@ function Unit.create(engine, data, player)
          managed_by   = data.managed_by,
       },
       drawing = {
-        fn = nil
+        fn          = nil,
+        mouse_click = nil,
+        mouse_move  = nil,
       },
    }
    setmetatable(o, Unit)
@@ -140,7 +141,7 @@ function Unit:bind_ctx(context)
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   self.drawing.fn = function()
     -- draw selection frame
-    if (self.data.selected) then
+    if (context.state.selected_unit and context.state.selected_unit.id == self.id) then
       local frame = terrain:get_icon('frame')
       assert(sdl_renderer:copy(frame.texture, nil, {x = x, y = y, w = hex_w, h = hex_h}))
     end
@@ -180,10 +181,60 @@ function Unit:bind_ctx(context)
     ))
   end
 
+  local mouse_click = function(event)
+    if (event.tile_id == self.tile.id) then
+      -- may be we click on other unit to select it
+      if (context.state.cursor == 'default') then
+        if (self.engine.current_player == self.player and event.button == 'left') then
+          context.state.selected_unit = self
+          print("selected unit " .. self.id)
+          self:update_actions_map()
+          self.engine.mediator:publish({ "view.update" })
+          return true
+        end
+      else
+        local action = context.state.cursor
+        local actor = assert(context.state.selected_unit)
+        local method_for = {
+          merge              = 'merge_at',
+          battle             = 'attack_on',
+          ["fire/artillery"] = 'attack_on'
+        }
+        local method = assert(method_for[action])
+        actor[method](actor, self.tile, action)
+        return true
+      end
+    end
+  end
+
+  local mouse_move = function(event)
+    if (event.tile_id == self.tile.id) then
+      local cursor = 'default'
+      local tile_id = event.tile_id
+      local u = context.state.selected_unit
+      local actions_map = u and u.data.actions_map
+      if (actions_map and actions_map.merge[tile_id]) then
+        cursor = 'merge'
+      elseif (actions_map and actions_map.attack[tile_id]) then
+        cursor = u:get_attack_kind(self.tile)
+      end
+      context.state.cursor = cursor
+      return true
+    end
+  end
+
+  context.renderer:add_handler('mouse_click', mouse_click)
+  context.renderer:add_handler('mouse_move', mouse_move)
+
+  self.drawing.mouse_click = mouse_click
+  self.drawing.mouse_move  = mouse_move
 end
 
-function Unit:unbind_ctx()
+function Unit:unbind_ctx(ctx)
+  ctx.renderer:remove_handler('mouse_click', self.drawing.mouse_click)
+  ctx.renderer:remove_handler('mouse_move', self.drawing.mouse_move)
   self.drawing.fn = nil
+  self.drawing.mouse_click = nil
 end
 
 function Unit:draw()
@@ -363,6 +414,7 @@ function Unit:move_to(dst_tile)
   self.tile = dst_tile
   self:_update_orientation(dst_tile, src_tile)
   self:update_actions_map()
+  self.engine.mediator:publish({ "view.update" });
 end
 
 function Unit:merge_at(dst_tile)

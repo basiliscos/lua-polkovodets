@@ -45,10 +45,13 @@ function Renderer.create(engine, window, sdl_renderer)
     textures_cache = {},
     resources      = {},
     fonts          = {},
-    notications    = {
-      ['updated.view']  = true,
-      ['updated.model'] = true,
-    }
+    handlers       = {
+      mouse_click = {},
+      mouse_move  = {},
+    },
+    state          = {
+      cursor = 'default',
+    },
   }
   -- hide system mouse pointer
   assert(SDL.showCursor(false))
@@ -88,10 +91,6 @@ function Renderer:get_size()
    return table.unpack(self.size)
 end
 
-function Renderer:notify(key, value)
-  self.notications[key] = value
-end
-
 
 function Renderer:_load_image(path)
    local surface = assert(image.load(path), "error loading image " .. path)
@@ -99,6 +98,28 @@ function Renderer:_load_image(path)
       assert(surface:setColorKey(1, 0x0))
    end
    return surface
+end
+
+
+function Renderer:add_handler(event_type, cb)
+  assert(cb)
+  local handlers = assert(self.handlers[event_type], "handlers for " .. event_type .. " is n/a")
+  table.insert(handlers, cb)
+  -- print(string.format("added handler for %s: %s ", event_type, cb))
+end
+
+function Renderer:remove_handler(event_type, cb)
+  assert(cb)
+  local handlers = assert(self.handlers[event_type], "event " .. event_type .. " cannot be handled")
+  local found_idx
+  for idx, handler in ipairs(handlers) do
+    if (handler == cb) then
+      found_idx = idx
+    end
+  end
+  assert(found_idx, string.format('handler for %s not found, cannot remove %s', event_type, cb))
+  table.remove(handlers, found_idx)
+  -- print(string.format("removed handler for %s: %s ", event_type, cb))
 end
 
 
@@ -189,6 +210,7 @@ function Renderer:_prepare_drawer()
   local context = {
     theme         = self.theme,
     renderer      = self,
+    state         = self.state,
     subordinated  = {}, -- k: tile_id, v: unit
   }
 
@@ -211,6 +233,7 @@ function Renderer:_prepare_drawer()
 
   -- model update handler
   engine.mediator:subscribe({ "model.update" }, function()
+    print("model.update")
     map = engine:get_map()
     terrain = map.terrain
     context.tile_geometry = {
@@ -252,8 +275,7 @@ function Renderer:_prepare_drawer()
     }
     context.active_layer = engine.active_layer
 
-    local u = engine:get_selected_unit()
-    context.selected_unit = u
+    local u = context.state.selected_unit
 
     local active_x, active_y = table.unpack(self.active_tile)
     local active_tile = map.tiles[active_x][active_y]
@@ -304,6 +326,7 @@ function Renderer:_prepare_drawer()
     if (engine:show_history()) then
       shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
     end
+    -- print("shown records " .. #shown_records)
 
     -- bind/unbind drawing context
     _.each(drawers, function(k, v) v:unbind_ctx(context) end)
@@ -364,6 +387,7 @@ function Renderer:_recalc_active_tile()
   end
 end
 
+--[[
 function Renderer:_action_kind(tile)
    local kind = 'default'
    local u = self.engine:get_selected_unit()
@@ -385,11 +409,11 @@ function Renderer:_action_kind(tile)
    end
    return kind
 end
-
+]]
 
 function Renderer:_draw_cursor()
    local state, x, y = SDL.getMouseState()
-   local kind = self:_action_kind(self.active_tile)
+   local kind = self.state.cursor
    local cursor = self.theme:get_cursor(kind)
    local cursor_size = self.theme.data.cursors.size
    local dst = { w = cursor_size, h = cursor_size, x = x, y = y }
@@ -463,8 +487,42 @@ function Renderer:main_loop()
       end
     elseif (t == SDL.event.MouseMotion) then
       self:_recalc_active_tile()
+      local state, x, y = SDL.getMouseState
+      local tile_x, tile_y = table.unpack(self.active_tile)
+      local tile_id = self.engine:get_map().tiles[tile_x][tile_y].id
+      local event = {
+        x       = x,
+        y       = y,
+        tile_id = tile_id,
+      }
+      for idx = #self.handlers.mouse_move, 1, -1 do
+        local handler = self.handlers.mouse_move[idx]
+        local stop_propagation = handler(event)
+        if (stop_propagation) then break end
+      end
     elseif (t == SDL.event.MouseButtonUp) then
       self:_recalc_active_tile()
+      local state, x, y = SDL.getMouseState
+      local tile_x, tile_y = table.unpack(self.active_tile)
+      local tile_id = self.engine:get_map().tiles[tile_x][tile_y].id
+      local button = (e.button == SDL.mouseButton.Left)
+                  and 'left'
+                  or  (e.button == SDL.mouseButton.Right)
+                  and 'right'
+                  or  nil
+      local event = {
+        x       = x,
+        y       = y,
+        tile_id = tile_id,
+        button  = button,
+      }
+      -- process handlerss in stack (FILO) order
+      for idx = #self.handlers.mouse_click, 1, -1 do
+        local handler = self.handlers.mouse_click[idx]
+        local stop_propagation = handler(event)
+        if (stop_propagation) then break end
+      end
+      --[[
       local x, y = table.unpack(self.active_tile)
       if (e.button == SDL.mouseButton.Left) then
         local action_kind = self:_action_kind(self.active_tile)
@@ -472,6 +530,7 @@ function Renderer:main_loop()
       elseif(e.button == SDL.mouseButton.Right) then
         engine:unselect_unit()
       end
+      ]]
     elseif (t == SDL.event.MouseWheel) then
       self:_check_scroll(e.x, e.y) -- check scroll by mouse wheel
     end

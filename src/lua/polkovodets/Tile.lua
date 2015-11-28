@@ -55,8 +55,9 @@ function Tile.create(engine, terrain, data)
       surface = nil,
     },
     drawing = {
-      fn      = nil,
-      objects = {},
+      fn          = nil,
+      mouse_click = nil,
+      objects     = {},
     }
   }
   setmetatable(o, Tile)
@@ -147,8 +148,8 @@ function Tile:bind_ctx(context)
     assert(sdl_renderer:copy(image.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
 
     -- hilight managed units, participants, fog of war
-    if (context.selected_unit) then
-      local u = context.selected_unit
+    if (context.state.selected_unit) then
+      local u = context.state.selected_unit
       local movement_area = u.data.actions_map.move
       if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
         local fog = terrain:get_icon('fog')
@@ -171,15 +172,64 @@ function Tile:bind_ctx(context)
 
   end
 
+  local mouse_click = function(event)
+    if (event.tile_id == self.id and event.button == 'left') then
+      local u = context.state.selected_unit
+      if (context.state.cursor == 'default') then
+        if (u and u.tile.id ~= self.id) then
+          print("unselecting unit")
+          context.state.selected_unit = nil
+          self.engine.mediator:publish({ "view.update" })
+          return true
+        end
+      else
+        local action = context.state.cursor
+        local actor = assert(context.state.selected_unit)
+        local method_for = {
+          move  = 'move_to',
+          land  = 'land_to',
+        }
+        local method = assert(method_for[action])
+        actor[method](actor, self, action)
+        return true
+      end
+    end
+  end
+
+  local mouse_move = function(event)
+    if (event.tile_id == self.id) then
+      local u = context.state.selected_unit
+      local cursor = 'default'
+      if (u and u.data.actions_map.landing[self.id]) then
+        cursor = 'land'
+      elseif (u and u.data.actions_map.move[self.id]) then
+        cursor = 'move'
+      end
+      context.state.cursor = cursor
+      return true
+    end
+  end
+  -- tile handlers has lower priority then unit handlers, add them first
+  context.renderer:add_handler('mouse_click', mouse_click)
+  context.renderer:add_handler('mouse_move', mouse_move)
+
   _.each(drawers, function(k, v) v:bind_ctx(tile_context) end)
 
   self.drawing.objects = drawers
   self.drawing.fn = draw_fn
+  self.drawing.mouse_click = mouse_click
+  self.drawing.mouse_move = mouse_move
 end
 
-function Tile:unbind_ctx()
+function Tile:unbind_ctx(context)
+  _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
+
+  context.renderer:remove_handler('mouse_click', self.drawing.mouse_click)
+  context.renderer:remove_handler('mouse_move', self.drawing.mouse_move)
+
   self.drawing.fn = nil
-  _.each(self.drawing.objects, function(k, v) v:unbind_ctx() end)
+  self.drawing.mouse_click = nil
+  self.drawing.mouse_move = nil
 end
 
 function Tile:draw()
