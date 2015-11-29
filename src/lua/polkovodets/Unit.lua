@@ -182,10 +182,11 @@ function Unit:bind_ctx(context)
   end
 
   local mouse_click = function(event)
-    if (event.tile_id == self.tile.id) then
+    if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
+      print("uk")
       -- may be we click on other unit to select it
       if (context.state.action == 'default') then
-        if (self.engine.current_player == self.player and event.button == 'left') then
+        if (self.engine.current_player == self.player) then
           context.state.selected_unit = self
           print("selected unit " .. self.id)
           self:update_actions_map()
@@ -194,7 +195,7 @@ function Unit:bind_ctx(context)
         end
       else
         local action = context.state.action
-        local actor = assert(context.state.selected_unit)
+        local actor = assert(context.state.selected_unit, "no selected unit for action " .. action)
         local method_for = {
           merge              = 'merge_at',
           battle             = 'attack_on',

@@ -162,6 +162,10 @@ function Tile:bind_ctx(context)
       local managed = terrain:get_icon('managed')
       assert(sdl_renderer:copy(managed.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
     end
+    if (context.state.participant_locations and context.state.participant_locations[self.id]) then
+      local participant = terrain:get_icon('participant')
+      assert(sdl_renderer:copy(participant.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+    end
 
     -- draw flag and unit(s)
     _.each(self.drawing.objects, function(k, v) v:draw() end)
@@ -198,7 +202,10 @@ function Tile:bind_ctx(context)
     elseif (event.button == 'right') then
       local u = context.state.selected_unit
       if (u) then
+        print("r")
         context.state.selected_unit = nil
+        context.state.action = 'default'
+        self.engine.mediator:publish({ "view.update" })
         return true
       end
     end

@@ -63,6 +63,7 @@ function Terrain:load(terrain_file)
    load_icon('frame')
    load_icon('fog')
    load_icon('managed')
+   load_icon('participant')
    local fog_image = self:get_icon('fog')
    assert(fog_image.texture:setAlphaMod(40))
 

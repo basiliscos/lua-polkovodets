@@ -127,10 +127,35 @@ function _Record:bind_ctx(context)
     mouse_move = function(event)
       if (event.tile_id == tile_id) then
         local now_over_battle_icon = is_over_icon(event.x, event.y)
+        local participant_locations = context.state.participant_locations or {}
         if (now_over_battle_icon ~= over_icon) then
+          participant_locations = {}
           over_icon = now_over_battle_icon
+          if (over_icon) then
+            local battles_on_tile = _.select(context.renderer.engine.history:get_actual_records(),
+              function(k, v)
+                return (v.action == 'battle') and (v.context.tile == tile_id)
+              end)
+            local participants = {}
+            _.each(battles_on_tile, function(k, v)
+                participants[v.context.i_unit] = true
+                participants[v.context.p_unit] = true
+            end)
+            _.each(_.keys(participants), function(k, v)
+              local unit = context.renderer.engine:get_unit(v)
+              if (unit.tile) then
+                participant_locations[unit.tile.id] = unit.id
+              end
+            end)
+            -- print("participants tile " .. inspect(participant_locations))
+          end
+          context.state.participant_locations = participant_locations
           context.renderer.engine.mediator:publish({ "view.update" })
         end
+      elseif (over_icon) then
+        over_icon = false
+        context.state.participant_locations = {}
+        context.renderer.engine.mediator:publish({ "view.update" })
       end
     end
 
