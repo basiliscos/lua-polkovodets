@@ -346,6 +346,25 @@ function Unit:_update_orientation(dst_tile, src_tile)
    self.data.orientation = orientation
 end
 
+function Unit:_check_death()
+  local alive_weapons = 0
+  for k, weapon_instance in pairs(self.data.staff) do
+    alive_weapons = alive_weapons + weapon_instance.data.quantity
+  end
+  if (alive_weapons == 0) then
+    self.data.state = 'dead'
+    print(self.id .. " is dead " .. alive_weapons)
+    if (self.tile) then
+      self.tile:set_unit(nil, self.data.layer)
+      self.tile = nil
+      if (self.engine.renderer.state.selected_unit == self) then
+          self.engine.renderer.state.selected_unit = nil
+      end
+      self.engine.mediator:publish({ "model.update" })
+    end
+  end
+end
+
 function Unit:move_to(dst_tile)
   local costs = assert(self.data.actions_map.move[dst_tile.id])
   local src_tile = self.tile
@@ -470,8 +489,10 @@ function Unit:land_to(tile)
 end
 
 function Unit:attack_on(tile, fire_type)
+  self:_check_death()
   local enemy_unit = tile:get_any_unit(self.engine.active_layer)
   assert(enemy_unit)
+  self:_update_orientation(enemy_unit.tile, self.tile)
   local i_casualities, p_casualities = self.engine.battle_scheme:perform_battle(self, enemy_unit, fire_type)
   local ctx = {
     i_unit    = self.id,
@@ -484,8 +505,13 @@ function Unit:attack_on(tile, fire_type)
     p = { casualities = p_casualities },
   }
   self.engine.history:record_player_action('battle', ctx, true, results)
-  print(inspect(self.engine.history.records_at))
-  self:update_actions_map()
+  print("batte results = " .. inspect(results))
+
+  self:_check_death()
+  enemy_unit:_check_death()
+  if (self.data.state ~= 'dead') then
+    self:update_actions_map()
+  end
 end
 
 
