@@ -41,7 +41,9 @@ subtest("german tank vs russian AT",
     local ger_tank = map.tiles[4][9]:get_unit('surface')
     ger_tank:update_actions_map()
     ok(ger_tank)
-    local ger_deaths, rus_deaths = bs:perform_battle(ger_tank, rus_at, 'battle')
+    ger_tank:attack_on(rus_at.tile, 'battle')
+    is(rus_at.data.state, 'dead')
+    isnt(ger_tank.data.state, 'dead')
   end
 )
 

@@ -21,6 +21,7 @@ function DummyRenderer.create(engine, width, height)
     h        = height,
     textures = {},
     image    = setmetatable(image, _DummyImage),
+    state    = {},
   }
   setmetatable(o, DummyRenderer)
   engine:set_renderer(o)
