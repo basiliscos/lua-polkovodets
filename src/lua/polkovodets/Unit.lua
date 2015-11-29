@@ -291,7 +291,7 @@ function Unit:_marched_weapons()
       local kind = weapon_instance.weapon.movement_type
       local transported = false
       local quantity = weapon_instance:quantity()
-      if ((transport_for[kind] or 0) >= quantity) then
+      if ((quantity  > 0) and (transport_for[kind] or 0) >= quantity) then
          transported = true
          transport_for[kind] = transport_for[kind] - quantity
       end
