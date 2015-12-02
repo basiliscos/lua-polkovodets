@@ -107,26 +107,12 @@ function _Record:bind_ctx(context)
       return ((x >= icon_x) and (x <= icon_x + battle_icon.w)
           and (y >= icon_y) and (y <= icon_y + battle_icon.h))
     end
-    local over_icon = is_over_icon(context.mouse.x, context.mouse.y)
+    local over_icon = false
 
-    local icon = over_icon and context.theme.history.battle_hilight or context.theme.history.battle
-
-    draw_fn = function(event)
-      assert(sdl_renderer:copy(
-        icon.texture,
-        nil,
-        {
-          x = icon_x,
-          y = icon_y,
-          w = icon.w,
-          h = icon.h,
-        })
-      )
-    end
-
-    mouse_move = function(event)
-      if (event.tile_id == tile_id) then
-        local now_over_battle_icon = is_over_icon(event.x, event.y)
+    local update_participants = function(x, y, over_tile_id)
+      local updated
+      if (over_tile_id == tile_id) then
+        local now_over_battle_icon = is_over_icon(x, y)
         local participant_locations = context.state.participant_locations or {}
         if (now_over_battle_icon ~= over_icon) then
           participant_locations = {}
@@ -149,20 +135,42 @@ function _Record:bind_ctx(context)
             end)
             -- print("participants tile " .. inspect(participant_locations))
           end
+          updated = true;
           context.state.participant_locations = participant_locations
-          context.renderer.engine.mediator:publish({ "view.update" })
+          print("over_icon = " .. inspect(over_icon))
         end
-      elseif (over_icon) then
-        over_icon = false
-        context.state.participant_locations = {}
+      end
+      return updated
+    end
+
+    update_participants(context.mouse.x, context.mouse.y, context.state.active_tile.id)
+
+    local icon = over_icon and context.theme.history.battle_hilight or context.theme.history.battle
+
+    draw_fn = function(event)
+      assert(sdl_renderer:copy(
+        icon.texture,
+        nil,
+        {
+          x = icon_x,
+          y = icon_y,
+          w = icon.w,
+          h = icon.h,
+        })
+      )
+    end
+
+    mouse_move = function(event)
+      if (update_participants(event.x, event.y, event.tile_id)) then
         context.renderer.engine.mediator:publish({ "view.update" })
+        return true
       end
     end
 
   end
 
   if (mouse_move) then
-    context.renderer:add_handler('mouse_move', mouse_move)
+    context.events_source.add_handler('mouse_move', mouse_move)
     self.drawing.mouse_move = mouse_move
   end
   self.drawing.fn = draw_fn
@@ -176,7 +184,10 @@ end
 function _Record:unbind_ctx(context)
   self.drawing.fn = nil
   if (self.drawing.mouse_move) then
-    context.renderer:remove_handler('mouse_move', self.drawing.mouse_move)
+    -- reset hilighting participants battle, as we leave the tile
+    -- and, hence, the battle icon
+    context.state.participant_locations = {}
+    context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
     self.drawing.mouse_move = nil
   end
 end

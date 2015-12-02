@@ -183,7 +183,6 @@ function Unit:bind_ctx(context)
 
   local mouse_click = function(event)
     if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
-      print("uk")
       -- may be we click on other unit to select it
       if (context.state.action == 'default') then
         if (self.engine.current_player == self.player) then
@@ -229,21 +228,22 @@ function Unit:bind_ctx(context)
           return false
         end
       end
-      context.state.action = action
+      self.engine.state.action = action
+      -- print("move mouse over " .. event.tile_id .. ", action: "  .. action)
       return true
     end
   end
 
-  context.renderer:add_handler('mouse_click', mouse_click)
-  context.renderer:add_handler('mouse_move', mouse_move)
+  context.events_source.add_handler('mouse_click', mouse_click)
+  context.events_source.add_handler('mouse_move', mouse_move)
 
   self.drawing.mouse_click = mouse_click
   self.drawing.mouse_move  = mouse_move
 end
 
-function Unit:unbind_ctx(ctx)
-  ctx.renderer:remove_handler('mouse_click', self.drawing.mouse_click)
-  ctx.renderer:remove_handler('mouse_move', self.drawing.mouse_move)
+function Unit:unbind_ctx(context)
+  context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
+  context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
   self.drawing.fn = nil
   self.drawing.mouse_click = nil
 end
@@ -357,8 +357,8 @@ function Unit:_check_death()
     if (self.tile) then
       self.tile:set_unit(nil, self.data.layer)
       self.tile = nil
-      if (self.engine.renderer.state.selected_unit == self) then
-          self.engine.renderer.state.selected_unit = nil
+      if (self.engine.state.selected_unit == self) then
+          self.engine.state.selected_unit = nil
       end
       self.engine.mediator:publish({ "model.update" })
     end
@@ -444,7 +444,7 @@ function Unit:move_to(dst_tile)
   self.tile = dst_tile
   self:_update_orientation(dst_tile, src_tile)
   self:update_actions_map()
-  self.engine.mediator:publish({ "view.update" });
+  self.engine.mediator:publish({ "view.update" })
 end
 
 function Unit:merge_at(dst_tile)
@@ -477,8 +477,9 @@ function Unit:merge_at(dst_tile)
    aux_unit.tile = nil
    dst_tile:set_unit(core_unit, layer)
 
-   self.engine.renderer.state.selected_unit = core_unit
+   self.engine.state.selected_unit = core_unit
    core_unit:update_actions_map()
+   self.engine.mediator:publish({ "view.update" })
 end
 
 function Unit:land_to(tile)
@@ -486,6 +487,8 @@ function Unit:land_to(tile)
    self:_update_state('landed')
    self:_update_layer()
    self.data.allow_move = false
+   self:update_actions_map()
+   self.engine.mediator:publish({ "view.update" })
 end
 
 function Unit:attack_on(tile, fire_type)

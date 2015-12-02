@@ -225,8 +225,8 @@ function Tile:bind_ctx(context)
     end
   end
   -- tile handlers has lower priority then unit handlers, add them first
-  context.renderer:add_handler('mouse_click', mouse_click)
-  context.renderer:add_handler('mouse_move', mouse_move)
+  context.events_source.add_handler('mouse_click', mouse_click)
+  context.events_source.add_handler('mouse_move', mouse_move)
 
   _.each(drawers, function(k, v) v:bind_ctx(tile_context) end)
 
@@ -239,8 +239,8 @@ end
 function Tile:unbind_ctx(context)
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
 
-  context.renderer:remove_handler('mouse_click', self.drawing.mouse_click)
-  context.renderer:remove_handler('mouse_move', self.drawing.mouse_move)
+  context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
+  context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
 
   self.drawing.fn = nil
   self.drawing.mouse_click = nil

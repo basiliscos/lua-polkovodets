@@ -45,7 +45,11 @@ function Engine.create()
     },
     options = {
       show_grid = true,
-    }
+    },
+    state          = {
+      active_tile = nil,
+      action      = 'default',
+    },
   }
   setmetatable(e,Engine)
   e.history = History.create(e)
@@ -167,7 +171,7 @@ end
 
 function Engine:current_turn() return self.turn end
 function Engine:end_turn()
-  self.renderer.state.selected_unit = nil
+  self.state.selected_unit = nil
   if (self.current_player_idx == self.total_players) then
     self.turn = self.turn + 1
     for k, unit in pairs(self.all_units) do

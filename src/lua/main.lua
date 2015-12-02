@@ -58,6 +58,7 @@ local gui_renderer = Renderer.create(engine, window, renderer)
 local scenario = Scenario.create(engine)
 scenario:load('Test')
 
+gui_renderer:prepare_drawers()
 gui_renderer:main_loop()
 
 SDL.quit()
