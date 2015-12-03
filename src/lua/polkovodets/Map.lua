@@ -26,6 +26,8 @@ local Tile = require 'polkovodets.Tile'
 local inspect = require('inspect')
 
 
+local SCROLL_TOLERANCE = 5
+
 function Map.create(engine)
    local m = {
     engine = engine,
@@ -33,6 +35,7 @@ function Map.create(engine)
     drawing = {
       fn          = nil,
       mouse_move  = nil,
+      idle        = nil,
       objects     = {},
       context     = {
         actual_records = {},
@@ -252,13 +255,45 @@ function Map:bind_ctx(context)
     if (new_tile and ((old_tile.data.x ~= new_tile[1]) or (old_tile.data.y ~= new_tile[2])) ) then
       engine.state.active_tile = self.tiles[new_tile[1]][new_tile[2]]
       -- print("active tile:" .. engine.state.active_tile.id)
-      self.engine.mediator:publish({ "view.update" });
+      engine.mediator:publish({ "view.update" })
     end
+  end
+
+
+  local map_w, map_h = engine.map.width, engine.map.height
+  local map_sw, map_sh = engine.gui.map_sw, engine.gui.map_sh
+  local window_w, window_h = context.renderer.window:getSize()
+
+  local idle = function(event)
+    local scroll_dy, scroll_dx = 0, 0
+    local direction
+    local x, y = event.x, event.y
+    local map_x, map_y = engine.gui.map_x, engine.gui.map_y
+    if ((y < SCROLL_TOLERANCE or scroll_dy > 0) and map_y > 0) then
+      engine.gui.map_y = engine.gui.map_y - 1
+      direction = "up"
+    elseif (((y > window_h - SCROLL_TOLERANCE) or scroll_dy < 0) and map_y < map_h - map_sh) then
+      engine.gui.map_y = engine.gui.map_y + 1
+      direction = "down"
+    elseif ((x < SCROLL_TOLERANCE or scroll_dx < 0)  and map_x > 0) then
+      engine.gui.map_x = engine.gui.map_x - 1
+      direction = "left"
+    elseif (((x > window_w - SCROLL_TOLERANCE) or scroll_dx > 0) and map_x < map_w - map_sw) then
+      engine.gui.map_x = engine.gui.map_x + 1
+      direction = "right"
+    end
+
+    if (direction) then
+      engine:update_shown_map()
+      engine.mediator:publish({ "view.update" })
+    end
+    return true
   end
 
   _.each(drawers, function(k, v) v:bind_ctx(map_context) end)
 
   context.events_source.add_handler('mouse_move', mouse_move)
+  context.events_source.add_handler('idle', idle)
 
   self.drawing.objects = drawers
   self.drawing.mouse_click = mouse_click
@@ -288,6 +323,7 @@ function Map:unbind_ctx(context)
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
 
   self.drawing.fn = nil
+  self.drawing.idle = nil
   self.drawing.mouse_move = nil
   self.drawing.objects = nil
 end

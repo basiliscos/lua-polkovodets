@@ -30,7 +30,6 @@ local Interface = require 'polkovodets.Interface'
 local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
 
-local SCROLL_TOLERANCE = 5
 local EVENT_DELAY = 50
 
 function Renderer.create(engine, window, sdl_renderer)
@@ -48,6 +47,7 @@ function Renderer.create(engine, window, sdl_renderer)
     handlers       = {
       mouse_click = {},
       mouse_move  = {},
+      idle        = {},
     },
   }
   -- hide system mouse pointer
@@ -313,6 +313,17 @@ function Renderer:main_loop()
       -- process handlerss in stack (FILO) order
       for idx = #self.handlers.mouse_click, 1, -1 do
         local handler = self.handlers.mouse_click[idx]
+        local stop_propagation = handler(event)
+        if (stop_propagation) then break end
+      end
+    else
+      local state, x, y = SDL.getMouseState()
+      local event = {
+        x       = x,
+        y       = y,
+      }
+      for idx = #self.handlers.idle, 1, -1 do
+        local handler = self.handlers.idle[idx]
         local stop_propagation = handler(event)
         if (stop_propagation) then break end
       end
