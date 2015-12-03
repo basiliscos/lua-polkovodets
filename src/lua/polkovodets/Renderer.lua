@@ -26,6 +26,7 @@ local inspect = require('inspect')
 local ttf = require "SDL.ttf"
 
 local Image = require 'polkovodets.utils.Image'
+local Interface = require 'polkovodets.Interface'
 local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
 
@@ -204,9 +205,11 @@ function Renderer:prepare_drawers()
       remove_handler = function(event_type, cb) return self:remove_handler(event_type, cb) end,
     },
   }
+  local interface = Interface.create(engine)
 
   local drawers = {
-    engine.map
+    engine.map,
+    interface,
   }
   print("d = " .. #drawers)
 
@@ -249,36 +252,6 @@ function Renderer:_draw_cursor()
    assert(self.sdl_renderer:copy(cursor.texture, nil, dst))
 end
 
---[[
-function Renderer:_draw_active_hex_info()
-   local engine = self.engine
-   local map = engine.map
-   local sdl_renderer = self.sdl_renderer
-   local x, y = table.unpack(self.active_tile)
-   local w,h = self.window:getSize()
-
-   local render_label = function(surface)
-      assert(surface)
-      local texture = assert(self.sdl_renderer:createTextureFromSurface(surface))
-      local sw, sh = surface:getSize()
-      local label_x = math.modf(w/2 - sw/2)
-      local label_y = 25 - (sh/2)
-      assert(sdl_renderer:copy(texture, nil , {x = label_x, y = label_y, w = sw, h = sh}))
-   end
-   if (x > 0 and x <= map.width and y > 0 and y <= map.height) then
-      local tile = map.tiles[x][y]
-      --local str = string.format('%s (%d:%d)', tile.data.name, x-2, map.width - y - math.modf((x-2) * 0.5))
-      local str = string.format('%s (%d:%d)', tile.data.name, x, y)
-      local font = self.theme.fonts.active_hex
-      local outline_color = self.theme.data.active_hex.outline_color
-      local color = self.theme.data.active_hex.color
-      font:setOutline(self.theme.data.active_hex.outline_width)
-      render_label(font:renderUtf8(str, "solid", outline_color))
-      font:setOutline(0)
-      render_label(font:renderUtf8(str, "solid", color))
-   end
-end
-]]
 
 function Renderer:_draw_world()
    -- self:_check_scroll(0, 0) -- check scroll by mouse position

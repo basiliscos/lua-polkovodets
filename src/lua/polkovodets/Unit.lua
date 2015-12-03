@@ -33,6 +33,7 @@ function Unit.create(engine, data, player)
    assert(data.y)
    assert(data.staff)
    assert(data.state)
+   assert(data.name)
    local orientation = assert(data.orientation)
    assert(string.find(orientation,'right') or string.find(orientation, 'left'))
 
@@ -46,6 +47,7 @@ function Unit.create(engine, data, player)
 
    local o = {
       id         = data.id,
+      name       = data.name,
       engine     = engine,
       player     = player,
       tile       = tile,
@@ -229,6 +231,7 @@ function Unit:bind_ctx(context)
         end
       end
       self.engine.state.action = action
+      self.engine.state.mouse_hint = self.name
       -- print("move mouse over " .. event.tile_id .. ", action: "  .. action)
       return true
     end

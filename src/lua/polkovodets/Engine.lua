@@ -49,6 +49,7 @@ function Engine.create()
     state          = {
       active_tile = nil,
       action      = 'default',
+      mouse_hint  = nil,
     },
   }
   setmetatable(e,Engine)

@@ -123,7 +123,7 @@ function Scenario:load(file)
    local unit_for = {}
    for k, data in pairs(Parser.create(scenarios_dir .. '/' .. army_file):get_raw_data()) do
       local id = assert(data.id)
-      assert(data.unit_name)
+      assert(data.name)
       local definition_id = assert(data.unit_definition_id)
       local x = tonumber(assert(data.x))
       local y = tonumber(assert(data.y))

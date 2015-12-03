@@ -221,6 +221,7 @@ function Tile:bind_ctx(context)
         action = 'move'
       end
       context.state.action = action
+      self.engine.state.mouse_hint = string.format('%s (%d:%d)', self.data.name, self.data.x, self.data.y)
       return true
     end
   end
