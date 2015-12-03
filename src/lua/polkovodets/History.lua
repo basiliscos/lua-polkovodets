@@ -109,6 +109,11 @@ function _Record:bind_ctx(context)
     end
     local over_icon = false
 
+    local actual_records = context.renderer.engine.history:get_actual_records()
+    local battles_count = _.countf(actual_records, function(k, v)
+      return (v.action == 'battle') and (v.context.tile == tile_id)
+    end)
+
     local update_participants = function(x, y, over_tile_id)
       local updated
       if (over_tile_id == tile_id) then
@@ -135,9 +140,12 @@ function _Record:bind_ctx(context)
             end)
             -- print("participants tile " .. inspect(participant_locations))
           end
-          updated = true;
+          updated = true
+          local tile = context.map:lookup_tile(tile_id)
+          context.state.mouse_hint = context.renderer.engine:translate(
+            'map.battle-on-tile', battles_count, tile.data.x .. ":" .. tile.data.y
+          )
           context.state.participant_locations = participant_locations
-          print("over_icon = " .. inspect(over_icon))
         end
       end
       return updated
@@ -163,8 +171,8 @@ function _Record:bind_ctx(context)
     mouse_move = function(event)
       if (update_participants(event.x, event.y, event.tile_id)) then
         context.renderer.engine.mediator:publish({ "view.update" })
-        return true
       end
+      return is_over_icon(event.x, event.y)
     end
 
   end

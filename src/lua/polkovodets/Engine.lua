@@ -25,9 +25,14 @@ local Tile = require 'polkovodets.Tile'
 local History = require 'polkovodets.History'
 local Mediator = require("mediator")
 
-function Engine.create()
+function Engine.create(language)
+
+  local lang = language or 'ru'
+  local messages = require('polkovodets.i18n.' .. lang)
   local e = {
     turn               = 0,
+    messages           = messages,
+    language           = lang,
     current_player_idx = nil,
     history_layer      = false,
     total_players      = 0,
@@ -57,6 +62,22 @@ function Engine.create()
   return e
 end
 
+function Engine:translate(key, ...)
+  assert(key)
+  local msg = self.messages[key]
+  if (msg) then
+    local params = {...}
+    for idx, value in ipairs(params) do
+      local str_param = '{' .. idx .. '}'
+      local str_begin, str_end = string.find(msg, str_param, nil, true)
+      if (str_begin) then
+        msg = string.sub(msg, 1, str_begin - 1) .. value .. string.sub(msg, str_end + 1)
+      end
+    end
+    return msg
+  end
+  return key
+end
 
 function Engine:set_map(map)
   assert(self.renderer)
