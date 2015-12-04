@@ -10,8 +10,8 @@ local Engine = require 'polkovodets.Engine'
 local DummyRenderer = require 't.DummyRenderer'
 
 local engine = Engine.create('en')
-local msg = engine:translate('map.battle-on-tile', 5, "1:2")
-is(msg, "5 battle(s) has occured on the tile 1:2")
+local msg = engine:translate('map.battle-on-tile', {count = 5, tile = "1:2"})
+is(msg, "5 battles have occured on the tile 1:2")
 
 DummyRenderer.create(engine, 640, 480)
 

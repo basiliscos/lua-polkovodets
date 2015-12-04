@@ -143,7 +143,7 @@ function _Record:bind_ctx(context)
           updated = true
           local tile = context.map:lookup_tile(tile_id)
           context.state.mouse_hint = context.renderer.engine:translate(
-            'map.battle-on-tile', battles_count, tile.data.x .. ":" .. tile.data.y
+            'map.battle-on-tile', {count = battles_count, tile = tile.data.x .. ":" .. tile.data.y}
           )
           context.state.participant_locations = participant_locations
         end

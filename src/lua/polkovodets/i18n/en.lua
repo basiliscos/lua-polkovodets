@@ -1,5 +1,10 @@
-local messages = {
-  ['map.battle-on-tile'] = '{1} battle(s) has occured on the tile {2}',
+t = {
+  en = {
+    ['map.battle-on-tile'] = {
+      one   = 'One battle has occured on the tile %{tile}',
+      other = '%{count} battles have occured on the tile %{tile}',
+    }
+  },
 }
 
-return messages
+return t

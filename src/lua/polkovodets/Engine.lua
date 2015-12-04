@@ -21,14 +21,20 @@ local Engine = {}
 Engine.__index = Engine
 
 local inspect = require('inspect')
+-- plural rules: http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
+local i18n = require 'i18n'
 local Tile = require 'polkovodets.Tile'
 local History = require 'polkovodets.History'
 local Mediator = require("mediator")
+
 
 function Engine.create(language)
 
   local lang = language or 'ru'
   local messages = require('polkovodets.i18n.' .. lang)
+  i18n.load(messages)
+  i18n.setLocale(lang)
+
   local e = {
     turn               = 0,
     messages           = messages,
@@ -62,21 +68,9 @@ function Engine.create(language)
   return e
 end
 
-function Engine:translate(key, ...)
+function Engine:translate(key, values)
   assert(key)
-  local msg = self.messages[key]
-  if (msg) then
-    local params = {...}
-    for idx, value in ipairs(params) do
-      local str_param = '{' .. idx .. '}'
-      local str_begin, str_end = string.find(msg, str_param, nil, true)
-      if (str_begin) then
-        msg = string.sub(msg, 1, str_begin - 1) .. value .. string.sub(msg, str_end + 1)
-      end
-    end
-    return msg
-  end
-  return key
+  return i18n.translate(key, values)
 end
 
 function Engine:set_map(map)
