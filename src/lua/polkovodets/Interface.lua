@@ -17,6 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]--
 
 local inspect = require('inspect')
+local _ = require ("moses")
+local GamePanel = require ('polkovodets.gui.GamePanel')
+
 
 local Inteface = {}
 Inteface.__index = Inteface
@@ -28,9 +31,18 @@ function Inteface.create(engine)
       fn          = nil,
       mouse_click = nil,
       objects     = {},
+      obj_by_type = {
+        game_panel = nil,
+      }
     }
   }
-  return setmetatable(o, Inteface)
+  setmetatable(o, Inteface)
+
+  local game_panel = GamePanel.create(engine)
+  table.insert(o.drawing.objects, game_panel)
+  o.drawing.obj_by_type.game_panel = game_panel
+
+  return o
 end
 
 function Inteface:bind_ctx(context)
@@ -39,8 +51,9 @@ function Inteface:bind_ctx(context)
   local outline_color = context.theme.data.active_hex.outline_color
   local color = context.theme.data.active_hex.color
 
-  local w,h = context.renderer.window:getSize()
+  local w, h = context.renderer.window:getSize()
   local sdl_renderer = context.renderer.sdl_renderer
+
   local render_label = function(surface)
     assert(surface)
     local texture = assert(sdl_renderer:createTextureFromSurface(surface))
@@ -49,6 +62,9 @@ function Inteface:bind_ctx(context)
     local label_y = 25 - math.modf(sh/2)
     assert(sdl_renderer:copy(texture, nil , {x = label_x, y = label_y, w = sw, h = sh}))
   end
+
+  local interface_ctx = _.clone(context, true)
+  interface_ctx.window = {w = w, h = h}
 
   local draw_fn = function()
     local hint = context.state.mouse_hint
@@ -59,12 +75,16 @@ function Inteface:bind_ctx(context)
       font:setOutline(0)
       render_label(font:renderUtf8(hint, "solid", color))
     end
+
+    _.each(self.drawing.objects, function(k, v) v:draw() end)
   end
 
+  _.each(self.drawing.objects, function(k, v) v:bind_ctx(interface_ctx) end)
   self.drawing.fn = draw_fn
 end
 
 function Inteface:unbind_ctx(context)
+  _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
   self.drawing.fn = nil
 end
 

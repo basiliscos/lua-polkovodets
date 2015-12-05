@@ -62,6 +62,26 @@ function Theme.create(engine, data)
         battle         = renderer:load_texture(theme_dir .. '/battle-icon.png'),
         battle_hilight = renderer:load_texture(theme_dir .. '/battle-icon-hilighted.png'),
       },
+      panel    = {
+        corner = {
+          bl = renderer:load_texture(theme_dir .. '/panel/corner-bl.png'),
+          br = renderer:load_texture(theme_dir .. '/panel/corner-br.png'),
+          tl = renderer:load_texture(theme_dir .. '/panel/corner-tl.png'),
+          tr = renderer:load_texture(theme_dir .. '/panel/corner-tr.png'),
+        },
+        mid    = {
+          b = renderer:load_texture(theme_dir .. '/panel/mid-b.png'),
+          t = renderer:load_texture(theme_dir .. '/panel/mid-t.png'),
+          l = renderer:load_texture(theme_dir .. '/panel/mid-l.png'),
+          r = renderer:load_texture(theme_dir .. '/panel/mid-r.png'),
+        },
+      },
+      buttons = {
+        end_turn = {
+          normal   = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
+          disabled = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
+        },
+      },
       fonts    = {
          active_hex = active_hex_ttf,
       },
