@@ -34,17 +34,31 @@ function GamePanel.create(engine)
     h = engine.renderer.theme.buttons.end_turn.normal.h
   }
 
-  local end_turn = Button.create(engine, {
-    hint = engine:translate('ui.button.end_turn'),
-  })
-  table.insert(o.drawing.objects, end_turn)
   o.buttons = {
     end_turn = end_turn,
   }
+  local add_button = function(key)
+    local button = Button.create(engine, {
+      hint = engine:translate('ui.button.' .. key),
+    })
+    table.insert(o.drawing.objects, button)
+    o.buttons[key] = button
+  end
+  add_button('toggle_history')
+  add_button('toggle_layer')
+  add_button('end_turn')
 
   o.callbacks = {
     end_turn = function()
       engine:end_turn()
+      return true
+    end,
+    toggle_layer = function()
+      engine:toggle_layer()
+      return true
+    end,
+    toggle_history = function()
+      engine:toggle_history()
       return true
     end,
   }
@@ -65,15 +79,26 @@ function GamePanel:bind_ctx(context)
   gamepanel_ctx.x = x
   gamepanel_ctx.y = y
 
+  -- generic buttons context
   gamepanel_ctx.button = {}
   for idx, button in pairs(self.drawing.objects) do
     gamepanel_ctx.button[button.id] = {
-      x = x + self.contentless_size.dx +  self.button_geometry.w * (idx - 1),
-      y = y + self.contentless_size.dy,
+      x        = x + self.contentless_size.dx +  self.button_geometry.w * (idx - 1),
+      y        = y + self.contentless_size.dy,
     }
   end
+
+  -- specific button context
   gamepanel_ctx.button[self.buttons.end_turn.id].image = theme.buttons.end_turn.normal
   gamepanel_ctx.button[self.buttons.end_turn.id].callback = self.callbacks.end_turn
+
+  local layer = self.engine.active_layer
+  gamepanel_ctx.button[self.buttons.toggle_layer.id].image = theme.buttons.toggle_layer[layer]
+  gamepanel_ctx.button[self.buttons.toggle_layer.id].callback = self.callbacks.toggle_layer
+
+  local history_state = self.engine.history_layer and 'active' or 'inactive'
+  gamepanel_ctx.button[self.buttons.toggle_history.id].image = theme.buttons.toggle_history[history_state]
+  gamepanel_ctx.button[self.buttons.toggle_history.id].callback = self.callbacks.toggle_history
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(gamepanel_ctx) end)
 

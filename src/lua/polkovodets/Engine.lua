@@ -198,6 +198,7 @@ function Engine:end_turn()
   else
     self:_set_current_player(self.current_player_idx + 1)
   end
+  self.history_layer = true
   self.mediator:publish({ "model.update" });
 end
 
