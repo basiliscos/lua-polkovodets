@@ -37,9 +37,6 @@ function Map.create(engine)
       mouse_move  = nil,
       idle        = nil,
       objects     = {},
-      context     = {
-        actual_records = {},
-      },
       -- k: original fn, value: proxied (map) fn
       proxy       = {
         mouse_move  = {},
@@ -103,17 +100,13 @@ function Map:load(map_file)
   self.tile_for = tile_for
   -- print(inspect(tiles[1][1]))
 
-  engine.state.active_tile = self.tiles[1][2]
-  engine.mediator:subscribe({ "model.update" }, function()
-    self.drawing.context.actual_records = engine.history:get_actual_records()
-    self.drawing.context.tile_geometry = {
-      w        = terrain.hex_width,
-      h        = terrain.hex_height,
-      x_offset = terrain.hex_x_offset,
-      y_offset = terrain.hex_y_offset,
-    }
-    engine.mediator:publish({ "view.update" });
-  end)
+  engine.state.active_tile = self.tiles[1][1]
+  self.tile_geometry = {
+    w        = terrain.hex_width,
+    h        = terrain.hex_height,
+    x_offset = terrain.hex_x_offset,
+    y_offset = terrain.hex_y_offset,
+  }
 end
 
 function Map:bind_ctx(context)
@@ -150,7 +143,7 @@ function Map:bind_ctx(context)
   local map_context = _.clone(context, true)
   map_context.map = self
   map_context.tile_visibility_test = tile_visibility_test
-  map_context.tile_geometry = self.drawing.context.tile_geometry
+  map_context.tile_geometry = self.tile_geometry
   map_context.screen = {
     offset = {
       engine.gui.map_sx - (engine.gui.map_x * terrain.hex_x_offset),
@@ -224,7 +217,7 @@ function Map:bind_ctx(context)
     end
   end
 
-  local actual_records = self.drawing.context.actual_records
+  local actual_records = context.state.actual_records
   -- bttles are always shown
   local shown_records = _.select(actual_records, battles)
   if (u) then

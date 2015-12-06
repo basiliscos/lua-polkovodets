@@ -246,7 +246,8 @@ function History:get_actual_records()
       end)
     )
   end
-  return records or {}
+  records = records or {}
+  return records
 end
 
 return History

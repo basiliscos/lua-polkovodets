@@ -58,14 +58,27 @@ function Engine.create(language)
       show_grid = true,
     },
     state          = {
-      active_tile = nil,
-      action      = 'default',
-      mouse_hint  = nil,
+      active_tile    = nil,
+      action         = 'default',
+      actual_records = {},
+      mouse_hint     = nil,
     },
   }
   setmetatable(e,Engine)
   e.history = History.create(e)
+
+  e.mediator:subscribe({ "model.update" }, function()
+    e:_update_history_records()
+  end)
   return e
+end
+
+function Engine:_update_history_records()
+    local records = self.history:get_actual_records()
+    self.state.actual_records = records
+    if (#records) then
+      self.mediator:publish({ "view.update" })
+    end
 end
 
 function Engine:translate(key, values)
@@ -327,7 +340,7 @@ end
 
 function Engine:toggle_history()
   self.history_layer = not self.history_layer
-  self.mediator:publish({ "view.update" });
+  self:_update_history_records()
 end
 
 function Engine:show_history()
