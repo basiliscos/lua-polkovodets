@@ -134,14 +134,19 @@ function Tile:bind_ctx(context)
   elseif (units_on_tile == 2) then -- draw 2 units: small and large
     local active_layer = context.active_layer
     local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
-    local normal_unit = self.layers[active_layer]
-    tile_context.unit[normal_unit.id] = { size = 'normal' }
-    table.insert(drawers, normal_unit)
 
+    -- small unit have to added first, as it has lower priority in event,
+    -- and should be drawn first, and then, possibly over-drawn by normal
+    -- unit. In the same tilme normal-unit events (i.e. click), should be
+    -- cauched first. This is more important
     local small_unit = self.layers[inactive_layer]
     local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
     tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
     table.insert(drawers, small_unit)
+
+    local normal_unit = self.layers[active_layer]
+    tile_context.unit[normal_unit.id] = { size = 'normal' }
+    table.insert(drawers, normal_unit)
   end
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)

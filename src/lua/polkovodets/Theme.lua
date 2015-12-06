@@ -79,15 +79,14 @@ function Theme.create(engine, data)
       buttons = {
         end_turn = {
           normal   = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
-          disabled = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
         },
         toggle_layer = {
-          surface = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
-          air     = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
+          surface = renderer:load_texture(theme_dir .. '/buttons/layer-surface.png'),
+          air     = renderer:load_texture(theme_dir .. '/buttons/layer-air.png'),
         },
         toggle_history = {
-          active   = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
-          inactive = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
+          active   = renderer:load_texture(theme_dir .. '/buttons/dummy-button.png'),
+          inactive = renderer:load_texture(theme_dir .. '/buttons/dummy-button.png'),
         },
       },
       fonts    = {
