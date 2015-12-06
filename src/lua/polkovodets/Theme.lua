@@ -85,8 +85,8 @@ function Theme.create(engine, data)
           air     = renderer:load_texture(theme_dir .. '/buttons/layer-air.png'),
         },
         toggle_history = {
-          active   = renderer:load_texture(theme_dir .. '/buttons/dummy-button.png'),
-          inactive = renderer:load_texture(theme_dir .. '/buttons/dummy-button.png'),
+          active   = renderer:load_texture(theme_dir .. '/buttons/history-active.png'),
+          inactive = renderer:load_texture(theme_dir .. '/buttons/history-inactive.png'),
         },
       },
       fonts    = {
