@@ -9,6 +9,7 @@ t = {
     ['ui.button.end_turn'] = 'Конец хода',
     ['ui.button.toggle_layer'] = 'Переключить активный уровень (поверхность/воздух)',
     ['ui.button.toggle_history'] = 'Показать последние действия оппонента',
+    ['ui.button.toggle_landscape'] = 'Показать только ландшафт',
   },
 }
 

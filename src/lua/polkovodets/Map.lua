@@ -218,16 +218,22 @@ function Map:bind_ctx(context)
   end
 
   local actual_records = context.state.actual_records
-  -- bttles are always shown
-  local shown_records = _.select(actual_records, battles)
-  if (u) then
-    shown_records = _.append(shown_records, _.select(actual_records, my_unit_movements))
-  end
+  local landscape_only = context.state.landscape_only
 
-  if (engine:show_history()) then
-    shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
+  -- bttles are always shown
+  local shown_records = {}
+
+  if (not landscape_only) then
+    shown_records = _.select(actual_records, battles)
+    if (u) then
+      shown_records = _.append(shown_records, _.select(actual_records, my_unit_movements))
+    end
+
+    if (engine:show_history()) then
+      shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
+    end
+    -- print("shown records " .. #shown_records)
   end
-  -- print("shown records " .. #shown_records)
 
   -- propagete drawing context
   local drawers = {}

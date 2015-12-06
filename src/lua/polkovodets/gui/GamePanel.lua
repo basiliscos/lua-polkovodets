@@ -44,6 +44,7 @@ function GamePanel.create(engine)
     table.insert(o.drawing.objects, button)
     o.buttons[key] = button
   end
+  add_button('toggle_landscape')
   add_button('toggle_history')
   add_button('toggle_layer')
   add_button('end_turn')
@@ -61,6 +62,10 @@ function GamePanel.create(engine)
       engine:toggle_history()
       return true
     end,
+    toggle_landscape = function()
+      engine:toggle_landscape()
+      return true
+    end
   }
 
   return o
@@ -99,6 +104,10 @@ function GamePanel:bind_ctx(context)
   local history_state = self.engine.history_layer and 'active' or 'inactive'
   gamepanel_ctx.button[self.buttons.toggle_history.id].image = theme.buttons.toggle_history[history_state]
   gamepanel_ctx.button[self.buttons.toggle_history.id].callback = self.callbacks.toggle_history
+
+  local landscape_state = self.engine.state.landscape_only and 'active' or 'inactive'
+  gamepanel_ctx.button[self.buttons.toggle_landscape.id].image = theme.buttons.toggle_landscape[landscape_state]
+  gamepanel_ctx.button[self.buttons.toggle_landscape.id].callback = self.callbacks.toggle_landscape
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(gamepanel_ctx) end)
 

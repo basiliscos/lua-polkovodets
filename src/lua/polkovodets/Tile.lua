@@ -113,11 +113,14 @@ function Tile:bind_ctx(context)
   local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
 
+  local landscape_only = context.state.landscape_only
   local show_grid = engine.options.show_grid
 
   -- draw nation flag in city, unless there is unit (then unit flag will be drawn)
   local nation = self.data.nation
   local units_on_tile = (self.layers.surface and 1 or 0) + (self.layers.air and 1 or 0)
+  -- force drawing 0 units
+  if (landscape_only) then units_on_tile = 0 end
 
   local tile_context = _.clone(context, true)
   tile_context.tile = self
@@ -154,22 +157,24 @@ function Tile:bind_ctx(context)
     -- draw terrain
     assert(sdl_renderer:copy(image.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
 
-    -- hilight managed units, participants, fog of war
-    if (context.state.selected_unit) then
-      local u = context.state.selected_unit
-      local movement_area = u.data.actions_map.move
-      if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
-        local fog = terrain:get_icon('fog')
-        assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+    if (not landscape_only) then
+      -- hilight managed units, participants, fog of war
+      if (context.state.selected_unit) then
+        local u = context.state.selected_unit
+        local movement_area = u.data.actions_map.move
+        if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
+          local fog = terrain:get_icon('fog')
+          assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+        end
       end
-    end
-    if (context.subordinated[self.id]) then
-      local managed = terrain:get_icon('managed')
-      assert(sdl_renderer:copy(managed.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
-    end
-    if (context.state.participant_locations and context.state.participant_locations[self.id]) then
-      local participant = terrain:get_icon('participant')
-      assert(sdl_renderer:copy(participant.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+      if (context.subordinated[self.id]) then
+        local managed = terrain:get_icon('managed')
+        assert(sdl_renderer:copy(managed.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+      end
+      if (context.state.participant_locations and context.state.participant_locations[self.id]) then
+        local participant = terrain:get_icon('participant')
+        assert(sdl_renderer:copy(participant.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+      end
     end
 
     -- draw flag and unit(s)

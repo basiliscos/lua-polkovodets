@@ -58,6 +58,7 @@ function Engine.create(language)
       show_grid = true,
     },
     state          = {
+      landscape_only = false,
       active_tile    = nil,
       action         = 'default',
       actual_records = {},
@@ -322,6 +323,13 @@ function Engine:pointer_to_tile(x,y)
    end
 end
 
+
+function Engine:toggle_landscape()
+  local value = not self.state.landscape_only
+  self.state.landscape_only = value
+  self.state.selected_unit = nil
+  self.mediator:publish({ "view.update" });
+end
 
 function Engine:toggle_layer()
   local current = self.active_layer

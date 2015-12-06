@@ -88,6 +88,10 @@ function Theme.create(engine, data)
           active   = renderer:load_texture(theme_dir .. '/buttons/history-active.png'),
           inactive = renderer:load_texture(theme_dir .. '/buttons/history-inactive.png'),
         },
+        toggle_landscape = {
+          active   = renderer:load_texture(theme_dir .. '/buttons/landscape-active.png'),
+          inactive = renderer:load_texture(theme_dir .. '/buttons/landscape-inactive.png'),
+        },
       },
       fonts    = {
          active_hex = active_hex_ttf,
