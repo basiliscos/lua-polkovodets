@@ -140,6 +140,43 @@ function Unit:bind_ctx(context)
   local efficiency = self.data.efficiency
   local unit_state = self.engine.renderer.theme:get_unit_state_icon(size, efficiency)
 
+  -- change attack possibility
+  local change_attack
+  local attack_kinds
+  local attack_kind_idx = 1
+  local is_over_change_attack_icon = function(x, y)
+    if (change_attack) then
+      local dst = change_attack.dst
+      local over = ((x >= dst.x) and (x <= dst.x + dst.w)
+        and (y >= dst.y) and (y <= dst.y + dst.h))
+      return over
+    end
+  end
+
+  local u = context.state.selected_unit
+  if (u and context.state.active_tile.id == self.tile.id) then
+    local actions_map = u.data.actions_map
+    if (actions_map and actions_map.attack[self.tile.id]) then
+      attack_kinds = u:get_attack_kinds(self.tile)
+      if (#attack_kinds > 1) then
+        local icon = context.renderer.theme.change_attack_type.available
+        change_attack = {
+          icon = icon,
+          dst = {
+            x = x + (hex_w - hex_x_offset),
+            y = y,
+            w = icon.w,
+            h = icon.h,
+          },
+        }
+        local icon_kind = is_over_change_attack_icon(context.mouse.x, context.mouse.y)
+          and 'hilight' or 'available'
+        change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
+      end
+    end
+  end
+
+
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   self.drawing.fn = function()
     -- draw selection frame
@@ -181,13 +218,30 @@ function Unit:bind_ctx(context)
         h = unit_state.h,
       }
     ))
+
+    -- draw unit change attack icon
+    if (change_attack) then
+      assert(sdl_renderer:copy(
+        change_attack.icon.texture,
+        nil,
+        change_attack.dst
+      ))
+    end
+
+
   end
 
   local mouse_click = function(event)
     if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
       -- may be we click on other unit to select it
       if (context.state.action == 'default') then
-        if (self.engine.current_player == self.player) then
+        if (is_over_change_attack_icon(event.x, event.y)) then
+          attack_kind_idx = attack_kind_idx + 1
+          if (attack_kind_idx > #attack_kinds) then attack_kind_idx = 1 end
+          local action = attack_kinds[attack_kind_idx]
+          self.engine.state.action = action
+          return true
+        elseif (self.engine.current_player == self.player) then
           context.state.selected_unit = self
           print("selected unit " .. self.id)
           self:update_actions_map()
@@ -220,10 +274,11 @@ function Unit:bind_ctx(context)
       local tile_id = event.tile_id
       local u = context.state.selected_unit
       local actions_map = u and u.data.actions_map
+      local hint = self.name
       if (actions_map and actions_map.merge[tile_id]) then
         action = 'merge'
       elseif (actions_map and actions_map.attack[tile_id]) then
-        action = u:get_attack_kind(self.tile)
+        action = attack_kinds[attack_kind_idx]
       elseif (actions_map and actions_map.move[tile_id]) then
         -- will be processed by tile
         if (self:get_layer() ~= u:get_movement_layer()) then
@@ -231,7 +286,20 @@ function Unit:bind_ctx(context)
         end
       end
       self.engine.state.action = action
-      self.engine.state.mouse_hint = self.name
+
+      -- update attack kind possibility
+      if (change_attack) then
+        local is_over = is_over_change_attack_icon(event.x, event.y)
+        local icon_kind = is_over and 'hilight' or 'available'
+        if (is_over) then
+          action = 'default'
+          hint   = self.engine:translate('map.change-attack-kind')
+        end
+        change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
+      end
+
+      self.engine.state.action = action
+      self.engine.state.mouse_hint = hint
       -- print("move mouse over " .. event.tile_id .. ", action: "  .. action)
       return true
     end
@@ -834,16 +902,8 @@ function Unit:subordinate(subject)
    end
 end
 
-function Unit:switch_attack_priorities()
-   local prio = self.data.attack_prio
-   if (prio.default) then prio = {['artillery'] = 10}
-   elseif (prio.artillery) then prio = {['battle'] = 10}
-   else prio = {['default'] = 10} end
-   self.data.attack_prio = prio
-end
-
-function Unit:get_attack_kind(tile)
-   local kind
+function Unit:get_attack_kinds(tile)
+   local kinds
 
    local attack_layers = self.data.actions_map.attack[tile.id]
    local same_layer = self:get_layer()
@@ -851,36 +911,21 @@ function Unit:get_attack_kind(tile)
    local attack_layer = attack_layers[same_layer]
    if (not attack_layer) then                         -- non ambigious case
       attack_layer = attack_layers[opposite_layer]
-      if (attack_layer['fire/bombing']) then kind = 'fire/bombing'
-      elseif (attack_layer['fire/anti-air']) then kind = 'fire/anti-air'
+      if (attack_layer['fire/bombing']) then kind = {'fire/bombing'}
+      elseif (attack_layer['fire/anti-air']) then kind = {'fire/anti-air'}
       else
          error("possible attack kinds for different layers are: 'fire/bombing' or 'fire/anti-air'")
       end
    else                                               -- ambigious case
       local selected_attack, attack_score = nil, 0
-      local has_battle = attack_layer['battle']
-      local has_artillery = attack_layer['fire/artillery']
-      local number_of_possibilities = (has_battle and 1 or 0) + (has_artillery and 1 or 0)
-      if (number_of_possibilities == 1) then
-         kind = has_battle and 'battle' or 'fire/artillery'
-      elseif (number_of_possibilities == 2) then
-         local prio = self.data.attack_prio
-         local scores = { ['artillery'] = (prio.artillery or 0), ['battle'] = prio.battle or 0 }
-         for idx, weapon_instance in pairs(self.data.staff) do
-            local score_to = weapon_instance:is_capable('RANGED_FIRE')
-               and 'artillery'
-               or  'battle'
-            local score = scores[score_to] + 1
-            scores[score_to] = score
-         end
-         kind = (scores['battle'] >= scores['artillery'])
-            and 'battle'
-            or  'fire/artillery'
-      else
-         error("possible attack kinds for different layers are: 'fire/bombing' or 'fire/anti-air'")
+      kinds = {}
+      if (attack_layer['battle']) then table.insert(kinds, 'battle') end
+      if (attack_layer['fire/artillery']) then
+        local position = (self.definition.unit_class.id == 'art') and 1 or #kinds + 1
+        table.insert(kinds, position, 'fire/artillery')
       end
    end
-   return kind
+   return kinds
 end
 
 function Unit:change_orientation()
