@@ -883,4 +883,10 @@ function Unit:get_attack_kind(tile)
    return kind
 end
 
+function Unit:change_orientation()
+  local o = (self.data.orientation == 'left') and 'right' or 'left'
+  self.data.orientation = o
+  self.engine.mediator:publish({ "view.update" })
+end
+
 return Unit

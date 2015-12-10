@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local inspect = require('inspect')
 local _ = require ("moses")
 local GamePanel = require ('polkovodets.gui.GamePanel')
+local UnitPanel = require ('polkovodets.gui.UnitPanel')
 
 
 local Inteface = {}
@@ -41,6 +42,11 @@ function Inteface.create(engine)
   local game_panel = GamePanel.create(engine)
   table.insert(o.drawing.objects, game_panel)
   o.drawing.obj_by_type.game_panel = game_panel
+
+  local unit_panel = UnitPanel.create(engine)
+  table.insert(o.drawing.objects, unit_panel)
+  o.drawing.obj_by_type.unit_panel = unit_panel
+
 
   return o
 end
