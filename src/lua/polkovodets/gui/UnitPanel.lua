@@ -49,15 +49,23 @@ function UnitPanel.create(engine)
 
   o.callbacks = {
     change_orientation = function()
-      local unit = engine.state.selected_unit
-      assert(unit)
-      unit:change_orientation()
+      local u = engine.state.selected_unit
+      if (u) then
+        u:change_orientation()
+      end
       return true
     end,
     information = function()
       return true
     end,
     detach = function()
+      local u = engine.state.selected_unit
+      if (u and #u.data.attached > 0) then
+        local attached_units = #u.data.attached
+        if (attached_units == 1) then
+
+        end
+      end
       return true
     end,
   }
@@ -87,15 +95,18 @@ function UnitPanel:bind_ctx(context)
     }
   end
 
+  local u = self.engine.state.selected_unit
   -- specific button context
-  local can_change_orientation = self.engine.state.selected_unit and 'available' or 'disabled'
+  local can_change_orientation = u and 'available' or 'disabled'
   gamepanel_ctx.button[self.buttons.change_orientation.id].image = theme.buttons.change_orientation[can_change_orientation]
   gamepanel_ctx.button[self.buttons.change_orientation.id].callback = self.callbacks.change_orientation
 
   gamepanel_ctx.button[self.buttons.information.id].image = theme.buttons.information.disabled
   gamepanel_ctx.button[self.buttons.information.id].callback = self.callbacks.information
 
-  gamepanel_ctx.button[self.buttons.detach.id].image = theme.buttons.detach.disabled
+  local detach_state = 'disabled'
+  if (u and #u.data.attached > 0) then detach_state = 'available' end
+  gamepanel_ctx.button[self.buttons.detach.id].image = theme.buttons.detach[detach_state]
   gamepanel_ctx.button[self.buttons.detach.id].callback = self.callbacks.detach
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(gamepanel_ctx) end)

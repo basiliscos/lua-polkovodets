@@ -59,6 +59,7 @@ function Unit.create(engine, data, player)
          efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
          orientation  = orientation,
          attached     = {},
+         attached_to  = nil,
          subordinated = {},
          attack_prio  = {['default'] = 10},
          managed_by   = data.managed_by,
@@ -268,10 +269,9 @@ function Unit:bind_ctx(context)
     end
   end
 
-  local mouse_move = function(event)
-    if (event.tile_id == self.tile.id) then
+  local update_action = function(tile_id, x, y)
+    if (tile_id == self.tile.id) then
       local action = 'default'
-      local tile_id = event.tile_id
       local u = context.state.selected_unit
       local actions_map = u and u.data.actions_map
       local hint = self.name
@@ -289,7 +289,7 @@ function Unit:bind_ctx(context)
 
       -- update attack kind possibility
       if (change_attack) then
-        local is_over = is_over_change_attack_icon(event.x, event.y)
+        local is_over = is_over_change_attack_icon(x, y)
         local icon_kind = is_over and 'hilight' or 'available'
         if (is_over) then
           action = 'default'
@@ -300,10 +300,16 @@ function Unit:bind_ctx(context)
 
       self.engine.state.action = action
       self.engine.state.mouse_hint = hint
-      -- print("move mouse over " .. event.tile_id .. ", action: "  .. action)
+      -- print("move mouse over " .. tile_id .. ", action: "  .. action)
       return true
     end
   end
+
+  local mouse_move = function(event)
+    return update_action(event.tile_id, event.x, event.y)
+  end
+
+  update_action(context.state.active_tile.id, context.mouse.x, context.mouse.y)
 
   context.events_source.add_handler('mouse_click', mouse_click)
   context.events_source.add_handler('mouse_move', mouse_move)
@@ -437,7 +443,9 @@ function Unit:_check_death()
 end
 
 function Unit:move_to(dst_tile)
-  local costs = assert(self.data.actions_map.move[dst_tile.id])
+  -- print("move map = " .. inspect(self.data.actions_map.move))
+  local costs = assert(self.data.actions_map.move[dst_tile.id],
+    "unit " .. self.id  .. " cannot move to ".. dst_tile.id)
   local src_tile = self.tile
 
   -- calculate back route from dst_tile to src_tile
@@ -546,6 +554,7 @@ function Unit:merge_at(dst_tile)
    -- aux unit is now attached, remove from map
    aux_unit.tile:set_unit(nil, layer)
    aux_unit.tile = nil
+   aux_unit.data.attached_to = core_unit
    dst_tile:set_unit(core_unit, layer)
 
    self.engine.state.selected_unit = core_unit
@@ -605,6 +614,8 @@ function Unit:update_actions_map()
    local map = engine.map
    -- determine, what the current user can do at the visible area
    local actions_map = {}
+   local start_tile = self.tile
+
 
    local merge_candidates = {}
    local landing_candidates = {}
@@ -645,7 +656,7 @@ function Unit:update_actions_map()
       -- initialize reachability with tile, on which the unit is already located
       local initial_costs = {}
       for idx, wi in pairs(marched_weapons) do initial_costs[wi.id] = 0 end
-      add_reachability_tile(self.tile, self.tile, Vector.create(initial_costs))
+      add_reachability_tile(start_tile, start_tile, Vector.create(initial_costs))
 
 
       local fuel_at = {};  -- k: tile_id, v: movement_costs table
@@ -671,7 +682,7 @@ function Unit:update_actions_map()
                local adj_cost = self:move_cost(adj_tile)
                local total_costs = costs + adj_cost
                -- ignore near enemy, if we are moving from the start tile
-               if (dst_tile == self.tile) then has_enemy_near = false end
+               if (dst_tile == start_tile) then has_enemy_near = false end
                if (total_costs <= fuel_limit and not has_enemy_near) then
                   add_reachability_tile(dst_tile, adj_tile, total_costs)
                end
@@ -679,14 +690,13 @@ function Unit:update_actions_map()
          end
       end
       -- do not move on the tile, where unit is already located
-      fuel_at[self.tile.id] = nil
+      fuel_at[start_tile.id] = nil
       return fuel_at
    end
 
    local get_attack_map = function()
       local attack_map = {}
       local visited_tiles = {} -- cache
-      local start_tile = self.tile
 
       local max_range = -1
       local weapon_capabilites = {} -- k1: layer, value: table with k2:range, and value: list of weapons
@@ -807,7 +817,7 @@ function Unit:update_actions_map()
    local get_landing_map = function()
       local map = {}
       for idx, tile in pairs(landing_candidates) do
-         if (tile ~= self.tile) then
+         if (tile ~= start_tile) then
             map[tile.id] = true
          end
       end
@@ -822,7 +832,7 @@ function Unit:update_actions_map()
    self.data.actions_map = actions_map
    self.engine.mediator:publish({ "view.update" });
 
-   print(inspect(actions_map.attack))
+   -- print(inspect(actions_map.move))
 end
 
 function Unit:is_capable(flag_mask)
