@@ -99,8 +99,15 @@ function Theme.create(engine, data)
         change_orientation = {
           available = renderer:load_texture(theme_dir .. '/buttons/change-orientation-available.png'),
           disabled  = renderer:load_texture(theme_dir .. '/buttons/change-orientation-disabled.png'),
-
-        }
+        },
+        information = {
+          available = renderer:load_texture(theme_dir .. '/buttons/information-available.png'),
+          disabled  = renderer:load_texture(theme_dir .. '/buttons/information-disabled.png'),
+        },
+        detach = {
+          available = renderer:load_texture(theme_dir .. '/buttons/detach-available.png'),
+          disabled  = renderer:load_texture(theme_dir .. '/buttons/detach-disabled.png'),
+        },
       },
       fonts    = {
          active_hex = active_hex_ttf,
