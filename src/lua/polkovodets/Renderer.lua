@@ -105,7 +105,7 @@ function Renderer:add_handler(event_type, cb)
 end
 
 function Renderer:remove_handler(event_type, cb)
-  assert(cb)
+  assert(cb, "cannot non-defined callback for " .. event_type)
   local handlers = assert(self.handlers[event_type], "event " .. event_type .. " cannot be handled")
   local found_idx
   for idx, handler in ipairs(handlers) do

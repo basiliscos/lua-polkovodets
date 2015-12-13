@@ -26,7 +26,7 @@ local _count = 1
 function Button.create(engine, data)
   local o = {
     id     = tostring(_count),
-    hint   = assert(data.hint),
+    hint   = data.hint,
     engine = engine,
     drawing = {
       fn          = nil,
@@ -58,6 +58,8 @@ function Button:bind_ctx(context)
   local drawing_fn = function()
     assert(sdl_renderer:copy(image.texture, nil, dst))
   end
+
+  assert(self.hint)
   local mouse_move = function(event)
     if (is_over(event)) then
       context.state.mouse_hint = self.hint
@@ -83,6 +85,7 @@ function Button:unbind_ctx(context)
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
   context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
   self.drawing.mouse_move = nil
+  self.drawing.mouse_click = nil
   self.drawing.fn = nil
 end
 

@@ -107,6 +107,10 @@ function Theme.create(engine, data)
         detach = {
           available = renderer:load_texture(theme_dir .. '/buttons/detach-available.png'),
           disabled  = renderer:load_texture(theme_dir .. '/buttons/detach-disabled.png'),
+          multiple  = {
+            renderer:load_texture(theme_dir .. '/buttons/detach-1.png'),
+            renderer:load_texture(theme_dir .. '/buttons/detach-2.png'),
+          },
         },
       },
       fonts    = {

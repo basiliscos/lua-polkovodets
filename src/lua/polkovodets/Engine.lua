@@ -62,6 +62,7 @@ function Engine.create(language)
       active_tile    = nil,
       action         = 'default',
       actual_records = {},
+      popups         = {},
       mouse_hint     = nil,
     },
   }

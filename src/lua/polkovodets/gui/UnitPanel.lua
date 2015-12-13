@@ -21,6 +21,7 @@ local _ = require ("moses")
 
 local Button = require ('polkovodets.gui.Button')
 local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
+local DetachPanel = require ('polkovodets.gui.DetachPanel')
 
 local UnitPanel = {}
 UnitPanel.__index = UnitPanel
@@ -29,18 +30,20 @@ setmetatable(UnitPanel , HorizontalPanel)
 function UnitPanel.create(engine)
   local o = HorizontalPanel.create(engine)
   setmetatable(o, UnitPanel)
+
   o.button_geometry = {
     w = engine.renderer.theme.buttons.end_turn.normal.w,
     h = engine.renderer.theme.buttons.end_turn.normal.h
   }
 
-  o.buttons = {
-  }
+  o.buttons = {}
+  o.button_list = {}
   local add_button = function(key)
     local button = Button.create(engine, {
       hint = engine:translate('ui.button.' .. key),
     })
     table.insert(o.drawing.objects, button)
+    table.insert(o.button_list, button)
     o.buttons[key] = button
   end
   add_button('change_orientation')
@@ -66,12 +69,18 @@ function UnitPanel.create(engine)
           local subordinated = u.data.attached[1]
           subordinated:update_actions_map()
           engine.state.selected_unit = subordinated
-          engine.mediator:publish({ "view.update" })
+        else
+          engine.state.popups.detach_panel = true
         end
+        engine.mediator:publish({ "view.update" })
       end
       return true
     end,
   }
+
+  local detach_panel = DetachPanel.create(engine, o.buttons.detach.id)
+  o.detach_panel = detach_panel
+  table.insert(o.drawing.objects, detach_panel)
 
   return o
 end
@@ -80,7 +89,7 @@ function UnitPanel:bind_ctx(context)
   local engine = self.engine
   local theme = assert(context.renderer.theme)
   local gamepanel_ctx = _.clone(context, true)
-  local content_w = self.button_geometry.w * #self.drawing.objects
+  local content_w = self.button_geometry.w * #self.button_list
   local content_h = self.button_geometry.h
   gamepanel_ctx.content_size = { w = content_w, h = content_h}
 
@@ -92,10 +101,10 @@ function UnitPanel:bind_ctx(context)
 
   -- generic buttons context
   gamepanel_ctx.button = {}
-  for idx, button in pairs(self.drawing.objects) do
+  for idx, button in pairs(self.button_list) do
     gamepanel_ctx.button[button.id] = {
-      x        = x + self.contentless_size.dx +  self.button_geometry.w * (idx - 1),
-      y        = y + self.contentless_size.dy,
+      x = x + self.contentless_size.dx +  self.button_geometry.w * (idx - 1),
+      y = y + self.contentless_size.dy,
     }
   end
 
