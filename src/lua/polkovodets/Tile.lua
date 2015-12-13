@@ -162,7 +162,8 @@ function Tile:bind_ctx(context)
       if (context.state.selected_unit) then
         local u = context.state.selected_unit
         local movement_area = u.data.actions_map.move
-        if ((not movement_area[self.id]) and (u.tile.id ~= self.id)) then
+        local u_tile = u.tile or u.data.attached_to.tile
+        if ((not movement_area[self.id]) and (u_tile.id ~= self.id)) then
           local fog = terrain:get_icon('fog')
           assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
         end

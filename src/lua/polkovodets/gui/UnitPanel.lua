@@ -63,7 +63,10 @@ function UnitPanel.create(engine)
       if (u and #u.data.attached > 0) then
         local attached_units = #u.data.attached
         if (attached_units == 1) then
-
+          local subordinated = u.data.attached[1]
+          subordinated:update_actions_map()
+          engine.state.selected_unit = subordinated
+          engine.mediator:publish({ "view.update" })
         end
       end
       return true
@@ -74,6 +77,7 @@ function UnitPanel.create(engine)
 end
 
 function UnitPanel:bind_ctx(context)
+  local engine = self.engine
   local theme = assert(context.renderer.theme)
   local gamepanel_ctx = _.clone(context, true)
   local content_w = self.button_geometry.w * #self.drawing.objects
@@ -105,7 +109,15 @@ function UnitPanel:bind_ctx(context)
   gamepanel_ctx.button[self.buttons.information.id].callback = self.callbacks.information
 
   local detach_state = 'disabled'
-  if (u and #u.data.attached > 0) then detach_state = 'available' end
+  if (u and #u.data.attached > 0) then
+    detach_state = 'available'
+    if (#u.data.attached == 1) then
+      local hint = engine:translate('ui.button.detach_unit', {name = u.data.attached[1].name })
+      self.buttons.detach.hint = hint
+    else
+      self.buttons.detach.hint = engine:translate('ui.button.detach')
+    end
+  end
   gamepanel_ctx.button[self.buttons.detach.id].image = theme.buttons.detach[detach_state]
   gamepanel_ctx.button[self.buttons.detach.id].callback = self.callbacks.detach
 

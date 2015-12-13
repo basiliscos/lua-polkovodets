@@ -442,10 +442,30 @@ function Unit:_check_death()
   end
 end
 
+function Unit:_detach()
+  if (self.data.attached_to) then
+    local parent = self.data.attached_to
+    local idx
+    for i, u in ipairs(parent.data.attached) do
+      if (u == self) then
+        idx = i
+        break
+      end
+    end
+    assert(idx)
+    table.remove(parent.data.attached, idx)
+    self.data.attached_to = nil
+    self.tile = parent.tile
+    return true
+  end
+end
+
 function Unit:move_to(dst_tile)
+  -- print("moving " .. self.id .. " to " .. dst_tile.id)
   -- print("move map = " .. inspect(self.data.actions_map.move))
   local costs = assert(self.data.actions_map.move[dst_tile.id],
     "unit " .. self.id  .. " cannot move to ".. dst_tile.id)
+  local being_attached = self:_detach()
   local src_tile = self.tile
 
   -- calculate back route from dst_tile to src_tile
@@ -501,7 +521,7 @@ function Unit:move_to(dst_tile)
   -- print("history = " .. inspect(self.engine.history.records_at))
 
   self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
-  self.tile:set_unit(nil, self.data.layer)
+  if (not being_attached) then src_tile:set_unit(nil, self.data.layer) end
   -- print(inspect(costs))
   for idx, weapon_instance in pairs(marched_weapons) do
     local cost = costs.data[weapon_instance.id]
@@ -509,6 +529,7 @@ function Unit:move_to(dst_tile)
   end
 
   -- update state
+
   local unit_type = self.definition.unit_type.id
   local new_state
   if (unit_type == 'ut_land') then
@@ -614,7 +635,8 @@ function Unit:update_actions_map()
    local map = engine.map
    -- determine, what the current user can do at the visible area
    local actions_map = {}
-   local start_tile = self.tile
+   local start_tile = self.tile or self.data.attached_to.tile
+   assert(start_tile)
 
 
    local merge_candidates = {}

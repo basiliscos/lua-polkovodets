@@ -17,6 +17,7 @@ t = {
     ['ui.button.change_orientation'] = 'Изменить пространсветнную ориентацию соединения',
     ['ui.button.information']        = 'Дополнительная информация',
     ['ui.button.detach']             = 'Открепить соединение',
+    ['ui.button.detach_unit']        = 'Открепить соединение (%{name})',
   },
 }
 
