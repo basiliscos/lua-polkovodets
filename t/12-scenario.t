@@ -134,14 +134,7 @@ subtest("move rus aircraft",
                         }
                      }
            )
-           is(ger_artillery:get_attack_kind(map.tiles[4][8]), 'fire/artillery')
-
-           ger_artillery:switch_attack_priorities()
-           is(ger_artillery:get_attack_kind(map.tiles[4][8]), 'fire/artillery')
-           ger_artillery:switch_attack_priorities()
-           is(ger_artillery:get_attack_kind(map.tiles[4][8]), 'battle')
-           ger_artillery:switch_attack_priorities()
-           is(ger_artillery:get_attack_kind(map.tiles[4][8]), 'fire/artillery')
+           is_deeply(ger_artillery:get_attack_kinds(map.tiles[4][8]), {'fire/artillery', "battle"})
 
            engine:end_turn()
            engine:end_turn()

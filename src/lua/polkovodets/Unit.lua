@@ -61,7 +61,6 @@ function Unit.create(engine, data, player)
          attached     = {},
          attached_to  = nil,
          subordinated = {},
-         attack_prio  = {['default'] = 10},
          managed_by   = data.managed_by,
       },
       drawing = {
