@@ -33,9 +33,9 @@ function UnitDefinition.create(engine, data)
    assert(data.flags)
    assert(string.find(data.size, '[LMS]'))
 
-   local unit_class = assert(unit_lib.units.classes[data.unit_class])
+   local unit_class = assert(unit_lib.units.classes.hash[data.unit_class])
    local unit_type_id = unit_class['type']
-   local unit_type = assert(unit_lib.units.types[unit_type_id], "type " .. unit_type_id .. " not found")
+   local unit_type = assert(unit_lib.units.types.hash[unit_type_id], "type " .. unit_type_id .. " not found")
 
    assert(data.icons)
    local state_icons = {}

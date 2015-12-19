@@ -24,6 +24,7 @@ local BattleFormula = require 'polkovodets.BattleFormula'
 local BattleScheme = require 'polkovodets.BattleScheme'
 local Parser = require 'polkovodets.Parser'
 local Weapon = require 'polkovodets.Weapon'
+local WeaponClass = require 'polkovodets.WeaponClass'
 local UnitDefinition = require 'polkovodets.UnitDefinition'
 
 
@@ -45,20 +46,26 @@ function UnitLib:load(unit_file)
    print('loading armed forces ' .. path)
    local parser = Parser.create(path)
 
-   local load_hash = function(parent, key)
+   local load_hash = function(parent, key, constructor)
       local file = assert(parent[key])
       local parser = Parser.create(definitions_dir .. '/' .. file)
       local hash = {}
+      local list = {}
+      local order = 1
       for k, data in pairs(parser:get_raw_data()) do
          local id = assert(data.id)
-         hash[id] = data
          if (data.flags) then
             if (type(data.flags) == 'string') then data.flags = {data.flags} end
          else
             data.flags = {}
          end
+         data.order = order
+         order = order + 1
+         local object = constructor and constructor(data) or data
+         hash[id] = object
+         table.insert(list, object)
       end
-      return hash
+      return {hash = hash, list = list}
    end
    --------------------------
    -- load weapons section --
@@ -68,7 +75,7 @@ function UnitLib:load(unit_file)
    -- load all simple definitions
    self.weapons.movement_types = load_hash(weapons_data, 'movement_types')
    self.weapons.target_types = load_hash(weapons_data, 'target_types')
-   self.weapons.classes = load_hash(weapons_data, 'classes')
+   self.weapons.classes = load_hash(weapons_data, 'classes', function(data) return WeaponClass.create(engine, data) end)
    self.weapons.categories = load_hash(weapons_data, 'categories')
    self.weapons.types = load_hash(weapons_data, 'types')
 
@@ -92,9 +99,9 @@ function UnitLib:load(unit_file)
    local unit_types = load_hash(units_data, 'types')
    local unit_classes = load_hash(units_data, 'classes')
    -- validate classes by types
-   for idx, class in pairs(unit_classes) do
+   for idx, class in pairs(unit_classes.hash) do
       local t = class.type
-      assert(unit_types[t], "unknown unit type " .. t .. " for unit class " .. idx)
+      assert(unit_types.hash[t], "unknown unit type " .. t .. " for unit class " .. idx)
    end
 
    -- make types & classes be accessible for units
@@ -111,7 +118,7 @@ function UnitLib:load(unit_file)
       local class = assert(data.unit_class)
       local staff = assert(data.staff)
 
-      assert(unit_classes[class])
+      assert(unit_classes.hash[class])
       assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
       for weapon_type, quantity in ipairs(staff) do
          assert(quantity)

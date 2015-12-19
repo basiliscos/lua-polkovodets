@@ -95,7 +95,6 @@ function DetachPanel:bind_ctx(context)
     -- mouse click has been handled by button, that means, user clicked
     -- outsied of buttos, and the "popup" (detach panel) should be closed
     local mouse_click = function(event)
-      print("hide detach panel")
       engine.state.popups.detach_panel = false
       return false -- allow further event propagation
     end

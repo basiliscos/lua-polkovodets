@@ -20,6 +20,7 @@ local inspect = require('inspect')
 local _ = require ("moses")
 local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
+local BattleDetailsWindow = require ('polkovodets.gui.BattleDetailsWindow')
 
 
 local Inteface = {}
@@ -47,6 +48,9 @@ function Inteface.create(engine)
   table.insert(o.drawing.objects, unit_panel)
   o.drawing.obj_by_type.unit_panel = unit_panel
 
+  local battle_details_window = BattleDetailsWindow.create(engine)
+  table.insert(o.drawing.objects, battle_details_window)
+  o.drawing.obj_by_type.battle_details_window = battle_details_window
 
   return o
 end

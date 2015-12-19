@@ -113,13 +113,31 @@ function Theme.create(engine, data)
           },
         },
       },
+      window = {
+        background = renderer:load_texture(theme_dir .. '/window/background.png'),
+      },
+      font = {
+        default = active_hex_font,
+      },
       fonts    = {
          active_hex = active_hex_ttf,
       },
+      font_cache = {},
       unit_states = unit_states,
    }
    setmetatable(o,Theme)
    return o
+end
+
+function Theme:get_font(name, size)
+  local cache_key = name .. size
+  local font = self.font_cache[cache_key]
+  if (font) then return font end
+
+  local path = self.font[name]
+  font = assert(ttf.open(path, size))
+  self.font_cache[cache_key] = font
+  return font
 end
 
 function Theme:get_unit_state_icon(size, efficiency)

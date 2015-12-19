@@ -35,8 +35,9 @@ function _Record.create(player, turn_no, action, context, success, results)
     success = success,
     results = results,
     drawing = {
-      fn         = nil,
-      mouse_move = nil,
+      fn          = nil,
+      mouse_move  = nil,
+      mouse_click = nil,
     }
   }
   return setmetatable(o, _Record)
@@ -50,7 +51,7 @@ function _Record:bind_ctx(context)
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   local draw_fn
-  local mouse_move
+  local mouse_move, mouse_click
 
 
   if (self.action == 'unit/move') then
@@ -175,12 +176,25 @@ function _Record:bind_ctx(context)
       return is_over_icon(event.x, event.y)
     end
 
+    mouse_click = function(event)
+      if (is_over_icon(event.x, event.y)) then
+        context.renderer.engine.state.popups.battle_details_window = true
+        context.renderer.engine.mediator:publish({ "view.update" })
+        return true
+      end
+    end
+
   end
 
   if (mouse_move) then
     context.events_source.add_handler('mouse_move', mouse_move)
     self.drawing.mouse_move = mouse_move
   end
+  if (mouse_click) then
+    context.events_source.add_handler('mouse_click', mouse_click)
+    self.drawing.mouse_click = mouse_click
+  end
+
   self.drawing.fn = draw_fn
 end
 
@@ -197,6 +211,7 @@ function _Record:unbind_ctx(context)
     context.state.participant_locations = {}
     context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
     self.drawing.mouse_move = nil
+    self.drawing.mouse_click = nil
   end
 end
 
