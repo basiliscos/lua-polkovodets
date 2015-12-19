@@ -363,9 +363,7 @@ function _Block:select_pair(ctx)
 end
 
 function _Block:perform_battle(i_unit, p_unit, fire_type)
-  print("a")
   local range = i_unit.tile:distance_to(p_unit.tile)
-  print("b")
   local i_weapon_instances = i_unit:_united_staff()
   local p_weapon_instances = p_unit:_united_staff()
 
@@ -373,6 +371,10 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
   local i_shots, p_shots = {}, {}
   _.each(i_weapon_instances, function(k, wi) i_shots[wi.id] = wi.data.quantity end)
   _.each(p_weapon_instances, function(k, wi) p_shots[wi.id] = wi.data.quantity end)
+
+  -- participants is equal to shots count
+  local i_participants = _.clone(i_shots)
+  local p_participants = _.clone(p_shots)
 
   local ctx = {
     range              = range,
@@ -401,7 +403,7 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
     end
   end
   _.each(i_weapon_instances, function(k, wi) wi.data.can_attack = false end)
-  return ctx.i.casualities, ctx.p.casualities
+  return ctx.i.casualities, ctx.p.casualities, i_participants, p_participants
 end
 
 

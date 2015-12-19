@@ -38,8 +38,6 @@ function BattleDetailsWindow.create(engine)
   assert (#weapon_classes > 0)
   -- print(inspect(weapon_classes))
   local class_icon = weapon_classes[1]:get_icon()
-  local classes_h = class_icon.h * #weapon_classes
-
 
   local text_size = 12
   local font = engine.renderer.theme:get_font('default', text_size)
@@ -85,7 +83,7 @@ function BattleDetailsWindow.create(engine)
     dx    = labels[#labels].dx + header_dx + labels[#labels].label.w + 5,
     dy    = labels[#labels].dy + labels[#labels].label.h + 1,
     w     = 1,
-    h     = classes_h,
+    h     = 0, -- to be defined later
     color = text_color,
   }
 
@@ -110,22 +108,103 @@ function BattleDetailsWindow.create(engine)
     separator = separator,
   }
 
+  local lines = {}
+  local line_dy = header_h + 2
+  for idx, class in ipairs(weapon_classes) do
+    local icon = class:get_icon()
+    local center_y = math.modf(line_dy + icon.h/2)
+    local line = {
+      class_id = class.id,
+      icon     = icon,
+      dx       = 0,
+      dy       = line_dy,
+      center   = {
+        i = {
+          was = {
+            dx = math.modf(labels[1].dx + labels[1].label.w/2),
+            dy = center_y,
+          },
+          casualities = {
+            dx = math.modf(labels[2].dx + labels[2].label.w/2),
+            dy = center_y,
+          },
+        },
+        p = {
+          was = {
+            dx = math.modf(labels[3].dx + labels[3].label.w/2),
+            dy = center_y,
+          },
+          casualities = {
+            dx = math.modf(labels[4].dx + labels[4].label.w/2),
+            dy = center_y,
+          },
+        },
+      },
+    }
+    table.insert(lines, line)
+    line_dy = line_dy + 2 + icon.h
+  end
+  separator.h = line_dy - lines[1].dy
+  -- print("lines = " .. inspect(lines))
+  o.content.lines = lines
+
   local content_w = header_w
-  local content_h = classes_h + header_h
+  local content_h = line_dy
 
   o.content.size = {
     w = content_w,
     h = content_h,
+  }
+  o.content.not_found = {
+    available = create_image(font:renderUtf8('-', "solid", 0xAAAAAA)),
+    hilight   = create_image(font:renderUtf8('-', "solid", 0xFFFFFF)),
   }
 
   -- print(string.format("content size %d x %d", content_w, content_h))
   return o
 end
 
+function BattleDetailsWindow:_classy_battle_weapons(record)
+  local engine = self.engine
+
+  local sources = {
+    {"i", "participants"},
+    {"i", "casualities"},
+    {"p", "participants"},
+    {"p", "casualities"},
+  }
+  local data = {}
+  for idx, source in pairs(sources) do
+    local side, property = source[1], source [2]
+    local property_data = record.results[side][property]
+    for wi_id, quantity in pairs(property_data) do
+      local wi = assert(engine.weapon_instance_for[wi_id])
+      local class = assert(wi:get_class())
+      local data_key = class.id .. "_" .. side .. "_" .. property
+      data[data_key] = (data[data_key] or 0) + quantity
+    end
+  end
+
+  -- print("data = " .. inspect(data))
+  local images = {}
+  local font = self.content.text.font
+  for key, quantity in pairs(data) do
+    local surface = font:renderUtf8(tostring(quantity), "solid", 0xFFFFFF)
+    images[key] = Image.create(engine.renderer.sdl_renderer, surface)
+  end
+
+  local classifyer = function(class_id, side, property)
+    local key = class_id .. "_" .. side .. "_" .. property
+    return images[key] or self.content.not_found.available
+  end
+  return classifyer
+end
+
 function BattleDetailsWindow:bind_ctx(context)
   local engine = self.engine
   if (engine.state.popups.battle_details_window) then
     self.ctx_bound = true
+    local record = assert(context.state.history_record)
 
     local theme = assert(context.renderer.theme)
     local details_ctx = _.clone(context, true)
@@ -152,6 +231,8 @@ function BattleDetailsWindow:bind_ctx(context)
       return over
     end
 
+    local classifyer = self:_classy_battle_weapons(record)
+
     local sdl_renderer = assert(context.renderer.sdl_renderer)
     self.drawing.content_fn = function()
 
@@ -160,13 +241,40 @@ function BattleDetailsWindow:bind_ctx(context)
         {x = content_x, y = content_y, w = content_w, h = content_h}
       ))
 
-      -- unit class icons
-      local header_h = self.content.header.h
-      for idx, class in ipairs(weapon_classes) do
-        local icon = class:get_icon()
+      -- unit classes icons with counts/casualities for initial/passive sides
+      for ignored, line in ipairs(self.content.lines) do
+        local icon = line.icon
         assert(sdl_renderer:copy(icon.texture, nil,
-          {x = content_x, y = content_y + header_h + (weapon_class_icon.h * (idx - 1)), w = weapon_class_icon.w, h = weapon_class_icon.h}
+          {x = content_x + line.dx, y = content_y + line.dy, w = icon.w, h = icon.h}
         ))
+        local i_was = classifyer(line.class_id, "i", "participants")
+        assert(sdl_renderer:copy(i_was.texture, nil,{
+          x = math.modf(content_x + line.center.i.was.dx - i_was.w/2),
+          y = math.modf(content_y + line.center.i.was.dy - i_was.h/2),
+          w = i_was.w,
+          h = i_was.h,
+        }))
+        local i_casualities = classifyer(line.class_id, "i", "casualities")
+        assert(sdl_renderer:copy(i_casualities.texture, nil,{
+          x = math.modf(content_x + line.center.i.casualities.dx - i_casualities.w/2),
+          y = math.modf(content_y + line.center.i.casualities.dy - i_casualities.h/2),
+          w = i_casualities.w,
+          h = i_casualities.h,
+        }))
+        local p_was = classifyer(line.class_id, "p", "participants")
+        assert(sdl_renderer:copy(p_was.texture, nil,{
+          x = math.modf(content_x + line.center.p.was.dx - p_was.w/2),
+          y = math.modf(content_y + line.center.p.was.dy - p_was.h/2),
+          w = p_was.w,
+          h = p_was.h,
+        }))
+        local p_casualities = classifyer(line.class_id, "p", "casualities")
+        assert(sdl_renderer:copy(p_casualities.texture, nil,{
+          x = math.modf(content_x + line.center.p.casualities.dx - p_casualities.w/2),
+          y = math.modf(content_y + line.center.p.casualities.dy - p_casualities.h/2),
+          w = p_casualities.w,
+          h = p_casualities.h,
+        }))
       end
 
       -- table header

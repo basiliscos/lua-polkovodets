@@ -182,6 +182,10 @@ function Engine:get_unit(id)
   return u
 end
 
+function Engine:set_weapon_instances(hash)
+  self.weapon_instance_for = hash
+end
+
 function Engine:_set_current_player(order)
    local player
    for i, p in pairs(self.player_for) do

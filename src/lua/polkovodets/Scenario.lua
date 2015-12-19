@@ -120,6 +120,9 @@ function Scenario:load(file)
    -- 1st pass: load units
    local army_file = assert(files.army)
    local all_units = {}
+   local all_weapon_instances = {
+
+   }
    local unit_for = {}
    for k, data in pairs(Parser.create(scenarios_dir .. '/' .. army_file):get_raw_data()) do
       local id = assert(data.id)
@@ -136,7 +139,9 @@ function Scenario:load(file)
       local staff_instances = {}
       for weapon_id, quantity in pairs(staff) do
          quantity = tonumber(quantity)
-         staff_instances[weapon_id] = WeaponInstance.create(engine, weapon_id, id, quantity)
+         local wi = WeaponInstance.create(engine, weapon_id, id, quantity)
+         staff_instances[weapon_id] = wi
+         all_weapon_instances[wi.id] = wi
       end
       data.staff = staff_instances
       local nation_id = unit_definition.data.nation
@@ -154,7 +159,7 @@ function Scenario:load(file)
       end
    end
 
-
+   engine:set_weapon_instances(all_weapon_instances)
    engine:set_units(all_units)
    engine:set_scenario(self)
 end

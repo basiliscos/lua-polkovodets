@@ -178,6 +178,7 @@ function _Record:bind_ctx(context)
 
     mouse_click = function(event)
       if (is_over_icon(event.x, event.y)) then
+        context.renderer.engine.state.history_record = self
         context.renderer.engine.state.popups.battle_details_window = true
         context.renderer.engine.mediator:publish({ "view.update" })
         return true

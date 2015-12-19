@@ -60,4 +60,8 @@ function WeaponInstance:update_state(new_state)
    end
 end
 
+function WeaponInstance:get_class()
+  return self.weapon.class
+end
+
 return WeaponInstance

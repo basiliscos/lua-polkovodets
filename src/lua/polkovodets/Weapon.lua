@@ -53,7 +53,7 @@ function Weapon.create(engine, data)
       range[k] = v
    end
 
-   assert(unit_lib.weapons.classes.hash[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
+   local class = assert(unit_lib.weapons.classes.hash[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
    assert(unit_lib.weapons.types.hash[w_type])
    local category = assert(unit_lib.weapons.categories.hash[w_category], "category " .. w_category .. " is not available")
    assert(unit_lib.weapons.movement_types.hash[movement_type])
@@ -73,7 +73,7 @@ function Weapon.create(engine, data)
 
    local o = {
       id            = id,
-      class         = w_class,
+      class         = class,
       weapon_type   = w_type,
       category      = w_category,
       movement_type = movement_type,
