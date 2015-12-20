@@ -65,12 +65,19 @@ function BattleDetailsWindow:_classy_battle_weapons(record)
     end
   end
 
+  local font = self.text.font
+  local create_image = function(str, color)
+    local surface = font:renderUtf8(tostring(str), "solid", color)
+    return Image.create(engine.renderer.sdl_renderer, surface)
+  end
+
   -- print("data = " .. inspect(data))
   local images = {}
-  local font = self.text.font
   for key, quantity in pairs(data) do
-    local surface = font:renderUtf8(tostring(quantity), "solid", 0xFFFFFF)
-    images[key] = Image.create(engine.renderer.sdl_renderer, surface)
+    images[key] = {
+      available = create_image(tostring(quantity), 0xAAAAAA),
+      hilight   = create_image(tostring(quantity), 0xFFFFFF),
+    }
   end
 
   local classifyer = function(class_id, side, property)
@@ -247,15 +254,55 @@ function BattleDetailsWindow:bind_ctx(context)
       return over
     end
 
-    local last_label_info = gui.header.labels[#gui.header.labels]
+    local l_infos = gui.header.labels
+
     local line_regions = _.map(gui.lines, function(idx, line)
       return {
         x_min = content_x,
-        x_max = content_x + last_label_info.dx + last_label_info.label.w,
+        x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
         y_min = content_y + line.dy,
         y_max = content_y + line.dy + line.icon.h,
+        i     = {
+          x_min = content_x + l_infos[1].dx ,
+          x_max = content_x + l_infos[2].dx + l_infos[2].label.w,
+        },
+        p     = {
+          x_min = content_x + l_infos[3].dx ,
+          x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
+        },
       }
     end)
+
+    local line_styles = {}
+    local update_line_styles = function(x, y)
+      line_styles = _.map(line_regions, function(idx, line_region)
+        local styles = {i = "available", p = "available"}
+        if (is_over(x, y, line_region)) then
+          if ((x >= line_region.i.x_min) and (x <= line_region.i.x_max)) then
+            styles.i = "hilight"
+          elseif ((x >= line_region.p.x_min) and (x <= line_region.p.x_max)) then
+            styles.p = "hilight"
+          end
+        end
+        return styles
+      end)
+    end
+    update_line_styles(context.mouse.x, context.mouse.y)
+
+    local get_line_image = function(idx, side, property)
+      local line = gui.lines[idx]
+      local images_pair = classifyer(line.class_id, side, property)
+      local style = line_styles[idx][side]
+      -- do not hilight row, if there are no casualities nor losses
+      if (style == 'hilight' ) then
+        local opposite_property = (property  == 'casualities') and 'participants' or 'casualities'
+        local opposite_pair = classifyer(line.class_id, side, opposite_property)
+        if (not(images_pair) and not(opposite_pair)) then
+          style = 'available'
+        end
+      end
+      return (images_pair or gui.not_found)[style]
+    end
 
     local sdl_renderer = assert(context.renderer.sdl_renderer)
     self.drawing.content_fn = function()
@@ -266,33 +313,33 @@ function BattleDetailsWindow:bind_ctx(context)
       ))
 
       -- unit classes icons with counts/casualities for initial/passive sides
-      for ignored, line in ipairs(gui.lines) do
+      for idx, line in ipairs(gui.lines) do
         local icon = line.icon
         assert(sdl_renderer:copy(icon.texture, nil,
           {x = content_x + line.dx, y = content_y + line.dy, w = icon.w, h = icon.h}
         ))
-        local i_was = classifyer(line.class_id, "i", "participants") or gui.not_found.available
+        local i_was = get_line_image(idx, "i", "participants")
         assert(sdl_renderer:copy(i_was.texture, nil,{
           x = math.modf(content_x + line.center.i.was.dx - i_was.w/2),
           y = math.modf(content_y + line.center.i.was.dy - i_was.h/2),
           w = i_was.w,
           h = i_was.h,
         }))
-        local i_casualities = classifyer(line.class_id, "i", "casualities") or gui.not_found.available
+        local i_casualities = get_line_image(idx, "i", "casualities")
         assert(sdl_renderer:copy(i_casualities.texture, nil,{
           x = math.modf(content_x + line.center.i.casualities.dx - i_casualities.w/2),
           y = math.modf(content_y + line.center.i.casualities.dy - i_casualities.h/2),
           w = i_casualities.w,
           h = i_casualities.h,
         }))
-        local p_was = classifyer(line.class_id, "p", "participants") or gui.not_found.available
+        local p_was = get_line_image(idx, "p", "participants")
         assert(sdl_renderer:copy(p_was.texture, nil,{
           x = math.modf(content_x + line.center.p.was.dx - p_was.w/2),
           y = math.modf(content_y + line.center.p.was.dy - p_was.h/2),
           w = p_was.w,
           h = p_was.h,
         }))
-        local p_casualities = classifyer(line.class_id, "p", "casualities") or gui.not_found.available
+        local p_casualities = get_line_image(idx, "p", "casualities")
         assert(sdl_renderer:copy(p_casualities.texture, nil,{
           x = math.modf(content_x + line.center.p.casualities.dx - p_casualities.w/2),
           y = math.modf(content_y + line.center.p.casualities.dy - p_casualities.h/2),
@@ -338,6 +385,7 @@ function BattleDetailsWindow:bind_ctx(context)
     local mouse_move = function(event)
       engine.state.mouse_hint = ''
       if (is_over(event.x, event.y, window_region)) then
+        update_line_styles(event.x, event.y)
         for idx, line_region in ipairs(line_regions) do
           if (is_over(event.x, event.y, line_region)) then
             local class_id = gui.lines[idx].class_id
