@@ -130,8 +130,8 @@ function _Record:bind_ctx(context)
               end)
             local participants = {}
             _.each(battles_on_tile, function(k, v)
-                participants[v.context.i_unit] = true
-                participants[v.context.p_unit] = true
+              _.each(v.context.i_units, function(i, unit_data) participants[unit_data.unit_id] = true end)
+              _.each(v.context.p_units, function(i, unit_data) participants[unit_data.unit_id] = true end)
             end)
             _.each(_.keys(participants), function(k, v)
               local unit = context.renderer.engine:get_unit(v)

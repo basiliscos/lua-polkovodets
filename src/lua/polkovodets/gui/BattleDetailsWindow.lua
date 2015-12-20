@@ -87,7 +87,7 @@ function BattleDetailsWindow:_classy_battle_weapons(record)
   return classifyer, available_classes
 end
 
-function BattleDetailsWindow:_construct_gui(available_classes)
+function BattleDetailsWindow:_construct_gui(available_classes, record)
   local engine = self.engine
   local weapon_classes = engine.unit_lib.weapons.classes.list
 
@@ -103,13 +103,42 @@ function BattleDetailsWindow:_construct_gui(available_classes)
   local was_label = create_image(font:renderUtf8(engine:translate('ui.window.battle_details.header.was'), "solid", 0xFFFFFF))
   local casualities_label = create_image(font:renderUtf8(engine:translate('ui.window.battle_details.header.casualities'), "solid", 0xFFFFFF))
 
-  -- initiator columns
+  local max_unit_height = 0
+  local unit_mapper = function(idx, unit_data)
+    local u = engine:get_unit(unit_data.unit_id)
+    local unit_icon = u.definition:get_icon(unit_data.state)
+    if (max_unit_height < unit_icon.h) then max_unit_height = unit_icon.h end
+    return {
+      name        = u.name,
+      unit_id     = unit_id,
+      unit_icon   = unit_icon,
+      nation_icon = u.definition.nation.unit_flag,
+    }
+  end
+  local i_units = _.map(record.context.i_units, unit_mapper)
+  local p_units = _.map(record.context.p_units, unit_mapper)
+  local i_units_w = _.reduce(i_units, function(state, v) return state + v.unit_icon.w end, 0)
+  local p_units_w = _.reduce(p_units, function(state, v) return state + v.unit_icon.w end, 0)
+
   local header_dx = 10
+  local initial_header_w = _.reduce({class_icon, was_label, casualities_label}, function(state, image)
+    return state + image.w
+  end,
+  0)
+  local max_w = math.max(i_units_w, p_units_w)
+  if (initial_header_w < max_w) then
+    local delta = max_w - initial_header_w
+    header_dx = math.modf(delta / 2) + 1
+  end
+
+  local dy = 10 + max_unit_height + 10
+
+  -- initiator columns
   local labels = {
     {
       label = was_label,
       dx    = class_icon.w + header_dx,
-      dy    = 0,
+      dy    = dy,
     },
   }
   table.insert(labels, {
@@ -151,7 +180,7 @@ function BattleDetailsWindow:_construct_gui(available_classes)
   }
 
   local lines = {}
-  local line_dy = header_h + 2
+  local line_dy = dy + header_h + 2
   local my_weapon_classes = {}
   _.eachi(weapon_classes, function(k, class)
     if (available_classes[class.id]) then
@@ -197,10 +226,32 @@ function BattleDetailsWindow:_construct_gui(available_classes)
   separator.h = line_dy - lines[1].dy
   -- print("lines = " .. inspect(lines))
 
+  dy = line_dy
+
   local content_w = header_w
   local content_h = line_dy
 
+  local dx = 0
+  dy = 10
+  local unit_gfx_mapper = function(unit_info)
+    local data = unit_info
+    data.dy = dy
+    data.dx = dx
+    dx = dx + unit_info.unit_icon.w + 5
+    return data
+  end
+  local units = {}
+  _.each(i_units, function(idx, unit_data)
+    units[#units + 1] = unit_gfx_mapper(unit_data)
+  end)
+  dx = separator.dx + separator.w
+  _.each(p_units, function(idx, unit_data)
+    units[#units + 1] = unit_gfx_mapper(unit_data)
+  end)
+  -- print("units = " .. inspect(units))
+
   local gui = {
+    units  = units,
     header = header,
     lines  = lines,
     not_found = {
@@ -223,7 +274,7 @@ function BattleDetailsWindow:bind_ctx(context)
     self.ctx_bound = true
     local record = assert(context.state.history_record)
     local classifyer, available_classes = self:_classy_battle_weapons(record)
-    local gui = self:_construct_gui(available_classes)
+    local gui = self:_construct_gui(available_classes, record)
 
     local theme = assert(context.renderer.theme)
     local details_ctx = _.clone(context, true)
@@ -272,6 +323,15 @@ function BattleDetailsWindow:bind_ctx(context)
         },
       }
     end)
+    local unit_regions = _.map(gui.units, function(idx, unit_data)
+      local icon = unit_data.unit_icon
+      return {
+        x_min = content_x + unit_data.dx,
+        x_max = content_x + unit_data.dx + icon.w,
+        y_min = content_y + unit_data.dy,
+        y_max = content_y + unit_data.dy + icon.h,
+      }
+    end)
 
     local line_styles = {}
     local update_line_styles = function(x, y)
@@ -312,7 +372,22 @@ function BattleDetailsWindow:bind_ctx(context)
         {x = content_x, y = content_y, w = content_w, h = content_h}
       ))
 
-      -- unit classes icons with counts/casualities for initial/passive sides
+      -- participating units
+      for idx, unit_data in ipairs(gui.units) do
+        local unit_icon = unit_data.unit_icon
+        local nation_icon = unit_data.nation_icon
+        assert(sdl_renderer:copy(unit_icon.texture, nil,
+          {x = content_x + unit_data.dx, y = content_y + unit_data.dy, w = unit_icon.w, h = unit_icon.h}
+        ))
+        assert(sdl_renderer:copy(nation_icon.texture, nil, {
+          x = content_x + unit_data.dx + unit_icon.w - nation_icon.w,
+          y = content_y + unit_data.dy + unit_icon.h - nation_icon.h,
+          w = nation_icon.w,
+          h = nation_icon.h
+        }))
+      end
+
+      -- weapon classes icons with counts/casualities for initial/passive sides
       for idx, line in ipairs(gui.lines) do
         local icon = line.icon
         assert(sdl_renderer:copy(icon.texture, nil,
@@ -386,6 +461,11 @@ function BattleDetailsWindow:bind_ctx(context)
       engine.state.mouse_hint = ''
       if (is_over(event.x, event.y, window_region)) then
         update_line_styles(event.x, event.y)
+        for idx, unit_region in ipairs(unit_regions) do
+          if (is_over(event.x, event.y, unit_region)) then
+            engine.state.mouse_hint = gui.units[idx].name
+          end
+        end
         for idx, line_region in ipairs(line_regions) do
           if (is_over(event.x, event.y, line_region)) then
             local class_id = gui.lines[idx].class_id

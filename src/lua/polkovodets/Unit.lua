@@ -330,8 +330,7 @@ end
 
 -- returns list of weapon instances for the current unit as well as for all it's attached units
 function Unit:_united_staff()
-   local unit_list = {self}
-   for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
+   local unit_list = self:_all_units()
 
    local united_staff = {}
    for idx, unit in pairs(unit_list) do
@@ -340,6 +339,13 @@ function Unit:_united_staff()
       end
    end
    return united_staff
+end
+
+-- returns list of all units, i.e. self + attached
+function Unit:_all_units()
+  local unit_list = {self}
+  for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
+  return unit_list
 end
 
 -- retunrs a table of weapon instances, which are will be marched,
@@ -599,9 +605,16 @@ function Unit:attack_on(tile, fire_type)
   local i_casualities, p_casualities, i_participants, p_participants
     = self.engine.battle_scheme:perform_battle(self, enemy_unit, fire_type)
 
+  local unit_serializer = function(key, unit)
+    return {
+      unit_id = unit.id,
+      state   = unit.data.state,
+    }
+  end
+
   local ctx = {
-    i_unit    = self.id,
-    p_unit    = enemy_unit.id,
+    i_units   = _.map(self:_all_units(), unit_serializer),
+    p_units   = _.map(enemy_unit:_all_units(), unit_serializer),
     fire_type = fire_type,
     tile      = tile.id,
   }
