@@ -145,8 +145,15 @@ function BattleDetailsWindow:_construct_gui(available_classes)
 
   local lines = {}
   local line_dy = header_h + 2
-  local my_weapon_classes = _.select(weapon_classes, function(k, class) return available_classes[class.id] end)
-  for idx, class in ipairs(my_weapon_classes) do
+  local my_weapon_classes = {}
+  _.eachi(weapon_classes, function(k, class)
+    if (available_classes[class.id]) then
+      table.insert(my_weapon_classes, class)
+    end
+  end)
+  -- local my_weapon_classes = _.select(weapon_classes, function(k, class) return available_classes[class.id] end)
+
+  for idx, class in pairs(my_weapon_classes) do
     local icon = class:get_icon()
     local center_y = math.modf(line_dy + icon.h/2)
     local line = {
