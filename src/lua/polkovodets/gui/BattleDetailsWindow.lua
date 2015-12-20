@@ -235,14 +235,27 @@ function BattleDetailsWindow:bind_ctx(context)
 
     local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 
-    local max_x = x + content_w + self.contentless_size.w
-    local max_y = y + content_h + self.contentless_size.h
-    local is_over_window = function(mx, my)
-      local over = ((mx >= x) and (mx <= max_x)
-                and (my >= y) and (my <= max_y))
+    local window_region = {
+      x_min = x,
+      x_max = x + content_w + self.contentless_size.w,
+      y_min = y,
+      y_max = y + content_h + self.contentless_size.h,
+    }
+    local is_over = function(mx, my, region)
+      local over = ((mx >= region.x_min) and (mx <= region.x_max)
+                and (my >= region.y_min) and (my <= region.y_max))
       return over
     end
 
+    local last_label_info = gui.header.labels[#gui.header.labels]
+    local line_regions = _.map(gui.lines, function(idx, line)
+      return {
+        x_min = content_x,
+        x_max = content_x + last_label_info.dx + last_label_info.label.w,
+        y_min = content_y + line.dy,
+        y_max = content_y + line.dy + line.icon.h,
+      }
+    end)
 
     local sdl_renderer = assert(context.renderer.sdl_renderer)
     self.drawing.content_fn = function()
@@ -311,7 +324,7 @@ function BattleDetailsWindow:bind_ctx(context)
     _.each(self.drawing.objects, function(k, v) v:bind_ctx(details_ctx) end)
 
     local mouse_click = function(event)
-      if (is_over_window(event.x, event.y)) then
+      if (is_over(event.x, event.y, window_region)) then
         -- print("ignore")
         -- click hasn't been processed by button, just ignore it
       else
@@ -323,6 +336,16 @@ function BattleDetailsWindow:bind_ctx(context)
 
     context.state.action = 'default'
     local mouse_move = function(event)
+      engine.state.mouse_hint = ''
+      if (is_over(event.x, event.y, window_region)) then
+        for idx, line_region in ipairs(line_regions) do
+          if (is_over(event.x, event.y, line_region)) then
+            local class_id = gui.lines[idx].class_id
+            local key = 'db.weapon-class.' .. class_id
+            engine.state.mouse_hint = engine:translate(key)
+          end
+        end
+      end
       return true -- stop further event propagation
     end
 

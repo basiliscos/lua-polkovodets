@@ -78,7 +78,7 @@ function Inteface:bind_ctx(context)
 
   local draw_fn = function()
     local hint = context.state.mouse_hint
-    if (hint) then
+    if (hint and #hint > 0) then
       font:setOutline(context.theme.data.active_hex.outline_width)
       -- print("hint = " .. inspect(hint))
       render_label(font:renderUtf8(hint, "solid", outline_color))
