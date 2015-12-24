@@ -115,6 +115,8 @@ function _Record:bind_ctx(context)
       return (v.action == 'battle') and (v.context.tile == tile_id)
     end)
 
+    local battles_on_tile
+
     local update_participants = function(x, y, over_tile_id)
       local updated
       if (over_tile_id == tile_id) then
@@ -124,7 +126,7 @@ function _Record:bind_ctx(context)
           participant_locations = {}
           over_icon = now_over_battle_icon
           if (over_icon) then
-            local battles_on_tile = _.select(context.renderer.engine.history:get_actual_records(),
+            battles_on_tile = _.select(context.renderer.engine.history:get_actual_records(),
               function(k, v)
                 return (v.action == 'battle') and (v.context.tile == tile_id)
               end)
@@ -178,8 +180,18 @@ function _Record:bind_ctx(context)
 
     mouse_click = function(event)
       if (is_over_icon(event.x, event.y)) then
-        context.renderer.engine.state.history_record = self
-        context.renderer.engine.state.popups.battle_details_window = true
+        if (#battles_on_tile == 1) then
+          context.renderer.engine.state.history_record = self
+          context.renderer.engine.state.popups.battle_details_window = true
+        else
+          context.renderer.engine.state.popups.battle_selector_popup = {
+            history_records = battles_on_tile,
+            position        = {
+              x = event.x,
+              y = event.y,
+            }
+          }
+        end
         context.renderer.engine.mediator:publish({ "view.update" })
         return true
       end

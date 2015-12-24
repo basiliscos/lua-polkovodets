@@ -178,7 +178,7 @@ end
 
 function Engine:get_unit(id)
   local u = self.unit_for[id]
-  assert(u)
+  assert(u, "unit with id " .. id .. " not found")
   return u
 end
 

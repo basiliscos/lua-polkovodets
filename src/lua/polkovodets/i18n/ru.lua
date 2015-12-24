@@ -23,6 +23,9 @@ t = {
     ['ui.window.battle_details.header.was']         = 'Было',
     ['ui.window.battle_details.header.casualities'] = 'Потери',
 
+    -- popups
+    ['ui.popup.battle_selector.battle'] = '%{i} / %{p}',
+
     -- database names translations
     ['db.weapon-class.wk_infant']     = 'Пехота',
     ['db.weapon-class.wk_armor']      = 'Бронетехника',

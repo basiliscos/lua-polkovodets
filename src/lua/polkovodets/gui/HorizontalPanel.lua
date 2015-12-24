@@ -33,7 +33,6 @@ function HorizontalPanel.create(engine)
     },
     drawing          = {
       fn          = nil,
-      mouse_click = nil,
       objects     = {},
     }
   }

@@ -272,6 +272,8 @@ function BattleDetailsWindow:bind_ctx(context)
   local engine = self.engine
   if (engine.state.popups.battle_details_window) then
     self.ctx_bound = true
+    engine.state.mouse_hint = ''
+
     local record = assert(context.state.history_record)
     local classifyer, available_classes = self:_classy_battle_weapons(record)
     local gui = self:_construct_gui(available_classes, record)

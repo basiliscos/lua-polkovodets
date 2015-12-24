@@ -21,7 +21,7 @@ local _ = require ("moses")
 local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
 local BattleDetailsWindow = require ('polkovodets.gui.BattleDetailsWindow')
-
+local BattleSelectorPopup = require ('polkovodets.gui.BattleSelectorPopup')
 
 local Inteface = {}
 Inteface.__index = Inteface
@@ -51,6 +51,11 @@ function Inteface.create(engine)
   local battle_details_window = BattleDetailsWindow.create(engine)
   table.insert(o.drawing.objects, battle_details_window)
   o.drawing.obj_by_type.battle_details_window = battle_details_window
+
+  local battle_selector_popup = BattleSelectorPopup.create(engine)
+  table.insert(o.drawing.objects, battle_selector_popup)
+  o.drawing.obj_by_type.battle_selector_popup = battle_selector_popup
+
 
   return o
 end
