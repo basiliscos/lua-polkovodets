@@ -27,6 +27,11 @@ local BattleDetailsWindow = {}
 BattleDetailsWindow.__index = BattleDetailsWindow
 setmetatable(BattleDetailsWindow, HorizontalPanel)
 
+local FONT_SIZE = 12
+local AVAILABLE_COLOR = 0xAAAAAA
+local HILIGHT_COLOR = 0xFFFFFF
+
+
 function BattleDetailsWindow.create(engine)
   local o = HorizontalPanel.create(engine)
   setmetatable(o, BattleDetailsWindow)
@@ -35,8 +40,7 @@ function BattleDetailsWindow.create(engine)
   o.content = {}
 
   o.text = {
-    size  = 12,
-    font  = engine.renderer.theme:get_font('default', 12),
+    font  = engine.renderer.theme:get_font('default', FONT_SIZE),
   }
 
   return o
@@ -75,8 +79,8 @@ function BattleDetailsWindow:_classy_battle_weapons(record)
   local images = {}
   for key, quantity in pairs(data) do
     images[key] = {
-      available = create_image(tostring(quantity), 0xAAAAAA),
-      hilight   = create_image(tostring(quantity), 0xFFFFFF),
+      available = create_image(tostring(quantity), AVAILABLE_COLOR),
+      hilight   = create_image(tostring(quantity), HILIGHT_COLOR),
     }
   end
 
