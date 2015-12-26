@@ -22,6 +22,7 @@ local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
 local BattleDetailsWindow = require ('polkovodets.gui.BattleDetailsWindow')
 local BattleSelectorPopup = require ('polkovodets.gui.BattleSelectorPopup')
+local WeaponCasualitiesDetailsWindow = require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
 
 local Inteface = {}
 Inteface.__index = Inteface
@@ -56,6 +57,9 @@ function Inteface.create(engine)
   table.insert(o.drawing.objects, battle_selector_popup)
   o.drawing.obj_by_type.battle_selector_popup = battle_selector_popup
 
+  local weapon_casualities_details_window = WeaponCasualitiesDetailsWindow.create(engine)
+  table.insert(o.drawing.objects, weapon_casualities_details_window)
+  o.drawing.obj_by_type.weapon_casualities_details_window = weapon_casualities_details_window
 
   return o
 end

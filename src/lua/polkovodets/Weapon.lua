@@ -25,6 +25,7 @@ function Weapon.create(engine, data)
    local unit_lib = engine.unit_lib
 
    local id = assert(data.id)
+   local name = assert(data.name)
    local w_class = assert(data.weap_class)
    local w_type = assert(data.weap_type)
    local w_category = assert(data.weap_category)
@@ -73,6 +74,7 @@ function Weapon.create(engine, data)
 
    local o = {
       id            = id,
+      name          = name,
       class         = class,
       weapon_type   = w_type,
       category      = w_category,

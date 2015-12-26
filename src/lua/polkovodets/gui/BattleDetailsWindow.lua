@@ -104,8 +104,8 @@ function BattleDetailsWindow:_construct_gui(available_classes, record)
   end
 
   local font = self.text.font
-  local was_label = create_image(font:renderUtf8(engine:translate('ui.window.battle_details.header.was'), "solid", 0xFFFFFF))
-  local casualities_label = create_image(font:renderUtf8(engine:translate('ui.window.battle_details.header.casualities'), "solid", 0xFFFFFF))
+  local was_label = create_image(font:renderUtf8(engine:translate('ui.window.battle_details.header.was'), "solid", HILIGHT_COLOR))
+  local casualities_label = create_image(font:renderUtf8(engine:translate('ui.window.battle_details.header.casualities'), "solid", HILIGHT_COLOR))
 
   local max_unit_height = 0
   local unit_mapper = function(idx, unit_data)
@@ -340,6 +340,7 @@ function BattleDetailsWindow:bind_ctx(context)
     end)
 
     local line_styles = {}
+    local active_class, active_side
     local update_line_styles = function(x, y)
       line_styles = _.map(line_regions, function(idx, line_region)
         local styles = {i = "available", p = "available"}
@@ -453,8 +454,42 @@ function BattleDetailsWindow:bind_ctx(context)
 
     local mouse_click = function(event)
       if (is_over(event.x, event.y, window_region)) then
-        -- print("ignore")
-        -- click hasn't been processed by button, just ignore it
+        -- assume, that the clicked weapon class and side are hilighted
+        local class_idx, side
+        for idx, line_style in ipairs(line_styles) do
+          local my_side = ((line_style.i == 'hilight') and 'i')
+                    or ((line_style.p == 'hilight') and 'p')
+          if (my_side) then
+            class_idx, side = idx, my_side
+            break
+          end
+        end
+        -- clicked on the hilighed class
+        if (class_idx) then
+          -- print("selected " .. class_idx .. ", side " .. side)
+          local class_id = gui.lines[class_idx].class_id
+
+          -- print(inspect(record.results[side]))
+          local filter = function(source)
+            local result = {}
+            for wi_id, quantity in pairs(source) do
+              local wi = assert(engine.weapon_instance_for[wi_id])
+              if (wi:get_class().id  == class_id) then
+                result [wi_id] = quantity
+              end
+            end
+            return result
+          end
+          context.renderer.engine.state.popups.weapon_casualities_details = {
+            participants = filter(record.results[side].participants),
+            casualities  = filter(record.results[side].casualities),
+            position     = {
+              x = event.x,
+              y = gui.lines[class_idx].dy + gui.lines[class_idx].icon.h + content_y,
+            }
+          }
+          engine.mediator:publish({ "view.update" })
+        end
       else
         engine.state.popups.battle_details_window = false
         engine.mediator:publish({ "view.update" })
