@@ -74,27 +74,40 @@ function Inteface:bind_ctx(context)
   local sdl_renderer = context.renderer.sdl_renderer
 
   local render_label = function(surface)
-    assert(surface)
     local texture = assert(sdl_renderer:createTextureFromSurface(surface))
     local sw, sh = surface:getSize()
     local label_x = math.modf(w/2 - sw/2)
     local label_y = 25 - math.modf(sh/2)
-    assert(sdl_renderer:copy(texture, nil , {x = label_x, y = label_y, w = sw, h = sh}))
+    return {
+      texture = texture,
+      dst     = {x = label_x, y = label_y, w = sw, h = sh},
+    }
   end
 
   local interface_ctx = _.clone(context, true)
   interface_ctx.window = {w = w, h = h}
 
-  local draw_fn = function()
+  local rendered_hint
+  local labels = {}
+  local update_hint = function()
     local hint = context.state.mouse_hint
-    if (hint and #hint > 0) then
-      font:setOutline(context.theme.data.active_hex.outline_width)
-      -- print("hint = " .. inspect(hint))
-      render_label(font:renderUtf8(hint, "solid", outline_color))
-      font:setOutline(0)
-      render_label(font:renderUtf8(hint, "solid", color))
+    if (hint ~= rendered_hint) then
+      labels = {}
+      if (hint and #hint > 0) then
+        font:setOutline(context.theme.data.active_hex.outline_width)
+        table.insert(labels, render_label(font:renderUtf8(hint, "solid", outline_color)))
+        font:setOutline(0)
+        table.insert(labels, render_label(font:renderUtf8(hint, "solid", color)))
+      end
     end
+  end
+  update_hint()
 
+  local draw_fn = function()
+    update_hint()
+    for idx, label_data in pairs(labels) do
+      assert(sdl_renderer:copy(label_data.texture, nil , label_data.dst))
+    end
     _.each(self.drawing.objects, function(k, v) v:draw() end)
   end
 
