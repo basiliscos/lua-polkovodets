@@ -18,18 +18,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local inspect = require('inspect')
 local _ = require ("moses")
+
+-- preload
 local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
-local BattleDetailsWindow = require ('polkovodets.gui.BattleDetailsWindow')
-local BattleSelectorPopup = require ('polkovodets.gui.BattleSelectorPopup')
+require ('polkovodets.gui.BattleDetailsWindow')
+require ('polkovodets.gui.BattleSelectorPopup')
 local WeaponCasualitiesDetailsWindow = require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
 
-local Inteface = {}
-Inteface.__index = Inteface
+local Interface = {}
+Interface.__index = Interface
 
-function Inteface.create(engine)
+function Interface.create(engine)
   local o = {
     engine = engine,
+    context = nil,
     drawing = {
       fn          = nil,
       mouse_click = nil,
@@ -39,7 +42,7 @@ function Inteface.create(engine)
       }
     }
   }
-  setmetatable(o, Inteface)
+  setmetatable(o, Interface)
 
   local game_panel = GamePanel.create(engine)
   table.insert(o.drawing.objects, game_panel)
@@ -49,23 +52,12 @@ function Inteface.create(engine)
   table.insert(o.drawing.objects, unit_panel)
   o.drawing.obj_by_type.unit_panel = unit_panel
 
-  local battle_details_window = BattleDetailsWindow.create(engine)
-  table.insert(o.drawing.objects, battle_details_window)
-  o.drawing.obj_by_type.battle_details_window = battle_details_window
-
-  local battle_selector_popup = BattleSelectorPopup.create(engine)
-  table.insert(o.drawing.objects, battle_selector_popup)
-  o.drawing.obj_by_type.battle_selector_popup = battle_selector_popup
-
-  local weapon_casualities_details_window = WeaponCasualitiesDetailsWindow.create(engine)
-  table.insert(o.drawing.objects, weapon_casualities_details_window)
-  o.drawing.obj_by_type.weapon_casualities_details_window = weapon_casualities_details_window
+  engine.interface = o
 
   return o
 end
 
-function Inteface:bind_ctx(context)
-
+function Interface:bind_ctx(context)
   local font = context.theme.fonts.active_hex
   local outline_color = context.theme.data.active_hex.outline_color
   local color = context.theme.data.active_hex.color
@@ -113,15 +105,64 @@ function Inteface:bind_ctx(context)
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(interface_ctx) end)
   self.drawing.fn = draw_fn
+  self.context = interface_ctx
 end
 
-function Inteface:unbind_ctx(context)
+function Interface:unbind_ctx(context)
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
   self.drawing.fn = nil
 end
 
-function Inteface:draw()
+function Interface:draw()
   self.drawing.fn()
 end
 
-return Inteface
+function Interface:add_window(id, data)
+  -- constuct short class name, by removing _ and capitalizing
+  -- 1st letters
+  local class_name = ''
+  local start_search = 1
+  local do_search = true
+  while (do_search) do
+    local s, e = string.find(id, '_', start_search, true)
+    if (s) then
+      local capital = string.upper(string.sub(id, start_search, start_search))
+      local tail = string.sub(id, start_search + 1, s - 1)
+      class_name = class_name .. capital .. tail
+      start_search = e + 1
+    else
+      do_search = false
+      local capital = string.upper(string.sub(id, start_search, start_search))
+      local tail = string.sub(id, start_search + 1)
+      class_name = class_name .. capital .. tail
+    end
+  end
+  -- print("class for " .. id .. " " .. class_name)
+  local class = require ('polkovodets.gui.' .. class_name)
+  local window = class.create(self.engine, data)
+
+  table.insert(self.drawing.objects, window)
+
+  window:bind_ctx(self.context)
+
+  print("created window" .. class_name)
+  self.engine.mediator:publish({ "view.update" })
+end
+
+function Interface:remove_window(window, do_not_emit_update)
+  local idx
+  for i, o in ipairs(self.drawing.objects) do
+    if (o == window) then
+      idx = i
+      break
+    end
+  end
+  assert(idx, "cannot find window to remove")
+  window:unbind_ctx(self.context)
+  table.remove(self.drawing.objects, idx)
+  if (not do_not_emit_update) then
+    self.engine.mediator:publish({ "view.update" })
+  end
+end
+
+return Interface

@@ -32,12 +32,12 @@ local AVAILABLE_COLOR = 0xAAAAAA
 local HILIGHT_COLOR = 0xFFFFFF
 
 
-function BattleDetailsWindow.create(engine)
+function BattleDetailsWindow.create(engine, data)
   local o = HorizontalPanel.create(engine)
   setmetatable(o, BattleDetailsWindow)
-  o.ctx_bound = false
   o.drawing.content_fn = nil
   o.content = {}
+  o.record = data
 
   o.text = {
     font  = engine.renderer.theme:get_font('default', FONT_SIZE),
@@ -274,279 +274,274 @@ end
 
 function BattleDetailsWindow:bind_ctx(context)
   local engine = self.engine
-  if (engine.state.popups.battle_details_window) then
-    self.ctx_bound = true
-    engine.state.mouse_hint = ''
+  engine.state.mouse_hint = ''
 
-    local record = assert(context.state.history_record)
-    local classifyer, available_classes = self:_classy_battle_weapons(record)
-    local gui = self:_construct_gui(available_classes, record)
+  local record = self.record
+  local classifyer, available_classes = self:_classy_battle_weapons(record)
+  local gui = self:_construct_gui(available_classes, record)
 
-    local theme = assert(context.renderer.theme)
-    local details_ctx = _.clone(context, true)
-    local content_w = gui.content_size.w
-    local content_h = gui.content_size.h
-    details_ctx.content_size = { w = content_w, h = content_h}
+  local theme = assert(context.renderer.theme)
+  local details_ctx = _.clone(context, true)
+  local content_w = gui.content_size.w
+  local content_h = gui.content_size.h
+  details_ctx.content_size = { w = content_w, h = content_h}
 
-    local window = assert(context.window)
-    local x = math.modf(window.w/2 - content_w/2)
-    local y = math.modf(window.h/2 - content_h/2)
-    details_ctx.x = x
-    details_ctx.y = y
+  local window = assert(context.window)
+  local x = math.modf(window.w/2 - content_w/2)
+  local y = math.modf(window.h/2 - content_h/2)
+  details_ctx.x = x
+  details_ctx.y = y
 
-    local weapon_classes = engine.unit_lib.weapons.classes.list
-    local weapon_class_icon = weapon_classes[1]:get_icon()
+  local weapon_classes = engine.unit_lib.weapons.classes.list
+  local weapon_class_icon = weapon_classes[1]:get_icon()
 
-    local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
+  local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 
-    local window_region = {
-      x_min = x,
-      x_max = x + content_w + self.contentless_size.w,
-      y_min = y,
-      y_max = y + content_h + self.contentless_size.h,
-    }
-    local is_over = function(mx, my, region)
-      local over = ((mx >= region.x_min) and (mx <= region.x_max)
-                and (my >= region.y_min) and (my <= region.y_max))
-      return over
-    end
+  local window_region = {
+    x_min = x,
+    x_max = x + content_w + self.contentless_size.w,
+    y_min = y,
+    y_max = y + content_h + self.contentless_size.h,
+  }
+  local is_over = function(mx, my, region)
+    local over = ((mx >= region.x_min) and (mx <= region.x_max)
+              and (my >= region.y_min) and (my <= region.y_max))
+    return over
+  end
 
-    local l_infos = gui.header.labels
+  local l_infos = gui.header.labels
 
-    local line_regions = _.map(gui.lines, function(idx, line)
-      return {
-        x_min = content_x,
+  local line_regions = _.map(gui.lines, function(idx, line)
+    return {
+      x_min = content_x,
+      x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
+      y_min = content_y + line.dy,
+      y_max = content_y + line.dy + line.icon.h,
+      i     = {
+        x_min = content_x + l_infos[1].dx ,
+        x_max = content_x + l_infos[2].dx + l_infos[2].label.w,
+      },
+      p     = {
+        x_min = content_x + l_infos[3].dx ,
         x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
-        y_min = content_y + line.dy,
-        y_max = content_y + line.dy + line.icon.h,
-        i     = {
-          x_min = content_x + l_infos[1].dx ,
-          x_max = content_x + l_infos[2].dx + l_infos[2].label.w,
-        },
-        p     = {
-          x_min = content_x + l_infos[3].dx ,
-          x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
-        },
-      }
-    end)
-    local unit_regions = _.map(gui.units, function(idx, unit_data)
-      local icon = unit_data.unit_icon
-      return {
-        x_min = content_x + unit_data.dx,
-        x_max = content_x + unit_data.dx + icon.w,
-        y_min = content_y + unit_data.dy,
-        y_max = content_y + unit_data.dy + icon.h,
-      }
-    end)
+      },
+    }
+  end)
+  local unit_regions = _.map(gui.units, function(idx, unit_data)
+    local icon = unit_data.unit_icon
+    return {
+      x_min = content_x + unit_data.dx,
+      x_max = content_x + unit_data.dx + icon.w,
+      y_min = content_y + unit_data.dy,
+      y_max = content_y + unit_data.dy + icon.h,
+    }
+  end)
 
-    local line_styles = {}
-    local active_class, active_side
-    local update_line_styles = function(x, y)
-      line_styles = _.map(line_regions, function(idx, line_region)
-        local styles = {i = "available", p = "available"}
-        if (is_over(x, y, line_region)) then
-          if ((x >= line_region.i.x_min) and (x <= line_region.i.x_max)) then
-            styles.i = "hilight"
-          elseif ((x >= line_region.p.x_min) and (x <= line_region.p.x_max)) then
-            styles.p = "hilight"
-          end
-        end
-        return styles
-      end)
-    end
-    update_line_styles(context.mouse.x, context.mouse.y)
-
-    local get_line_image = function(idx, side, property)
-      local line = gui.lines[idx]
-      local images_pair = classifyer(line.class_id, side, property)
-      local style = line_styles[idx][side]
-      -- do not hilight row, if there are no casualities nor losses
-      if (style == 'hilight' ) then
-        local opposite_property = (property  == 'casualities') and 'participants' or 'casualities'
-        local opposite_pair = classifyer(line.class_id, side, opposite_property)
-        if (not(images_pair) and not(opposite_pair)) then
-          style = 'available'
+  local line_styles = {}
+  local active_class, active_side
+  local update_line_styles = function(x, y)
+    line_styles = _.map(line_regions, function(idx, line_region)
+      local styles = {i = "available", p = "available"}
+      if (is_over(x, y, line_region)) then
+        if ((x >= line_region.i.x_min) and (x <= line_region.i.x_max)) then
+          styles.i = "hilight"
+        elseif ((x >= line_region.p.x_min) and (x <= line_region.p.x_max)) then
+          styles.p = "hilight"
         end
       end
-      return (images_pair or gui.not_found)[style]
+      return styles
+    end)
+  end
+  update_line_styles(context.mouse.x, context.mouse.y)
+
+  local get_line_image = function(idx, side, property)
+    local line = gui.lines[idx]
+    local images_pair = classifyer(line.class_id, side, property)
+    local style = line_styles[idx][side]
+    -- do not hilight row, if there are no casualities nor losses
+    if (style == 'hilight' ) then
+      local opposite_property = (property  == 'casualities') and 'participants' or 'casualities'
+      local opposite_pair = classifyer(line.class_id, side, opposite_property)
+      if (not(images_pair) and not(opposite_pair)) then
+        style = 'available'
+      end
     end
+    return (images_pair or gui.not_found)[style]
+  end
 
-    local sdl_renderer = assert(context.renderer.sdl_renderer)
-    self.drawing.content_fn = function()
+  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  self.drawing.content_fn = function()
 
-      -- background
-      assert(sdl_renderer:copy(theme.window.background.texture, nil,
-        {x = content_x, y = content_y, w = content_w, h = content_h}
+    -- background
+    assert(sdl_renderer:copy(theme.window.background.texture, nil,
+      {x = content_x, y = content_y, w = content_w, h = content_h}
+    ))
+
+    -- participating units
+    for idx, unit_data in ipairs(gui.units) do
+      local unit_icon = unit_data.unit_icon
+      local nation_icon = unit_data.nation_icon
+      assert(sdl_renderer:copy(unit_icon.texture, nil,
+        {x = content_x + unit_data.dx, y = content_y + unit_data.dy, w = unit_icon.w, h = unit_icon.h}
       ))
-
-      -- participating units
-      for idx, unit_data in ipairs(gui.units) do
-        local unit_icon = unit_data.unit_icon
-        local nation_icon = unit_data.nation_icon
-        assert(sdl_renderer:copy(unit_icon.texture, nil,
-          {x = content_x + unit_data.dx, y = content_y + unit_data.dy, w = unit_icon.w, h = unit_icon.h}
-        ))
-        assert(sdl_renderer:copy(nation_icon.texture, nil, {
-          x = content_x + unit_data.dx + unit_icon.w - nation_icon.w,
-          y = content_y + unit_data.dy + unit_icon.h - nation_icon.h,
-          w = nation_icon.w,
-          h = nation_icon.h
-        }))
-      end
-
-      -- weapon classes icons with counts/casualities for initial/passive sides
-      for idx, line in ipairs(gui.lines) do
-        local icon = line.icon
-        assert(sdl_renderer:copy(icon.texture, nil,
-          {x = content_x + line.dx, y = content_y + line.dy, w = icon.w, h = icon.h}
-        ))
-        local i_was = get_line_image(idx, "i", "participants")
-        assert(sdl_renderer:copy(i_was.texture, nil,{
-          x = math.modf(content_x + line.center.i.was.dx - i_was.w/2),
-          y = math.modf(content_y + line.center.i.was.dy - i_was.h/2),
-          w = i_was.w,
-          h = i_was.h,
-        }))
-        local i_casualities = get_line_image(idx, "i", "casualities")
-        assert(sdl_renderer:copy(i_casualities.texture, nil,{
-          x = math.modf(content_x + line.center.i.casualities.dx - i_casualities.w/2),
-          y = math.modf(content_y + line.center.i.casualities.dy - i_casualities.h/2),
-          w = i_casualities.w,
-          h = i_casualities.h,
-        }))
-        local p_was = get_line_image(idx, "p", "participants")
-        assert(sdl_renderer:copy(p_was.texture, nil,{
-          x = math.modf(content_x + line.center.p.was.dx - p_was.w/2),
-          y = math.modf(content_y + line.center.p.was.dy - p_was.h/2),
-          w = p_was.w,
-          h = p_was.h,
-        }))
-        local p_casualities = get_line_image(idx, "p", "casualities")
-        assert(sdl_renderer:copy(p_casualities.texture, nil,{
-          x = math.modf(content_x + line.center.p.casualities.dx - p_casualities.w/2),
-          y = math.modf(content_y + line.center.p.casualities.dy - p_casualities.h/2),
-          w = p_casualities.w,
-          h = p_casualities.h,
-        }))
-      end
-
-      -- table header
-      for idx, label_info in ipairs(gui.header.labels) do
-        local label = label_info.label
-        assert(sdl_renderer:copy(label.texture, nil,
-          {x = content_x + label_info.dx, y = content_y + label_info.dy, w = label.w, h = label.h}
-        ))
-      end
-
-      -- initiator/passive separator
-      local prev_color = sdl_renderer:getDrawColor()
-      assert(sdl_renderer:setDrawColor(gui.header.separator.color))
-      assert(sdl_renderer:drawLine({
-        x1 = content_x + gui.header.separator.dx,
-        y1 = content_y + gui.header.separator.dy,
-        x2 = content_x + gui.header.separator.dx,
-        y2 = content_y + gui.header.separator.dy + gui.header.separator.h,
+      assert(sdl_renderer:copy(nation_icon.texture, nil, {
+        x = content_x + unit_data.dx + unit_icon.w - nation_icon.w,
+        y = content_y + unit_data.dy + unit_icon.h - nation_icon.h,
+        w = nation_icon.w,
+        h = nation_icon.h
       }))
-      assert(sdl_renderer:setDrawColor(prev_color))
     end
 
-    _.each(self.drawing.objects, function(k, v) v:bind_ctx(details_ctx) end)
+    -- weapon classes icons with counts/casualities for initial/passive sides
+    for idx, line in ipairs(gui.lines) do
+      local icon = line.icon
+      assert(sdl_renderer:copy(icon.texture, nil,
+        {x = content_x + line.dx, y = content_y + line.dy, w = icon.w, h = icon.h}
+      ))
+      local i_was = get_line_image(idx, "i", "participants")
+      assert(sdl_renderer:copy(i_was.texture, nil,{
+        x = math.modf(content_x + line.center.i.was.dx - i_was.w/2),
+        y = math.modf(content_y + line.center.i.was.dy - i_was.h/2),
+        w = i_was.w,
+        h = i_was.h,
+      }))
+      local i_casualities = get_line_image(idx, "i", "casualities")
+      assert(sdl_renderer:copy(i_casualities.texture, nil,{
+        x = math.modf(content_x + line.center.i.casualities.dx - i_casualities.w/2),
+        y = math.modf(content_y + line.center.i.casualities.dy - i_casualities.h/2),
+        w = i_casualities.w,
+        h = i_casualities.h,
+      }))
+      local p_was = get_line_image(idx, "p", "participants")
+      assert(sdl_renderer:copy(p_was.texture, nil,{
+        x = math.modf(content_x + line.center.p.was.dx - p_was.w/2),
+        y = math.modf(content_y + line.center.p.was.dy - p_was.h/2),
+        w = p_was.w,
+        h = p_was.h,
+      }))
+      local p_casualities = get_line_image(idx, "p", "casualities")
+      assert(sdl_renderer:copy(p_casualities.texture, nil,{
+        x = math.modf(content_x + line.center.p.casualities.dx - p_casualities.w/2),
+        y = math.modf(content_y + line.center.p.casualities.dy - p_casualities.h/2),
+        w = p_casualities.w,
+        h = p_casualities.h,
+      }))
+    end
 
-    local mouse_click = function(event)
-      if (is_over(event.x, event.y, window_region)) then
-        -- assume, that the clicked weapon class and side are hilighted
-        local class_idx, side
-        for idx, line_style in ipairs(line_styles) do
-          local my_side = ((line_style.i == 'hilight') and 'i')
-                    or ((line_style.p == 'hilight') and 'p')
-          if (my_side) then
-            class_idx, side = idx, my_side
-            break
-          end
+    -- table header
+    for idx, label_info in ipairs(gui.header.labels) do
+      local label = label_info.label
+      assert(sdl_renderer:copy(label.texture, nil,
+        {x = content_x + label_info.dx, y = content_y + label_info.dy, w = label.w, h = label.h}
+      ))
+    end
+
+    -- initiator/passive separator
+    local prev_color = sdl_renderer:getDrawColor()
+    assert(sdl_renderer:setDrawColor(gui.header.separator.color))
+    assert(sdl_renderer:drawLine({
+      x1 = content_x + gui.header.separator.dx,
+      y1 = content_y + gui.header.separator.dy,
+      x2 = content_x + gui.header.separator.dx,
+      y2 = content_y + gui.header.separator.dy + gui.header.separator.h,
+    }))
+    assert(sdl_renderer:setDrawColor(prev_color))
+  end
+
+  _.each(self.drawing.objects, function(k, v) v:bind_ctx(details_ctx) end)
+
+  local mouse_click = function(event)
+    if (is_over(event.x, event.y, window_region)) then
+      local class_idx, side
+      for idx, line_style in ipairs(line_styles) do
+        local my_side = ((line_style.i == 'hilight') and 'i')
+                  or ((line_style.p == 'hilight') and 'p')
+        if (my_side) then
+          class_idx, side = idx, my_side
+          break
         end
-        -- clicked on the hilighed class
-        if (class_idx) then
-          -- print("selected " .. class_idx .. ", side " .. side)
-          local class_id = gui.lines[class_idx].class_id
+      end
+      -- clicked on the hilighed class
+      if (class_idx) then
+        -- print("selected " .. class_idx .. ", side " .. side)
+        local class_id = gui.lines[class_idx].class_id
 
-          -- print(inspect(record.results[side]))
-          local filter = function(source)
-            local result = {}
-            for wi_id, quantity in pairs(source) do
-              local wi = assert(engine.weapon_instance_for[wi_id])
-              if (wi:get_class().id  == class_id) then
-                result [wi_id] = quantity
-              end
+        -- print(inspect(record.results[side]))
+        local has_at_least_one_instance = false
+        local filter = function(source)
+          local result = {}
+          for wi_id, quantity in pairs(source) do
+            local wi = assert(engine.weapon_instance_for[wi_id])
+            if (wi:get_class().id  == class_id) then
+              result[wi_id] = quantity
+              has_at_least_one_instance = true
             end
-            return result
           end
-          context.renderer.engine.state.popups.weapon_casualities_details = {
-            participants = filter(record.results[side].participants),
-            casualities  = filter(record.results[side].casualities),
+          return result
+        end
+        local participants = filter(record.results[side].participants)
+        local casualities  = filter(record.results[side].casualities)
+        if (has_at_least_one_instance) then
+          engine.interface:add_window('weapon_casualities_details_window', {
+            participants = participants,
+            casualities  = casualities,
             position     = {
               x = event.x,
               y = gui.lines[class_idx].dy + gui.lines[class_idx].icon.h + content_y,
             }
-          }
-          engine.mediator:publish({ "view.update" })
-        end
-      else
-        engine.state.popups.battle_details_window = false
-        engine.mediator:publish({ "view.update" })
-      end
-      return true -- stop further event propagation
-    end
-
-    context.state.action = 'default'
-    local mouse_move = function(event)
-      engine.state.mouse_hint = ''
-      if (is_over(event.x, event.y, window_region)) then
-        update_line_styles(event.x, event.y)
-        for idx, unit_region in ipairs(unit_regions) do
-          if (is_over(event.x, event.y, unit_region)) then
-            engine.state.mouse_hint = gui.units[idx].name
-          end
-        end
-        for idx, line_region in ipairs(line_regions) do
-          if (is_over(event.x, event.y, line_region)) then
-            local class_id = gui.lines[idx].class_id
-            local key = 'db.weapon-class.' .. class_id
-            engine.state.mouse_hint = engine:translate(key)
-          end
+          })
         end
       end
-      return true -- stop further event propagation
+    else
+      engine.interface:remove_window(self)
     end
-
-    context.events_source.add_handler('mouse_click', mouse_click)
-    self.content.mouse_click = mouse_click
-    context.events_source.add_handler('mouse_move', mouse_move)
-    self.content.mouse_move = mouse_move
-
-    HorizontalPanel.bind_ctx(self, details_ctx)
+    return true -- stop further event propagation
   end
+
+  context.state.action = 'default'
+  local mouse_move = function(event)
+    engine.state.mouse_hint = ''
+    if (is_over(event.x, event.y, window_region)) then
+      update_line_styles(event.x, event.y)
+      for idx, unit_region in ipairs(unit_regions) do
+        if (is_over(event.x, event.y, unit_region)) then
+          engine.state.mouse_hint = gui.units[idx].name
+        end
+      end
+      for idx, line_region in ipairs(line_regions) do
+        if (is_over(event.x, event.y, line_region)) then
+          local class_id = gui.lines[idx].class_id
+          local key = 'db.weapon-class.' .. class_id
+          engine.state.mouse_hint = engine:translate(key)
+        end
+      end
+    end
+    return true -- stop further event propagation
+  end
+
+  context.events_source.add_handler('mouse_click', mouse_click)
+  self.content.mouse_click = mouse_click
+  context.events_source.add_handler('mouse_move', mouse_move)
+  self.content.mouse_move = mouse_move
+
+  HorizontalPanel.bind_ctx(self, details_ctx)
 end
 
 function BattleDetailsWindow:unbind_ctx(context)
-  if (self.ctx_bound and self.engine.state.popups.battle_details_window) then
-    self.ctx_bound = false
-    self.drawing.content_fn = nil
-    _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
-    context.events_source.remove_handler('mouse_click', self.content.mouse_click)
-    context.events_source.remove_handler('mouse_move', self.content.mouse_move)
-    self.content.mouse_click = nil
-    self.content.mouse_move = nil
-    HorizontalPanel.unbind_ctx(self, context)
-  end
+  self.drawing.content_fn = nil
+  _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
+  context.events_source.remove_handler('mouse_click', self.content.mouse_click)
+  context.events_source.remove_handler('mouse_move', self.content.mouse_move)
+  self.content.mouse_click = nil
+  self.content.mouse_move = nil
+  HorizontalPanel.unbind_ctx(self, context)
 end
 
 function BattleDetailsWindow:draw()
-  if (self.engine.state.popups.battle_details_window) then
-    -- drawing order: background, window decorations, controls
-    self.drawing.content_fn()
-    HorizontalPanel.draw(self)
-    _.each(self.drawing.objects, function(k, v) v:draw() end)
-  end
+  -- drawing order: background, window decorations, controls
+  self.drawing.content_fn()
+  HorizontalPanel.draw(self)
+  _.each(self.drawing.objects, function(k, v) v:draw() end)
 end
 
 return BattleDetailsWindow

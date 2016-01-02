@@ -181,18 +181,16 @@ function _Record:bind_ctx(context)
     mouse_click = function(event)
       if (is_over_icon(event.x, event.y)) then
         if (#battles_on_tile == 1) then
-          context.renderer.engine.state.history_record = self
-          context.renderer.engine.state.popups.battle_details_window = true
+          context.renderer.engine.interface:add_window('battle_details_window', self)
         else
-          context.renderer.engine.state.popups.battle_selector_popup = {
+          context.renderer.engine.interface:add_window('battle_selector_popup', {
             history_records = battles_on_tile,
             position        = {
               x = event.x,
               y = event.y,
             }
-          }
+          })
         end
-        context.renderer.engine.mediator:publish({ "view.update" })
         return true
       end
     end

@@ -149,7 +149,7 @@ function Popup:bind_ctx(context)
       end
       update_line_styles(event.x, event.y)
     else
-      self.close_fn()
+      self.close_fn(self)
     end
     return true -- stop further event propagation
   end
