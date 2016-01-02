@@ -8,6 +8,7 @@ t = {
       other = 'Произошло %{count} сражения на клетке %{tile}',
     },
     ['map.change-attack-kind']       = 'Изменить вид аттаки',
+    ['map.unit_info']                = 'Информация о соединении',
 
     -- UI buttons
     ['ui.button.end_turn']           = 'Конец хода',

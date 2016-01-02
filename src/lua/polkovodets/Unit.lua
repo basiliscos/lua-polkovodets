@@ -131,9 +131,36 @@ function Unit:bind_ctx(context)
   local flip = (orientation == 'left') and SDL.rendererFlip.none or
   (orientation == 'right') and SDL.rendererFlip.Horizontal
 
+  local is_over = function(x, y, region)
+    local over = ((x >= region.x_min) and (x <= region.x_max)
+              and (y >= region.y_min) and (y <= region.y_max))
+    return over
+  end
 
   -- unit nation flag
   local unit_flag = self.definition.nation.unit_flag
+  -- +/- 1 is required to narrow the clickable/hilightable area
+  -- which is also needed to preven hilighting when mouse pointer
+  -- will be moved to the bottom tile
+  local unit_flag_region = {
+    x_min = x + 1 + hex_x_offset - unit_flag.w,
+    y_min = y + 1 + hex_h - unit_flag.h,
+    x_max = x - 1 + hex_x_offset,
+    y_max = y - 1 + hex_h,
+  }
+  local unit_flag_dst =  {
+    x = x + hex_x_offset - unit_flag.w,
+    y = y + hex_h - unit_flag.h,
+    w = unit_flag.w,
+    h = unit_flag.h,
+  }
+  local unit_flag_hilight_image = self.engine.renderer.theme.unit_flag_hilight
+  local do_hilight_unit_flag = false
+  local update_unit_flag = function(x, y)
+    do_hilight_unit_flag = is_over(x, y, unit_flag_region)
+    return do_hilight_unit_flag
+  end
+  update_unit_flag(context.mouse.x, context.mouse.y)
 
   -- unit state
   local size = self.definition.data.size
@@ -196,16 +223,10 @@ function Unit:bind_ctx(context)
     }))
 
     -- draw unit nation flag
-    assert(sdl_renderer:copy(
-      unit_flag.texture,
-      nil,
-      {
-        x = x + hex_x_offset - unit_flag.w,
-        y = y + hex_h - unit_flag.h,
-        w = unit_flag.w,
-        h = unit_flag.h,
-      }
-    ))
+    assert(sdl_renderer:copy(unit_flag.texture, nil, unit_flag_dst))
+    if (do_hilight_unit_flag) then
+      assert(sdl_renderer:copy(unit_flag_hilight_image.texture, nil, unit_flag_dst))
+    end
 
     -- draw unit state
     assert(sdl_renderer:copy(
@@ -296,11 +317,18 @@ function Unit:bind_ctx(context)
         end
         change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
       end
+      if (update_unit_flag(x, y)) then
+        action = 'default'
+        hint   = self.engine:translate('map.unit_info')
+      end
 
       self.engine.state.action = action
       self.engine.state.mouse_hint = hint
       -- print("move mouse over " .. tile_id .. ", action: "  .. action)
       return true
+    else
+      -- remove unit flag hilight
+      update_unit_flag(x, y)
     end
   end
 

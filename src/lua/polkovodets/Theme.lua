@@ -62,6 +62,7 @@ function Theme.create(engine, data)
         battle         = renderer:load_texture(theme_dir .. '/battle-icon.png'),
         battle_hilight = renderer:load_texture(theme_dir .. '/battle-icon-hilighted.png'),
       },
+      unit_flag_hilight =  renderer:load_texture(theme_dir .. '/unit-flag-hilight.png'),
       change_attack_type = {
         available = renderer:load_texture(theme_dir .. '/change-attack-type.png'),
         hilight   = renderer:load_texture(theme_dir .. '/change-attack-type-hilighted.png'),
