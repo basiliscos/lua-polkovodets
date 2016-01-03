@@ -25,10 +25,10 @@ function UnitDefinition.create(engine, data)
    local unit_lib = engine.unit_lib
 
    assert(data.id)
-   assert(data.name)
    assert(data.unit_class)
    assert(data.staff)
    assert(data.size)
+   assert(data.spotting)
    assert(data.nation)
    assert(data.flags)
    assert(string.find(data.size, '[LMS]'))

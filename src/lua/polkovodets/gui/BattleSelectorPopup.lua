@@ -56,7 +56,6 @@ function BattleSelectorPopup:bind_ctx(context)
 end
 
 function BattleSelectorPopup:unbind_ctx(context)
-  self.ctx_bound = false
   Popup.unbind_ctx(self, context)
 end
 

@@ -34,6 +34,8 @@ function Unit.create(engine, data, player)
    assert(data.staff)
    assert(data.state)
    assert(data.name)
+   assert(data.entr)
+   assert(data.exp)
    local orientation = assert(data.orientation)
    assert(string.find(orientation,'right') or string.find(orientation, 'left'))
 
@@ -53,6 +55,8 @@ function Unit.create(engine, data, player)
       tile       = tile,
       definition = definition,
       data = {
+         entr         = data.entr,
+         experience   = data.exp,
          staff        = data.staff,
          state        = data.state,
          allow_move   = true,
@@ -254,6 +258,12 @@ function Unit:bind_ctx(context)
 
   local mouse_click = function(event)
     if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
+      -- check if the click has been performed on unit flag, then
+      -- show unit info
+      if (is_over(event.x, event.y, unit_flag_region)) then
+        self.engine.interface:add_window('unit_info_window', self)
+        return true
+      end
       -- may be we click on other unit to select it
       if (context.state.action == 'default') then
         if (is_over_change_attack_icon(event.x, event.y)) then

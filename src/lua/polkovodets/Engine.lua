@@ -85,7 +85,8 @@ end
 
 function Engine:translate(key, values)
   assert(key)
-  return i18n.translate(key, values)
+  local value = i18n.translate(key, values)
+  return value or ('?' .. key .. '?')
 end
 
 function Engine:set_map(map)

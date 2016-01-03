@@ -34,7 +34,6 @@ local HILIGHT_COLOR = 0xFFFFFF
 function WeaponCasualitiesDetailsWindow.create(engine, data)
   local o = HorizontalPanel.create(engine)
   setmetatable(o, WeaponCasualitiesDetailsWindow)
-  o.ctx_bound = false
   o.drawing.content_fn = nil
   o.content = {}
 
@@ -50,7 +49,6 @@ end
 function WeaponCasualitiesDetailsWindow:bind_ctx(context)
   local engine = self.engine
   local theme = assert(context.renderer.theme)
-  self.ctx_bound = true
   engine.state.mouse_hint = ''
 
   local wcdw_ctx = _.clone(context, true)
@@ -202,7 +200,6 @@ function WeaponCasualitiesDetailsWindow:bind_ctx(context)
 end
 
 function WeaponCasualitiesDetailsWindow:unbind_ctx(context)
-  self.ctx_bound = false
   context.events_source.remove_handler('mouse_click', self.content.mouse_click)
   context.events_source.remove_handler('mouse_move', self.content.mouse_move)
   self.content.mouse_click = nil

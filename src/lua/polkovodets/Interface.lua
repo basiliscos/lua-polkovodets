@@ -24,7 +24,8 @@ local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
 require ('polkovodets.gui.BattleDetailsWindow')
 require ('polkovodets.gui.BattleSelectorPopup')
-local WeaponCasualitiesDetailsWindow = require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
+require ('polkovodets.gui.UnitInfoWindow')
+require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
 
 local Interface = {}
 Interface.__index = Interface
