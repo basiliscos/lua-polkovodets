@@ -114,6 +114,13 @@ function Theme.create(engine, data)
           },
         },
       },
+      tabs = {
+        info = {
+          available = renderer:load_texture(theme_dir .. '/tabs/info.png'),
+          hilight   = renderer:load_texture(theme_dir .. '/tabs/info-hilight.png'),
+          active    = renderer:load_texture(theme_dir .. '/tabs/info-active.png'),
+        },
+      },
       window = {
         background = renderer:load_texture(theme_dir .. '/window/background.png'),
       },
