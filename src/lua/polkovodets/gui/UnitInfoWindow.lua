@@ -65,6 +65,7 @@ function UnitInfoWindow:_construct_info_tab()
     image = definition_name,
   })
 
+  local max_label_x = 0
   local add_row = function(key, value)
     local label = Image.create(
       engine.renderer.sdl_renderer,
@@ -84,6 +85,7 @@ function UnitInfoWindow:_construct_info_tab()
       dy = tab_data.all[#tab_data.all].dy,
       image = value_img,
     }
+    max_label_x = math.max(max_label_x, value_descr.dx)
     table.insert(tab_data.all, value_descr)
     table.insert(tab_data.r_aligned, value_descr)
   end
@@ -99,7 +101,32 @@ function UnitInfoWindow:_construct_info_tab()
   end
   add_row('ui.unit-info.state', engine:translate('db.unit.state.' .. unit.data.state))
   add_row('ui.unit-info.orientation', engine:translate('db.unit.orientation.' .. unit.data.orientation))
+
+  -- re-allign r-aligned labels (values) to the same right-most border
+  _.each(tab_data.r_aligned, function(idx, e)
+    e.dx = max_label_x
+  end)
+
   return tab_data
+end
+
+function UnitInfoWindow:_construct_attachments_tab()
+  local engine = self.engine
+  local unit = self.unit
+  if (#unit.data.attached > 0) then
+    local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+    local tab_data = {
+      all       = {},
+      r_aligned = {},
+      icon      = {
+        current = 'available',
+        states  = engine.renderer.theme.tabs.attachments,
+      }
+    }
+
+    local dx, dy = 0, 0
+    return tab_data
+  end
 end
 
 function UnitInfoWindow:_construct_gui()
@@ -145,18 +172,21 @@ function UnitInfoWindow:_construct_gui()
   local tabs = {}
   local max_tab_w, max_tab_h = 0, 0
   local add_tab = function(tab)
-    table.insert(tabs, tab)
-    local w = _.max(tab.all, function(e)
-      return e.dx + e.image.w
-    end)
-    local h = _.max(tab.all, function(e)
-      return e.dy + e.image.h
-    end)
-    max_tab_w = math.max(max_tab_w, w)
-    max_tab_h = math.max(max_tab_h, h)
+    if (tab) then
+      table.insert(tabs, tab)
+      local w = _.max(tab.all, function(e)
+        return e.dx + e.image.w
+      end)
+      local h = _.max(tab.all, function(e)
+        return e.dy + e.image.h
+      end)
+      max_tab_w = math.max(max_tab_w, w or 0)
+      max_tab_h = math.max(max_tab_h, h or 0)
+    end
   end
 
   add_tab(self:_construct_info_tab())
+  add_tab(self:_construct_attachments_tab())
 
   max_w = math.max(max_tab_w, max_w)
 
@@ -231,14 +261,18 @@ function UnitInfoWindow:bind_ctx(context)
     -- header
     _.each(gui.elements, element_drawer)
 
-    -- active tab
+    -- draw active tab
     local tab_elements = gui.tabs[gui.active_tab].all
     _.each(tab_elements, element_drawer)
-    local icon_data = gui.tabs[gui.active_tab].icon
-    local tab_image = icon_data.states[icon_data.current]
-    assert(sdl_renderer:copy(tab_image.texture, nil,
-      {x = content_x + icon_data.dx, y = content_y + icon_data.dy, w = tab_image.w, h = tab_image.h}
-    ))
+
+    -- draw all tab labels
+    _.each(gui.tabs, function(idx, tab)
+      local icon_data = tab.icon
+      local tab_image = icon_data.states[icon_data.current]
+      assert(sdl_renderer:copy(tab_image.texture, nil,
+        {x = content_x + icon_data.dx, y = content_y + icon_data.dy, w = tab_image.w, h = tab_image.h}
+      ))
+    end)
 
   end
   HorizontalPanel.bind_ctx(self, unit_info_ctx)
