@@ -125,8 +125,25 @@ function UnitInfoWindow:_construct_attachments_tab()
         states  = engine.renderer.theme.tabs.attachments,
       }
     }
-
     local dx, dy = 0, 0
+    for idx, attached_unit in ipairs(unit.data.attached) do
+      local definition_name = Image.create(
+        engine.renderer.sdl_renderer,
+        font:renderUtf8(attached_unit.definition.data.name, "solid", DEFAULT_COLOR)
+      )
+      table.insert(tab_data.all, {
+        dx = dx,
+        dy = dy,
+        image = definition_name,
+      })
+      local unit_flag = attached_unit.definition.nation.unit_flag
+      table.insert(tab_data.all, {
+        dx = dx + definition_name.w + 5,
+        dy = dy + math.modf(definition_name.h/2 - unit_flag.h/2),
+        image = unit_flag,
+      })
+      dy = dy + definition_name.h + 5
+    end
     return tab_data
   end
 end
@@ -171,6 +188,7 @@ function UnitInfoWindow:_construct_gui()
   local dx = 10
   --[[ header end ]]--
 
+  local padding = dx -- l and r padding
   local tabs = {}
   local max_tab_w, max_tab_h = 0, 0
   local add_tab = function(tab)
@@ -182,7 +200,7 @@ function UnitInfoWindow:_construct_gui()
       local h = _.max(tab.all, function(e)
         return e.dy + e.image.h
       end)
-      max_tab_w = math.max(max_tab_w, w or 0)
+      max_tab_w = math.max(max_tab_w, (w or 0) + padding * 2)
       max_tab_h = math.max(max_tab_h, h or 0)
     end
   end
