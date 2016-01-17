@@ -129,7 +129,7 @@ function UnitInfoWindow:_construct_attachments_tab()
     for idx, attached_unit in ipairs(unit.data.attached) do
       local definition_name = Image.create(
         engine.renderer.sdl_renderer,
-        font:renderUtf8(attached_unit.definition.data.name, "solid", DEFAULT_COLOR)
+        font:renderUtf8(attached_unit.name, "solid", DEFAULT_COLOR)
       )
       table.insert(tab_data.all, {
         dx = dx,
@@ -147,6 +147,54 @@ function UnitInfoWindow:_construct_attachments_tab()
     return tab_data
   end
 end
+
+function UnitInfoWindow:_construct_management_tab()
+  local engine = self.engine
+  local unit = self.unit
+  local k, manage_level = unit:is_capable('MANAGE_LEVEL')
+  if (not manage_level) then
+    local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+    local tab_data = {
+      all       = {},
+      r_aligned = {},
+      icon      = {
+        hint    = engine:translate('ui.unit-info.tab.management.hint'),
+        current = 'available',
+        states  = engine.renderer.theme.tabs.attachments,
+      }
+    }
+    -- create list of manager units, the top-level managers come last
+    local manager_units = {}
+    local manager_unit = unit
+    while (manager_unit.data.managed_by and (manager_unit.id ~= manager_unit.data.managed_by)) do
+      manager_unit = engine:get_unit(manager_unit.data.managed_by)
+      table.insert(manager_units, manager_unit)
+    end
+    -- table.remove(manager_units, #manager_unit)
+
+    local dx, dy = 0, 0
+    for idx, manager_unit in ipairs(manager_units) do
+      local definition_name = Image.create(
+        engine.renderer.sdl_renderer,
+        font:renderUtf8(manager_unit.name, "solid", DEFAULT_COLOR)
+      )
+      table.insert(tab_data.all, {
+        dx = dx,
+        dy = dy,
+        image = definition_name,
+      })
+      local unit_flag = manager_unit.definition.nation.unit_flag
+      table.insert(tab_data.all, {
+        dx = dx + definition_name.w + 5,
+        dy = dy + math.modf(definition_name.h/2 - unit_flag.h/2),
+        image = unit_flag,
+      })
+      dy = dy + definition_name.h + 5
+    end
+    return tab_data
+  end
+end
+
 
 function UnitInfoWindow:_construct_gui()
   local engine = self.engine
@@ -207,6 +255,7 @@ function UnitInfoWindow:_construct_gui()
 
   add_tab(self:_construct_info_tab())
   add_tab(self:_construct_attachments_tab())
+  add_tab(self:_construct_management_tab())
 
   max_w = math.max(max_tab_w, max_w)
 

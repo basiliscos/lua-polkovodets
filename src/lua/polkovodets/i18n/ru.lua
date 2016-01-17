@@ -14,6 +14,7 @@ t = {
     -- unit info window
     ['ui.unit-info.tab.info.hint']        = 'Общая информация',
     ['ui.unit-info.tab.attachments.hint'] = 'Прикреплённые соединения',
+    ['ui.unit-info.tab.management.hint']  = 'Управление',
 
     ['ui.unit-info.size']            = 'Тип',
     ['ui.unit-info.class']           = 'Класс',

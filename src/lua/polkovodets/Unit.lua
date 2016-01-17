@@ -958,7 +958,7 @@ function Unit:subordinate(subject)
       print("unit " .. subject.id .. " managed by " .. self.id)
    else -- subordinate command unit (manager)
       subject_manage_level = tonumber(subject_manage_level)
-      assert(subject_manage_level < manage_level)
+      assert(subject_manage_level > manage_level)
 
       local k, managed_managers_level_limit = self:is_capable('MANAGED_MANAGERS_LEVEL_LIMIT')
 

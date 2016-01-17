@@ -125,6 +125,11 @@ function Theme.create(engine, data)
           hilight   = renderer:load_texture(theme_dir .. '/tabs/attachments-hilight.png'),
           active    = renderer:load_texture(theme_dir .. '/tabs/attachments-active.png'),
         },
+        management = {
+          available = renderer:load_texture(theme_dir .. '/tabs/management.png'),
+          hilight   = renderer:load_texture(theme_dir .. '/tabs/management-hilight.png'),
+          active    = renderer:load_texture(theme_dir .. '/tabs/management-active.png'),
+        },
       },
       window = {
         background = renderer:load_texture(theme_dir .. '/window/background.png'),
