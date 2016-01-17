@@ -11,6 +11,10 @@ t = {
     ['map.unit_info']                = 'Информация о соединении',
 
 
+    -- unit info window
+    ['ui.unit-info.tab.info.hint']        = 'Общая информация',
+    ['ui.unit-info.tab.attachments.hint'] = 'Прикреплённые соединения',
+
     ['ui.unit-info.size']            = 'Тип',
     ['ui.unit-info.class']           = 'Класс',
     ['ui.unit-info.spotting']        = 'Радиус обзора',

@@ -47,6 +47,7 @@ function UnitInfoWindow:_construct_info_tab()
     all       = {},
     r_aligned = {},
     icon      = {
+      hint    = engine:translate('ui.unit-info.tab.info.hint'),
       current = 'available',
       states  = engine.renderer.theme.tabs.info,
     }
@@ -119,6 +120,7 @@ function UnitInfoWindow:_construct_attachments_tab()
       all       = {},
       r_aligned = {},
       icon      = {
+        hint    = engine:translate('ui.unit-info.tab.attachments.hint'),
         current = 'available',
         states  = engine.renderer.theme.tabs.attachments,
       }
@@ -245,6 +247,31 @@ function UnitInfoWindow:bind_ctx(context)
     h = content_h,
   }
 
+  local is_over = function(mx, my, region)
+    local over = ((mx >= region.x_min) and (mx <= region.x_max)
+              and (my >= region.y_min) and (my <= region.y_max))
+    return over
+  end
+  local tab_icon_regions = _.map(gui.tabs, function(idx, tab)
+    local icon_data = tab.icon
+    local tab_image = icon_data.states[icon_data.current]
+    return {
+      x_min = content_x + icon_data.dx,
+      x_max = content_x + icon_data.dx + tab_image.w,
+      y_min = content_y + icon_data.dy,
+      y_max = content_y + icon_data.dy + tab_image.h,
+    }
+  end)
+
+  local is_over_tab_region = function(x,y)
+    for idx, tab_icon_area in ipairs(tab_icon_regions) do
+      if (is_over(x, y, tab_icon_area)) then
+        return idx
+      end
+    end
+  end
+
+
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   self.drawing.content_fn = function()
     -- background
@@ -275,10 +302,52 @@ function UnitInfoWindow:bind_ctx(context)
     end)
 
   end
+
+  local mouse_click = function(event)
+    local idx = is_over_tab_region(event.x, event.y)
+    if (idx) then
+      local prev_tab = gui.tabs[gui.active_tab]
+      local new_tab = gui.tabs[idx]
+      prev_tab.icon.current = 'available'
+      new_tab.icon.current = 'active'
+      gui.active_tab = idx
+    end
+    return true -- stop further event propagation
+  end
+
+  context.state.action = 'default'
+  local mouse_move = function(event)
+    engine.state.mouse_hint = ''
+    -- remove hilight from all tab icons, except the active one
+    for idx, tab in ipairs(gui.tabs) do
+      local icon = tab.icon
+      if (idx ~= gui.active_tab) then
+        icon.current = 'available'
+      end
+    end
+    local idx = is_over_tab_region(event.x, event.y)
+    if (idx) then
+      engine.state.mouse_hint = gui.tabs[idx].icon.hint
+      if (idx ~= gui.active_tab) then
+        gui.tabs[idx].icon.current = 'hilight'
+      end
+    end
+    return true -- stop further event propagation
+  end
+
+  context.events_source.add_handler('mouse_click', mouse_click)
+  context.events_source.add_handler('mouse_move', mouse_move)
+  self.content.mouse_click = mouse_click
+  self.content.mouse_move = mouse_move
+
   HorizontalPanel.bind_ctx(self, unit_info_ctx)
 end
 
 function UnitInfoWindow:unbind_ctx(context)
+  context.events_source.remove_handler('mouse_click', self.content.mouse_click)
+  context.events_source.remove_handler('mouse_move', self.content.mouse_move)
+  self.content.mouse_click = nil
+  self.content.mouse_move = nil
   self.drawing.content_fn = nil
   HorizontalPanel.unbind_ctx(self, context)
 end
