@@ -313,6 +313,12 @@ function UnitInfoWindow:bind_ctx(context)
     w = content_w,
     h = content_h,
   }
+  local window_region = {
+    x_min = x,
+    y_min = y,
+    x_max = x + self.contentless_size.w + content_w,
+    y_max = y + self.contentless_size.h + content_h,
+  }
 
   local is_over = function(mx, my, region)
     local over = ((mx >= region.x_min) and (mx <= region.x_max)
@@ -371,13 +377,18 @@ function UnitInfoWindow:bind_ctx(context)
   end
 
   local mouse_click = function(event)
-    local idx = is_over_tab_region(event.x, event.y)
-    if (idx) then
-      local prev_tab = gui.tabs[gui.active_tab]
-      local new_tab = gui.tabs[idx]
-      prev_tab.icon.current = 'available'
-      new_tab.icon.current = 'active'
-      gui.active_tab = idx
+    if (is_over(event.x, event.y, window_region)) then
+      local idx = is_over_tab_region(event.x, event.y)
+      if (idx) then
+        local prev_tab = gui.tabs[gui.active_tab]
+        local new_tab = gui.tabs[idx]
+        prev_tab.icon.current = 'available'
+        new_tab.icon.current = 'active'
+        gui.active_tab = idx
+      end
+    else
+      -- just close the window
+      engine.interface:remove_window(self)
     end
     return true -- stop further event propagation
   end
