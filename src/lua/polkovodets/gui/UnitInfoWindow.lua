@@ -138,22 +138,26 @@ function UnitInfoWindow:_construct_attachments_tab()
         current = 'available',
         states  = engine.renderer.theme.tabs.attachments,
       },
-      mouse_click = function(event) end,
-      mouse_move = function(event) end,
+      mouse_click = function() end,
+      mouse_move = "to be defined later",
     }
     local dx, dy = 0, 0
     local lines = {}
+    -- actualize lines, i.e show possibly only one hilighted item
     local fill_active = function(x, y)
       tab_data.active = {}
       tab_data.all    = {}
       for idx, line in pairs(lines) do
-        table.insert(tab_data.active, line.default)
+        local active = line.region:is_over(x, y) and line.hilight or line.default
+        table.insert(tab_data.active, active)
         table.insert(tab_data.active, line.flag)
         table.insert(tab_data.all   , line.default)
         table.insert(tab_data.all   , line.hilight)
         table.insert(tab_data.all,    line.flag)
       end
     end
+
+    -- create all lines, i.e. unit label (default/hilight) + icon
     for idx, attached_unit in ipairs(unit.data.attached) do
       local name = self:_render_string(attached_unit.name, DEFAULT_COLOR)
       local name_hilight = self:_render_string(attached_unit.name, HILIGHT_COLOR)
@@ -166,18 +170,16 @@ function UnitInfoWindow:_construct_attachments_tab()
       local line_descr = {
         default = { dx = dx, dy = dy, image = name },
         hilight = { dx = dx, dy = dy, image = name_hilight },
-        region  = {
-          min_x = dx,
-          min_y = dy,
-          max_x = unit_flag_descr.dx + unit_flag_descr.image.w,
-          min_y = dy + name.h,
-        },
+        region  = Region.create(dx, dy, unit_flag_descr.dx + unit_flag_descr.image.w, dy + name.h),
         flag    = unit_flag_descr,
       }
       table.insert(lines, line_descr)
       dy = dy + name.h + 5
     end
+
+    -- fill with defaults
     fill_active(-1, -1)
+    tab_data.mouse_move = fill_active
     return tab_data
   end
 end
@@ -514,7 +516,8 @@ function UnitInfoWindow:bind_ctx(context)
       end
     end
     if (not(idx) and tab_content_region:is_over(event.x, event.y)) then
-      gui.tabs[gui.active_tab].mouse_move(event)
+      -- need to shift coordinate system
+      gui.tabs[gui.active_tab].mouse_move(event.x - tab_x_min, event.y - tab_y_min)
     end
     return true -- stop further event propagation
   end
