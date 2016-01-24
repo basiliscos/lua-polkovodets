@@ -29,6 +29,7 @@ setmetatable(UnitInfoWindow, HorizontalPanel)
 local TTILE_FONT_SIZE = 16
 local DEFAULT_FONT_SIZE = 12
 local DEFAULT_COLOR = 0xAAAAAA
+local HILIGHT_COLOR = 0xFFFFFF
 
 function UnitInfoWindow.create(engine, data)
   local o = HorizontalPanel.create(engine)
@@ -127,10 +128,9 @@ function UnitInfoWindow:_construct_attachments_tab()
   local unit = self.unit
   if (#unit.data.attached > 0) then
     local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
-    local all = {}
     local tab_data = {
-      all       = all,
-      active    = all,
+      all       = {},
+      active    = {},
       r_aligned = {},
       icon      = {
         hint    = engine:translate('ui.unit-info.tab.attachments.hint'),
@@ -141,21 +141,42 @@ function UnitInfoWindow:_construct_attachments_tab()
       mouse_move = function(event) end,
     }
     local dx, dy = 0, 0
-    for idx, attached_unit in ipairs(unit.data.attached) do
-      local definition_name = self:_render_string(attached_unit.name, DEFAULT_COLOR)
-      table.insert(tab_data.all, {
-        dx = dx,
-        dy = dy,
-        image = definition_name,
-      })
-      local unit_flag = attached_unit.definition.nation.unit_flag
-      table.insert(tab_data.all, {
-        dx = dx + definition_name.w + 5,
-        dy = dy + math.modf(definition_name.h/2 - unit_flag.h/2),
-        image = unit_flag,
-      })
-      dy = dy + definition_name.h + 5
+    local lines = {}
+    local fill_active = function(x, y)
+      tab_data.active = {}
+      tab_data.all    = {}
+      for idx, line in pairs(lines) do
+        table.insert(tab_data.active, line.default)
+        table.insert(tab_data.active, line.flag)
+        table.insert(tab_data.all   , line.default)
+        table.insert(tab_data.all   , line.hilight)
+        table.insert(tab_data.all,    line.flag)
+      end
     end
+    for idx, attached_unit in ipairs(unit.data.attached) do
+      local name = self:_render_string(attached_unit.name, DEFAULT_COLOR)
+      local name_hilight = self:_render_string(attached_unit.name, HILIGHT_COLOR)
+      local unit_flag = attached_unit.definition.nation.unit_flag
+      local unit_flag_descr = {
+        dx = dx + name.w + 5,
+        dy = dy + math.modf(name.h/2 - unit_flag.h/2),
+        image = unit_flag,
+      }
+      local line_descr = {
+        default = { dx = dx, dy = dy, image = name },
+        hilight = { dx = dx, dy = dy, image = name_hilight },
+        region  = {
+          min_x = dx,
+          min_y = dy,
+          max_x = unit_flag_descr.dx + unit_flag_descr.image.w,
+          min_y = dy + name.h,
+        },
+        flag    = unit_flag_descr,
+      }
+      table.insert(lines, line_descr)
+      dy = dy + name.h + 5
+    end
+    fill_active(-1, -1)
     return tab_data
   end
 end
