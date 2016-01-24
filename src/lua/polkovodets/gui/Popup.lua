@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ local inspect = require('inspect')
 local _ = require ("moses")
 
 local Image = require 'polkovodets.utils.Image'
+local Region = require 'polkovodets.utils.Region'
 
 local Popup = {}
 Popup.__index = Popup
@@ -85,29 +86,14 @@ function Popup:bind_ctx(context)
   content_w = content_w + margin_x * 2
 
   _.each(labels, function(idx, label)
-    label.region = {
-      x_min = x,
-      x_max = x + content_w,
-      y_min = label.dy + y,
-      y_max = label.dy + y + label.image.available.h,
-    }
+    label.region = Region.create(x, label.dy + y, x + content_w, label.dy + y + label.image.available.h)
   end)
 
-  local is_over = function(mx, my, region)
-    local over = ((mx >= region.x_min) and (mx <= region.x_max)
-              and (my >= region.y_min) and (my <= region.y_max))
-    return over
-  end
-  local popup_region = {
-    x_min = x,
-    x_max = x + content_w,
-    y_min = y,
-    y_max = y + content_h,
-  }
+  local popup_region = Region.create(x, y, x + content_w, y + content_h)
 
   local update_line_styles = function(x, y)
     _.each(labels, function(key, label)
-      label.style = is_over(x, y, label.region) and 'hilight' or 'available'
+      label.style = label.region:is_over(x, y) and 'hilight' or 'available'
     end)
   end
 
@@ -134,16 +120,16 @@ function Popup:bind_ctx(context)
   end
 
   local mouse_move = function(event)
-    if (is_over(event.x, event.y, popup_region)) then
+    if (popup_region:is_over(event.x, event.y)) then
       update_line_styles(event.x, event.y)
     end
     return true -- stop further event propagation
   end
 
   local mouse_click = function(event)
-    if (is_over(event.x, event.y, popup_region)) then
+    if (popup_region:is_over(event.x, event.y)) then
       for idx, label in ipairs(labels) do
-        if (is_over(event.x, event.y, label.region)) then
+        if (label.region:is_over(event.x, event.y)) then
           return definitions[idx].callback()
         end
       end

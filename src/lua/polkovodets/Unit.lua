@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ Unit.__index = Unit
 local _ = require ("moses")
 local inspect = require('inspect')
 local SDL = require "SDL"
+local Region = require 'polkovodets.utils.Region'
 local Vector = require 'polkovodets.utils.Vector'
 
 
@@ -135,23 +136,12 @@ function Unit:bind_ctx(context)
   local flip = (orientation == 'left') and SDL.rendererFlip.none or
   (orientation == 'right') and SDL.rendererFlip.Horizontal
 
-  local is_over = function(x, y, region)
-    local over = ((x >= region.x_min) and (x <= region.x_max)
-              and (y >= region.y_min) and (y <= region.y_max))
-    return over
-  end
-
   -- unit nation flag
   local unit_flag = self.definition.nation.unit_flag
   -- +/- 1 is required to narrow the clickable/hilightable area
   -- which is also needed to preven hilighting when mouse pointer
   -- will be moved to the bottom tile
-  local unit_flag_region = {
-    x_min = x + 1 + hex_x_offset - unit_flag.w,
-    y_min = y + 1 + hex_h - unit_flag.h,
-    x_max = x - 1 + hex_x_offset,
-    y_max = y - 1 + hex_h,
-  }
+  local unit_flag_region = Region.create(x + 1 + hex_x_offset - unit_flag.w, y + 1 + hex_h - unit_flag.h, x - 1 + hex_x_offset, y - 1 + hex_h)
   local unit_flag_dst =  {
     x = x + hex_x_offset - unit_flag.w,
     y = y + hex_h - unit_flag.h,
@@ -161,7 +151,7 @@ function Unit:bind_ctx(context)
   local unit_flag_hilight_image = self.engine.renderer.theme.unit_flag_hilight
   local do_hilight_unit_flag = false
   local update_unit_flag = function(x, y)
-    do_hilight_unit_flag = is_over(x, y, unit_flag_region)
+    do_hilight_unit_flag =  unit_flag_region:is_over(x, y)
     return do_hilight_unit_flag
   end
   update_unit_flag(context.mouse.x, context.mouse.y)
@@ -173,15 +163,11 @@ function Unit:bind_ctx(context)
 
   -- change attack possibility
   local change_attack
+  local change_attack_region
   local attack_kinds
   local attack_kind_idx = 1
   local is_over_change_attack_icon = function(x, y)
-    if (change_attack) then
-      local dst = change_attack.dst
-      local over = ((x >= dst.x) and (x <= dst.x + dst.w)
-        and (y >= dst.y) and (y <= dst.y + dst.h))
-      return over
-    end
+    return change_attack and change_attack_region:is_over(x, y)
   end
 
   local u = context.state.selected_unit
@@ -191,15 +177,17 @@ function Unit:bind_ctx(context)
       attack_kinds = u:get_attack_kinds(self.tile)
       if (#attack_kinds > 1) then
         local icon = context.renderer.theme.change_attack_type.available
+        local change_attack_x = x + (hex_w - hex_x_offset)
         change_attack = {
           icon = icon,
           dst = {
-            x = x + (hex_w - hex_x_offset),
+            x = change_attack_x,
             y = y,
             w = icon.w,
             h = icon.h,
           },
         }
+        change_attack_region = Region.create(change_attack_x, y, change_attack_x + icon.w, y + icon.h)
         local icon_kind = is_over_change_attack_icon(context.mouse.x, context.mouse.y)
           and 'hilight' or 'available'
         change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
@@ -260,7 +248,7 @@ function Unit:bind_ctx(context)
     if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
       -- check if the click has been performed on unit flag, then
       -- show unit info
-      if (is_over(event.x, event.y, unit_flag_region)) then
+      if (unit_flag_region:is_over(event.x, event.y)) then
         self.engine.interface:add_window('unit_info_window', self)
         return true
       end

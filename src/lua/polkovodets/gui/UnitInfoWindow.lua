@@ -21,6 +21,7 @@ local _ = require ("moses")
 
 local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
 local Image = require 'polkovodets.utils.Image'
+local Region = require 'polkovodets.utils.Region'
 
 local UnitInfoWindow = {}
 UnitInfoWindow.__index = UnitInfoWindow
@@ -424,38 +425,21 @@ function UnitInfoWindow:bind_ctx(context)
     w = content_w,
     h = content_h,
   }
-  local window_region = {
-    x_min = x,
-    y_min = y,
-    x_max = x + self.contentless_size.w + content_w,
-    y_max = y + self.contentless_size.h + content_h,
-  }
-  local tab_content_region = {
-    x_min = content_x + gui.tabs_region.x_min,
-    y_min = content_y + gui.tabs_region.y_min,
-    x_max = content_x + gui.tabs_region.x_max,
-    y_max = content_y + gui.tabs_region.y_max,
-  }
+  local window_region = Region.create(x, y, x + self.contentless_size.w + content_w, y + self.contentless_size.h + content_h)
+  local tab_x_min, tab_y_min = content_x + gui.tabs_region.x_min, content_y + gui.tabs_region.y_min
+  local tab_x_max, tab_y_max = content_x + gui.tabs_region.x_max, content_y + gui.tabs_region.y_max
+  local tab_content_region = Region.create(tab_x_min, tab_y_min, tab_x_max, tab_y_max)
 
-  local is_over = function(mx, my, region)
-    local over = ((mx >= region.x_min) and (mx <= region.x_max)
-              and (my >= region.y_min) and (my <= region.y_max))
-    return over
-  end
   local tab_icon_regions = _.map(gui.tabs, function(idx, tab)
     local icon_data = tab.icon
     local tab_image = icon_data.states[icon_data.current]
-    return {
-      x_min = content_x + icon_data.dx,
-      x_max = content_x + icon_data.dx + tab_image.w,
-      y_min = content_y + icon_data.dy,
-      y_max = content_y + icon_data.dy + tab_image.h,
-    }
+    local x, y = content_x + icon_data.dx, content_y + icon_data.dy
+    return Region.create(x, y, x + tab_image.w, y + tab_image.h)
   end)
 
   local is_over_tab_icons_region = function(x,y)
     for idx, tab_icon_area in ipairs(tab_icon_regions) do
-      if (is_over(x, y, tab_icon_area)) then
+      if (tab_icon_area:is_over(x, y)) then
         return idx
       end
     end
@@ -494,7 +478,7 @@ function UnitInfoWindow:bind_ctx(context)
   end
 
   local mouse_click = function(event)
-    if (is_over(event.x, event.y, window_region)) then
+    if (window_region:is_over(event.x, event.y)) then
       local idx = is_over_tab_icons_region(event.x, event.y)
       if (idx) then -- swithing tab
         local prev_tab = gui.tabs[gui.active_tab]
@@ -529,7 +513,7 @@ function UnitInfoWindow:bind_ctx(context)
         gui.tabs[idx].icon.current = 'hilight'
       end
     end
-    if (not(idx) and  is_over(event.x, event.y, tab_content_region)) then
+    if (not(idx) and tab_content_region:is_over(event.x, event.y)) then
       gui.tabs[gui.active_tab].mouse_move(event)
     end
     return true -- stop further event propagation

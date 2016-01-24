@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ History.__index = History
 
 local _ = require ("moses")
 local inspect = require('inspect')
+local Region = require 'polkovodets.utils.Region'
 
 local _Record = {}
 _Record.__index = _Record
@@ -104,10 +105,7 @@ function _Record:bind_ctx(context)
     local battle_icon = context.theme.history.battle
     local icon_x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - battle_icon.w
     local icon_y = tile.virtual.y + context.screen.offset[2]
-    local is_over_icon = function(x, y)
-      return ((x >= icon_x) and (x <= icon_x + battle_icon.w)
-          and (y >= icon_y) and (y <= icon_y + battle_icon.h))
-    end
+    local icon_region = Region.create(icon_x, icon_y, icon_x + battle_icon.w, icon_y + battle_icon.h)
     local over_icon = false
 
     local actual_records = context.renderer.engine.history:get_actual_records()
@@ -120,7 +118,7 @@ function _Record:bind_ctx(context)
     local update_participants = function(x, y, over_tile_id)
       local updated
       if (over_tile_id == tile_id) then
-        local now_over_battle_icon = is_over_icon(x, y)
+        local now_over_battle_icon = icon_region:is_over(x, y)
         local participant_locations = context.state.participant_locations or {}
         if (now_over_battle_icon ~= over_icon) then
           participant_locations = {}
@@ -175,11 +173,11 @@ function _Record:bind_ctx(context)
       if (update_participants(event.x, event.y, event.tile_id)) then
         context.renderer.engine.mediator:publish({ "view.update" })
       end
-      return is_over_icon(event.x, event.y)
+      return icon_region:is_over(event.x, event.y)
     end
 
     mouse_click = function(event)
-      if (is_over_icon(event.x, event.y)) then
+      if (icon_region:is_over(event.x, event.y)) then
         if (#battles_on_tile == 1) then
           context.renderer.engine.interface:add_window('battle_details_window', self)
         else

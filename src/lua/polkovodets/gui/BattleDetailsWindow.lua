@@ -22,6 +22,7 @@ local _ = require ("moses")
 local Button = require ('polkovodets.gui.Button')
 local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
 local Image = require 'polkovodets.utils.Image'
+local Region = require 'polkovodets.utils.Region'
 
 local BattleDetailsWindow = {}
 BattleDetailsWindow.__index = BattleDetailsWindow
@@ -295,44 +296,26 @@ function BattleDetailsWindow:bind_ctx(context)
 
   local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 
-  local window_region = {
-    x_min = x,
-    x_max = x + content_w + self.contentless_size.w,
-    y_min = y,
-    y_max = y + content_h + self.contentless_size.h,
-  }
-  local is_over = function(mx, my, region)
-    local over = ((mx >= region.x_min) and (mx <= region.x_max)
-              and (my >= region.y_min) and (my <= region.y_max))
-    return over
-  end
+  local max_x, max_y = x + content_w + self.contentless_size.w, y + content_h + self.contentless_size.h
+  local window_region = Region.create(x, y, max_x, max_y)
 
   local l_infos = gui.header.labels
 
   local line_regions = _.map(gui.lines, function(idx, line)
+    local y_min = content_y + line.dy
+    local y_max = content_y + line.dy + line.icon.h
+    local ix_min, ix_max = content_x + l_infos[1].dx, content_x + l_infos[2].dx + l_infos[2].label.w
+    local px_min, px_max = content_x + l_infos[3].dx, content_x + l_infos[4].dx + l_infos[4].label.w
     return {
-      x_min = content_x,
-      x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
-      y_min = content_y + line.dy,
-      y_max = content_y + line.dy + line.icon.h,
-      i     = {
-        x_min = content_x + l_infos[1].dx ,
-        x_max = content_x + l_infos[2].dx + l_infos[2].label.w,
-      },
-      p     = {
-        x_min = content_x + l_infos[3].dx ,
-        x_max = content_x + l_infos[4].dx + l_infos[4].label.w,
-      },
+      whole = Region.create(content_x, y_min, content_x + l_infos[4].dx + l_infos[4].label.w, y_max),
+      i     = Region.create(ix_min, y_min, ix_max, y_max),
+      p     = Region.create(px_min, y_min, px_max, y_max),
     }
   end)
   local unit_regions = _.map(gui.units, function(idx, unit_data)
     local icon = unit_data.unit_icon
-    return {
-      x_min = content_x + unit_data.dx,
-      x_max = content_x + unit_data.dx + icon.w,
-      y_min = content_y + unit_data.dy,
-      y_max = content_y + unit_data.dy + icon.h,
-    }
+    local x, y = content_x + unit_data.dx, content_y + unit_data.dy
+    return Region.create(x, y, x + icon.w, y + icon.h)
   end)
 
   local line_styles = {}
@@ -340,10 +323,10 @@ function BattleDetailsWindow:bind_ctx(context)
   local update_line_styles = function(x, y)
     line_styles = _.map(line_regions, function(idx, line_region)
       local styles = {i = "available", p = "available"}
-      if (is_over(x, y, line_region)) then
-        if ((x >= line_region.i.x_min) and (x <= line_region.i.x_max)) then
+      if (line_region.whole:is_over(x, y)) then
+        if (line_region.i:is_over(x, y)) then
           styles.i = "hilight"
-        elseif ((x >= line_region.p.x_min) and (x <= line_region.p.x_max)) then
+        elseif (line_region.p:is_over(x, y)) then
           styles.p = "hilight"
         end
       end
@@ -449,7 +432,7 @@ function BattleDetailsWindow:bind_ctx(context)
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(details_ctx) end)
 
   local mouse_click = function(event)
-    if (is_over(event.x, event.y, window_region)) then
+    if (window_region:is_over(event.x, event.y)) then
       local class_idx, side
       for idx, line_style in ipairs(line_styles) do
         local my_side = ((line_style.i == 'hilight') and 'i')
@@ -499,15 +482,15 @@ function BattleDetailsWindow:bind_ctx(context)
   context.state.action = 'default'
   local mouse_move = function(event)
     engine.state.mouse_hint = ''
-    if (is_over(event.x, event.y, window_region)) then
+    if (window_region:is_over(event.x, event.y)) then
       update_line_styles(event.x, event.y)
       for idx, unit_region in ipairs(unit_regions) do
-        if (is_over(event.x, event.y, unit_region)) then
+        if (unit_region:is_over(event.x, event.y)) then
           engine.state.mouse_hint = gui.units[idx].name
         end
       end
       for idx, line_region in ipairs(line_regions) do
-        if (is_over(event.x, event.y, line_region)) then
+        if (line_region.whole:is_over(event.x, event.y)) then
           local class_id = gui.lines[idx].class_id
           local key = 'db.weapon-class.' .. class_id
           engine.state.mouse_hint = engine:translate(key)

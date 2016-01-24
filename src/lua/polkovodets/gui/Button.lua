@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]--
 
 local inspect = require('inspect')
+local Region = require 'polkovodets.utils.Region'
 
 local Button = {}
 Button.__index = Button
@@ -47,12 +48,7 @@ function Button:bind_ctx(context)
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   local dst = { x = x, y = y,  w = image.w, h = image.h }
-  local x_max = x + image.h
-  local y_max = y + image.h
-
-  local is_over = function(event)
-    return ((event.x >= x) and (event.x <= x_max) and (event.y >= y) and (event.y <= y_max))
-  end
+  local region = Region.create(x, y, x + image.h, y + image.h)
 
   local callback = assert(my_ctx.callback)
   local drawing_fn = function()
@@ -61,7 +57,7 @@ function Button:bind_ctx(context)
 
   assert(self.hint)
   local mouse_move = function(event)
-    if (is_over(event)) then
+    if (region:is_over(event.x, event.y)) then
       context.state.mouse_hint = self.hint
       if (context.state.action ~= 'default') then
         context.state.action = 'default'
@@ -71,7 +67,7 @@ function Button:bind_ctx(context)
     end
   end
   local mouse_click = function(event)
-    if (is_over(event)) then return callback() end
+    if (region:is_over(event.x, event.y)) then return callback() end
   end
 
   context.events_source.add_handler('mouse_click', mouse_click)
