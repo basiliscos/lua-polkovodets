@@ -39,18 +39,32 @@ function UnitInfoWindow.create(engine, data)
   return o
 end
 
+function UnitInfoWindow:_render_string(label, color)
+  local engine = self.engine
+  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local image = Image.create(
+    engine.renderer.sdl_renderer,
+    font:renderUtf8(label, "solid", color)
+  )
+  return image
+end
+
 function UnitInfoWindow:_construct_info_tab()
   local engine = self.engine
   local unit = self.unit
   local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local all = {}
   local tab_data = {
-    all       = {},
+    all       = all,
+    active    = all,
     r_aligned = {},
     icon      = {
       hint    = engine:translate('ui.unit-info.tab.info.hint'),
       current = 'available',
       states  = engine.renderer.theme.tabs.info,
-    }
+    },
+    mouse_click = function(event) end,
+    mouse_move = function(event) end,
   }
 
   local dx, dy = 0, 0
@@ -77,17 +91,14 @@ function UnitInfoWindow:_construct_info_tab()
       dy = tab_data.all[#tab_data.all].dy + tab_data.all[#tab_data.all].image.h + 5,
       image = label,
     })
-    local value_img = Image.create(
-      engine.renderer.sdl_renderer,
-      font:renderUtf8(value, "solid", DEFAULT_COLOR)
-    )
+    local value_img = self:_render_string(value, DEFAULT_COLOR);
     local value_descr = {
       dx = tab_data.all[#tab_data.all].dx + tab_data.all[#tab_data.all].image.w + 15,
       dy = tab_data.all[#tab_data.all].dy,
       image = value_img,
     }
     max_label_x = math.max(max_label_x, value_descr.dx)
-    table.insert(tab_data.all, value_descr)
+    table.insert(all, value_descr)
     table.insert(tab_data.r_aligned, value_descr)
   end
 
@@ -116,21 +127,22 @@ function UnitInfoWindow:_construct_attachments_tab()
   local unit = self.unit
   if (#unit.data.attached > 0) then
     local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+    local all = {}
     local tab_data = {
-      all       = {},
+      all       = all,
+      active    = all,
       r_aligned = {},
       icon      = {
         hint    = engine:translate('ui.unit-info.tab.attachments.hint'),
         current = 'available',
         states  = engine.renderer.theme.tabs.attachments,
-      }
+      },
+      mouse_click = function(event) end,
+      mouse_move = function(event) end,
     }
     local dx, dy = 0, 0
     for idx, attached_unit in ipairs(unit.data.attached) do
-      local definition_name = Image.create(
-        engine.renderer.sdl_renderer,
-        font:renderUtf8(attached_unit.name, "solid", DEFAULT_COLOR)
-      )
+      local definition_name = self:_render_string(attached_unit.name, DEFAULT_COLOR)
       table.insert(tab_data.all, {
         dx = dx,
         dy = dy,
@@ -154,14 +166,18 @@ function UnitInfoWindow:_construct_management_tab()
   local k, manage_level = unit:is_capable('MANAGE_LEVEL')
   if (not manage_level) then
     local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+    local all = {}
     local tab_data = {
-      all       = {},
+      all       = all,
+      active    = all,
       r_aligned = {},
       icon      = {
         hint    = engine:translate('ui.unit-info.tab.management.hint'),
         current = 'available',
         states  = engine.renderer.theme.tabs.attachments,
-      }
+      },
+      mouse_click = function(event) end,
+      mouse_move = function(event) end,
     }
     -- create list of manager units, the top-level managers come last
     local manager_units = {}
@@ -174,10 +190,7 @@ function UnitInfoWindow:_construct_management_tab()
 
     local dx, dy = 0, 0
     for idx, manager_unit in ipairs(manager_units) do
-      local definition_name = Image.create(
-        engine.renderer.sdl_renderer,
-        font:renderUtf8(manager_unit.name, "solid", DEFAULT_COLOR)
-      )
+      local definition_name = self:_render_string(manager_unit.name, DEFAULT_COLOR)
       table.insert(tab_data.all, {
         dx = dx,
         dy = dy,
@@ -221,32 +234,30 @@ function UnitInfoWindow:_construct_weapon_tabs()
     _.each({'active', 'available', 'hilight'}, function(idx, style)
       icon_states[style] = class:get_icon(style)
     end)
+    local all = {}
     local tab_data = {
-      all       = {},
+      all       = all,
+      active    = all,
       r_aligned = {},
       icon      = {
         hint    = engine:translate('db.weapon-class.' .. class.id),
         current = 'available',
         states  = icon_states,
-      }
+      },
+      mouse_click = function(event) end,
+      mouse_move = function(event) end,
     }
     -- render per weapon instance: weapon name and available quantity
     local dx, dy = 0, 0
     local weapon_instances = wi_for_class[class.id]
     for idx, wi in ipairs(weapon_instances) do
-      local name = Image.create(
-        engine.renderer.sdl_renderer,
-        font:renderUtf8(wi.weapon.name, "solid", DEFAULT_COLOR)
-      )
+      local name = self:_render_string(wi.weapon.name, DEFAULT_COLOR)
       table.insert(tab_data.all, {
         dx = dx,
         dy = dy,
         image = name,
       })
-      local quantity = Image.create(
-        engine.renderer.sdl_renderer,
-        font:renderUtf8(tostring(wi.data.quantity), "solid", DEFAULT_COLOR)
-      )
+      local quantity = self:_render_string(tostring(wi.data.quantity), DEFAULT_COLOR)
       local quantity_desc = {
         dx = dx + name.w + 5,
         dy = dy,
@@ -350,10 +361,18 @@ function UnitInfoWindow:_construct_gui()
     end)
   end)
 
+  local tabs_region = {
+    x_min = dx,
+    y_min = dy,
+    x_max = max_w,
+    y_max = dy + max_tab_h,
+  }
+
   local active_tab = 1
   tabs[active_tab].icon.current = 'active'
   local gui = {
     tabs         = tabs,
+    tabs_region  = tabs_region,
     active_tab   = active_tab,
     elements     = elements,
     content_size = {
@@ -390,6 +409,12 @@ function UnitInfoWindow:bind_ctx(context)
     x_max = x + self.contentless_size.w + content_w,
     y_max = y + self.contentless_size.h + content_h,
   }
+  local tab_content_region = {
+    x_min = content_x + gui.tabs_region.x_min,
+    y_min = content_y + gui.tabs_region.y_min,
+    x_max = content_x + gui.tabs_region.x_max,
+    y_max = content_y + gui.tabs_region.y_max,
+  }
 
   local is_over = function(mx, my, region)
     local over = ((mx >= region.x_min) and (mx <= region.x_max)
@@ -407,7 +432,7 @@ function UnitInfoWindow:bind_ctx(context)
     }
   end)
 
-  local is_over_tab_region = function(x,y)
+  local is_over_tab_icons_region = function(x,y)
     for idx, tab_icon_area in ipairs(tab_icon_regions) do
       if (is_over(x, y, tab_icon_area)) then
         return idx
@@ -432,8 +457,8 @@ function UnitInfoWindow:bind_ctx(context)
     -- header
     _.each(gui.elements, element_drawer)
 
-    -- draw active tab
-    local tab_elements = gui.tabs[gui.active_tab].all
+    -- draw active tab active elements
+    local tab_elements = gui.tabs[gui.active_tab].active
     _.each(tab_elements, element_drawer)
 
     -- draw all tab labels
@@ -449,13 +474,15 @@ function UnitInfoWindow:bind_ctx(context)
 
   local mouse_click = function(event)
     if (is_over(event.x, event.y, window_region)) then
-      local idx = is_over_tab_region(event.x, event.y)
-      if (idx) then
+      local idx = is_over_tab_icons_region(event.x, event.y)
+      if (idx) then -- swithing tab
         local prev_tab = gui.tabs[gui.active_tab]
         local new_tab = gui.tabs[idx]
         prev_tab.icon.current = 'available'
         new_tab.icon.current = 'active'
         gui.active_tab = idx
+      else -- some action inside tab content, delegate
+        gui.tabs[gui.active_tab]:mouse_click(event)
       end
     else
       -- just close the window
@@ -474,12 +501,15 @@ function UnitInfoWindow:bind_ctx(context)
         icon.current = 'available'
       end
     end
-    local idx = is_over_tab_region(event.x, event.y)
+    local idx = is_over_tab_icons_region(event.x, event.y)
     if (idx) then
       engine.state.mouse_hint = gui.tabs[idx].icon.hint
       if (idx ~= gui.active_tab) then
         gui.tabs[idx].icon.current = 'hilight'
       end
+    end
+    if (not(idx) and  is_over(event.x, event.y, tab_content_region)) then
+      gui.tabs[gui.active_tab].mouse_move(event)
     end
     return true -- stop further event propagation
   end
