@@ -286,9 +286,7 @@ function BattleDetailsWindow:bind_ctx(context)
   local content_h = gui.content_size.h
   details_ctx.content_size = { w = content_w, h = content_h}
 
-  local window = assert(context.window)
-  local x = math.modf(window.w/2 - content_w/2)
-  local y = math.modf(window.h/2 - content_h/2)
+  local x, y = context.layout_fn(self, content_w, content_h)
   details_ctx.x = x
   details_ctx.y = y
 

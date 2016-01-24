@@ -374,9 +374,7 @@ function UnitInfoWindow:bind_ctx(context)
 
   local content_w = gui.content_size.w
   local content_h = gui.content_size.h
-  local window = assert(context.window)
-  local x = math.modf(window.w/2 - content_w/2)
-  local y = math.modf(window.h/2 - content_h/2)
+  local x, y = context.layout_fn(self, content_w, content_h)
 
   local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 

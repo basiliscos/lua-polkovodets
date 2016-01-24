@@ -77,8 +77,15 @@ function Interface:bind_ctx(context)
     }
   end
 
+  local layout_fn = function(window, content_w, content_h)
+    local x = math.modf(w/2 - content_w/2)
+    local y = math.modf(h/2 - content_h/2)
+    return x, y
+  end
+
   local interface_ctx = _.clone(context, true)
   interface_ctx.window = {w = w, h = h}
+  interface_ctx.layout_fn = layout_fn
 
   local rendered_hint
   local labels = {}
