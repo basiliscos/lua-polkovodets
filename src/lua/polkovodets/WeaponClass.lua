@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,19 +27,24 @@ function WeaponClass.create(engine, data)
   local icon_path = assert(data.icon)
 
   local gfx_dir = engine:get_gfx_dir()
-  local full_path = gfx_dir .. '/' .. icon_path
-  -- print("loading weapon class icon " .. full_path)
-  local icon = engine.renderer:load_texture(full_path)
+  local icon_path = gfx_dir .. '/' .. icon_path
+  local icon_for_style = {}
+  for idx, style in pairs({"active", "available", "hilight"}) do
+    local full_path = icon_path .. "-" .. style .. ".png"
+    icon_for_style[style] = engine.renderer:load_texture(full_path)
+  end
   local o = {
     id    = id,
     order = order,
-    icon  = icon,
+    icons = icon_for_style,
   }
   return setmetatable(o, WeaponClass)
 end
 
-function WeaponClass:get_icon()
-  return self.icon
+function WeaponClass:get_icon(style)
+  assert(style)
+  local icon = assert(self.icons[style], "icon of style " .. style .. " n/a for weapon class " .. self.id)
+  return icon
 end
 
 return WeaponClass

@@ -195,13 +195,79 @@ function UnitInfoWindow:_construct_management_tab()
   end
 end
 
+function UnitInfoWindow:_construct_weapon_tabs()
+  local engine = self.engine
+  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local class_presents = {} -- k: class_id, value: boolean
+  local unit = self.unit
+
+  local wi_for_class = {} -- k: class_id, v: array of weapon instances
+  -- fetch available classes & related weapon instances
+  _.each(unit.data.staff, function(idx, wi)
+    local class = wi:get_class()
+    class_presents[class.id] = true
+    local wi_list = wi_for_class[class.id] or {}
+    table.insert(wi_list, wi)
+    wi_for_class[class.id] = wi_list
+  end)
+
+  -- get classes in the correct order
+  local classes = _.select(engine.unit_lib.weapons.classes.list, function(idx, class)
+    return class_presents[class.id]
+  end)
+
+  local tabs = _.map(classes, function(idx, class)
+    local icon_states = {}
+    _.each({'active', 'available', 'hilight'}, function(idx, style)
+      icon_states[style] = class:get_icon(style)
+    end)
+    local tab_data = {
+      all       = {},
+      r_aligned = {},
+      icon      = {
+        hint    = engine:translate('db.weapon-class.' .. class.id),
+        current = 'available',
+        states  = icon_states,
+      }
+    }
+    -- render per weapon instance: weapon name and available quantity
+    local dx, dy = 0, 0
+    local weapon_instances = wi_for_class[class.id]
+    for idx, wi in ipairs(weapon_instances) do
+      local name = Image.create(
+        engine.renderer.sdl_renderer,
+        font:renderUtf8(wi.weapon.name, "solid", DEFAULT_COLOR)
+      )
+      table.insert(tab_data.all, {
+        dx = dx,
+        dy = dy,
+        image = name,
+      })
+      local quantity = Image.create(
+        engine.renderer.sdl_renderer,
+        font:renderUtf8(tostring(wi.data.quantity), "solid", DEFAULT_COLOR)
+      )
+      local quantity_desc = {
+        dx = dx + name.w + 5,
+        dy = dy,
+        image = quantity,
+      }
+      table.insert(tab_data.all, quantity_desc)
+      table.insert(tab_data.r_aligned, quantity_desc)
+      dy = dy + name.h + 5
+    end
+    return tab_data
+  end)
+
+
+  return tabs
+end
+
 
 function UnitInfoWindow:_construct_gui()
   local engine = self.engine
   local unit = self.unit
 
-  local max_w = 100
-  local max_h = 100
   local elements = {}
 
   --[[ header start ]]--
@@ -225,8 +291,8 @@ function UnitInfoWindow:_construct_gui()
     image = title,
   })
 
-  max_w = elements[#elements].dx + elements[#elements].image.w + 5
-  max_h = math.max(title.h, flag.h)
+  local max_w = elements[#elements].dx + elements[#elements].image.w + 5
+  local max_h = math.max(title.h, flag.h)
   -- reposition title/flag to be on the same Y-center
   _.each(elements, function(idx, e)
     e.dy = math.modf((max_h - e.image.h) / 2)
@@ -256,14 +322,14 @@ function UnitInfoWindow:_construct_gui()
   add_tab(self:_construct_info_tab())
   add_tab(self:_construct_attachments_tab())
   add_tab(self:_construct_management_tab())
+  _.each(self:_construct_weapon_tabs(), function(idx, tab)
+    add_tab(tab)
+  end)
 
-  max_w = math.max(max_tab_w, max_w)
-
-  -- post-process tabs: adjust r-aligned items, icons, dx, dy for all elements
+  -- post-process tabs: adjust tab icons, dx, dy for all elements,
   local tab_icon_dx, tab_icon_dy = dx, dy
   local tab_line = 4 + tabs[1].icon.states[tabs[1].icon.current].h
   dy = dy + tab_line
-
   _.each(tabs, function(idx, tab)
     tab.icon.dx = tab_icon_dx
     tab.icon.dy = tab_icon_dy
@@ -272,6 +338,13 @@ function UnitInfoWindow:_construct_gui()
       e.dx = e.dx + dx
       e.dy = e.dy + dy
     end)
+  end)
+
+  -- it might be that tabs icon line is the most wide
+  max_w = math.max(max_tab_w, max_w, tab_icon_dx + 10)
+
+  -- post-process tabs: adjust r-aligned items
+  _.each(tabs, function(idx, tab)
     _.each(tab.r_aligned, function(idx, e)
       e.dx = max_w - e.image.w - 10
     end)

@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ function BattleDetailsWindow:_construct_gui(available_classes, record)
 
   assert (#weapon_classes > 0)
   -- print(inspect(weapon_classes))
-  local class_icon = weapon_classes[1]:get_icon()
+  local class_icon = weapon_classes[1]:get_icon('available')
 
   local create_image = function(surface)
     return Image.create(engine.renderer.sdl_renderer, surface)
@@ -194,7 +194,7 @@ function BattleDetailsWindow:_construct_gui(available_classes, record)
   -- local my_weapon_classes = _.select(weapon_classes, function(k, class) return available_classes[class.id] end)
 
   for idx, class in pairs(my_weapon_classes) do
-    local icon = class:get_icon()
+    local icon = class:get_icon('available')
     local center_y = math.modf(line_dy + icon.h/2)
     local line = {
       class_id = class.id,
@@ -293,7 +293,7 @@ function BattleDetailsWindow:bind_ctx(context)
   details_ctx.y = y
 
   local weapon_classes = engine.unit_lib.weapons.classes.list
-  local weapon_class_icon = weapon_classes[1]:get_icon()
+  local weapon_class_icon = weapon_classes[1]:get_icon('available')
 
   local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 
