@@ -36,7 +36,7 @@ function UnitInfoWindow.create(engine, data)
   local o = HorizontalPanel.create(engine)
   setmetatable(o, UnitInfoWindow)
   o.drawing.content_fn = nil
-  o.content = {}
+  o.content = { active_tab = 1 }
   o.unit = assert(data)
   return o
 end
@@ -143,12 +143,16 @@ function UnitInfoWindow:_construct_attachments_tab()
     }
     local dx, dy = 0, 0
     local lines = {}
+    local hilighted_line
     -- actualize lines, i.e show possibly only one hilighted item
     local fill_active = function(x, y)
+      hilighted_line = nil
       tab_data.active = {}
       tab_data.all    = {}
       for idx, line in pairs(lines) do
-        local active = line.region:is_over(x, y) and line.hilight or line.default
+        local is_over = line.region:is_over(x, y)
+        if (is_over) then hilighted_line = idx end
+        local active = is_over and line.hilight or line.default
         table.insert(tab_data.active, active)
         table.insert(tab_data.active, line.flag)
         table.insert(tab_data.all   , line.default)
@@ -180,6 +184,12 @@ function UnitInfoWindow:_construct_attachments_tab()
     -- fill with defaults
     fill_active(-1, -1)
     tab_data.mouse_move = fill_active
+    tab_data.mouse_click = function(x, y)
+      if (hilighted_line) then
+        local new_unit = unit.data.attached[hilighted_line]
+        engine.interface:add_window('unit_info_window', new_unit)
+      end
+    end
     return tab_data
   end
 end
@@ -392,7 +402,7 @@ function UnitInfoWindow:_construct_gui()
     y_max = dy + max_tab_h,
   }
 
-  local active_tab = 1
+  local active_tab = self.content.active_tab
   tabs[active_tab].icon.current = 'active'
   local gui = {
     tabs         = tabs,
@@ -488,6 +498,8 @@ function UnitInfoWindow:bind_ctx(context)
         prev_tab.icon.current = 'available'
         new_tab.icon.current = 'active'
         gui.active_tab = idx
+        -- remember active tab between ctx bind/unbind
+        self.content.active_tab = idx
       else -- some action inside tab content, delegate
         gui.tabs[gui.active_tab]:mouse_click(event)
       end

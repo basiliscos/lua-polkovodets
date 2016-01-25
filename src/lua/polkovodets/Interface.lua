@@ -40,7 +40,9 @@ function Interface.create(engine)
       objects     = {},
       obj_by_type = {
         game_panel = nil,
-      }
+      },
+      opened_windows = 0,
+      window_order = {}, -- key: window, value order = z-index
     }
   }
   setmetatable(o, Interface)
@@ -78,8 +80,14 @@ function Interface:bind_ctx(context)
   end
 
   local layout_fn = function(window, content_w, content_h)
+    -- calculate window center
     local x = math.modf(w/2 - content_w/2)
     local y = math.modf(h/2 - content_h/2)
+    local order = assert(self.drawing.window_order[window])
+    local total = assert(self.drawing.opened_windows)
+    local z_index = total - order
+    x = x - (20 * z_index)
+    y = y - (35 * z_index)
     return x, y
   end
 
@@ -151,6 +159,11 @@ function Interface:add_window(id, data)
 
   table.insert(self.drawing.objects, window)
 
+  local opened_windows = self.drawing.opened_windows
+  opened_windows = opened_windows + 1
+  self.drawing.opened_windows = opened_windows
+  self.drawing.window_order[window] = opened_windows
+
   window:bind_ctx(self.context)
 
   print("created window" .. class_name)
@@ -167,7 +180,13 @@ function Interface:remove_window(window, do_not_emit_update)
   end
   assert(idx, "cannot find window to remove")
   window:unbind_ctx(self.context)
-  table.remove(self.drawing.objects, idx)
+
+  local opened_windows = self.drawing.opened_windows
+  opened_windows = opened_windows - 1
+  self.drawing.opened_windows = opened_windows
+  self.drawing.window_order[window] = nil
+
+table.remove(self.drawing.objects, idx)
   if (not do_not_emit_update) then
     self.engine.mediator:publish({ "view.update" })
   end
