@@ -124,73 +124,90 @@ function UnitInfoWindow:_construct_info_tab()
   return tab_data
 end
 
+function UnitInfoWindow:_construct_units_tab(tab_hint, tab_icon_states, iterator)
+  local engine = self.engine
+  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local tab_data = {
+    all       = {},
+    active    = {},
+    r_aligned = {},
+    icon      = {
+      hint    = engine:translate(tab_hint),
+      current = 'available',
+      states  = tab_icon_states,
+    },
+    mouse_click = function() end,
+    mouse_move = "to be defined later",
+  }
+  local dx, dy = 0, 0
+  local lines = {}
+  local hilighted_line
+  -- actualize lines, i.e show possibly only one hilighted item
+  local fill_active = function(x, y)
+    hilighted_line = nil
+    tab_data.active = {}
+    tab_data.all    = {}
+    for idx, line in pairs(lines) do
+      local is_over = line.region:is_over(x, y)
+      if (is_over) then hilighted_line = idx end
+      local active = is_over and line.hilight or line.default
+      table.insert(tab_data.active, active)
+      table.insert(tab_data.active, line.flag)
+      table.insert(tab_data.all   , line.default)
+      table.insert(tab_data.all   , line.hilight)
+      table.insert(tab_data.all,    line.flag)
+    end
+  end
+
+  -- create all lines, i.e. unit label (default/hilight) + icon
+  for idx, unit in iterator() do
+    local name = self:_render_string(unit.name, DEFAULT_COLOR)
+    local name_hilight = self:_render_string(unit.name, HILIGHT_COLOR)
+    local unit_flag = unit.definition.nation.unit_flag
+    local unit_flag_descr = {
+      dx = dx + name.w + 5,
+      dy = dy + math.modf(name.h/2 - unit_flag.h/2),
+      image = unit_flag,
+    }
+    local line_descr = {
+      default = { dx = dx, dy = dy, image = name },
+      hilight = { dx = dx, dy = dy, image = name_hilight },
+      region  = Region.create(dx, dy, unit_flag_descr.dx + unit_flag_descr.image.w, dy + name.h),
+      flag    = unit_flag_descr,
+      unit    = unit,
+    }
+    table.insert(lines, line_descr)
+    dy = dy + name.h + 5
+  end
+
+  -- fill with defaults
+  fill_active(-1, -1)
+  tab_data.mouse_move = fill_active
+  tab_data.mouse_click = function(x, y)
+    if (hilighted_line) then
+      local unit = lines[hilighted_line].unit
+      engine.interface:add_window('unit_info_window', unit)
+    end
+  end
+  return tab_data
+end
+
 function UnitInfoWindow:_construct_attachments_tab()
   local engine = self.engine
   local unit = self.unit
   if (#unit.data.attached > 0) then
-    local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
-    local tab_data = {
-      all       = {},
-      active    = {},
-      r_aligned = {},
-      icon      = {
-        hint    = engine:translate('ui.unit-info.tab.attachments.hint'),
-        current = 'available',
-        states  = engine.renderer.theme.tabs.attachments,
-      },
-      mouse_click = function() end,
-      mouse_move = "to be defined later",
-    }
-    local dx, dy = 0, 0
-    local lines = {}
-    local hilighted_line
-    -- actualize lines, i.e show possibly only one hilighted item
-    local fill_active = function(x, y)
-      hilighted_line = nil
-      tab_data.active = {}
-      tab_data.all    = {}
-      for idx, line in pairs(lines) do
-        local is_over = line.region:is_over(x, y)
-        if (is_over) then hilighted_line = idx end
-        local active = is_over and line.hilight or line.default
-        table.insert(tab_data.active, active)
-        table.insert(tab_data.active, line.flag)
-        table.insert(tab_data.all   , line.default)
-        table.insert(tab_data.all   , line.hilight)
-        table.insert(tab_data.all,    line.flag)
+    local iterator_factory = function()
+      local idx = 1
+      local iterator = function()
+        if (idx <= #unit.data.attached) then
+          local prev_idx = idx
+          idx = idx + 1
+          return prev_idx, unit.data.attached[prev_idx]
+        end
       end
+      return iterator, nil, true
     end
-
-    -- create all lines, i.e. unit label (default/hilight) + icon
-    for idx, attached_unit in ipairs(unit.data.attached) do
-      local name = self:_render_string(attached_unit.name, DEFAULT_COLOR)
-      local name_hilight = self:_render_string(attached_unit.name, HILIGHT_COLOR)
-      local unit_flag = attached_unit.definition.nation.unit_flag
-      local unit_flag_descr = {
-        dx = dx + name.w + 5,
-        dy = dy + math.modf(name.h/2 - unit_flag.h/2),
-        image = unit_flag,
-      }
-      local line_descr = {
-        default = { dx = dx, dy = dy, image = name },
-        hilight = { dx = dx, dy = dy, image = name_hilight },
-        region  = Region.create(dx, dy, unit_flag_descr.dx + unit_flag_descr.image.w, dy + name.h),
-        flag    = unit_flag_descr,
-      }
-      table.insert(lines, line_descr)
-      dy = dy + name.h + 5
-    end
-
-    -- fill with defaults
-    fill_active(-1, -1)
-    tab_data.mouse_move = fill_active
-    tab_data.mouse_click = function(x, y)
-      if (hilighted_line) then
-        local new_unit = unit.data.attached[hilighted_line]
-        engine.interface:add_window('unit_info_window', new_unit)
-      end
-    end
-    return tab_data
+    return self:_construct_units_tab('ui.unit-info.tab.attachments.hint', engine.renderer.theme.tabs.attachments, iterator_factory)
   end
 end
 
@@ -199,46 +216,29 @@ function UnitInfoWindow:_construct_management_tab()
   local unit = self.unit
   local k, manage_level = unit:is_capable('MANAGE_LEVEL')
   if (not manage_level) then
-    local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
-    local all = {}
-    local tab_data = {
-      all       = all,
-      active    = all,
-      r_aligned = {},
-      icon      = {
-        hint    = engine:translate('ui.unit-info.tab.management.hint'),
-        current = 'available',
-        states  = engine.renderer.theme.tabs.attachments,
-      },
-      mouse_click = function(event) end,
-      mouse_move = function(event) end,
-    }
-    -- create list of manager units, the top-level managers come last
-    local manager_units = {}
-    local manager_unit = unit
-    while (manager_unit.data.managed_by and (manager_unit.id ~= manager_unit.data.managed_by)) do
-      manager_unit = engine:get_unit(manager_unit.data.managed_by)
-      table.insert(manager_units, manager_unit)
-    end
-    -- table.remove(manager_units, #manager_unit)
 
-    local dx, dy = 0, 0
-    for idx, manager_unit in ipairs(manager_units) do
-      local definition_name = self:_render_string(manager_unit.name, DEFAULT_COLOR)
-      table.insert(tab_data.all, {
-        dx = dx,
-        dy = dy,
-        image = definition_name,
-      })
-      local unit_flag = manager_unit.definition.nation.unit_flag
-      table.insert(tab_data.all, {
-        dx = dx + definition_name.w + 5,
-        dy = dy + math.modf(definition_name.h/2 - unit_flag.h/2),
-        image = unit_flag,
-      })
-      dy = dy + definition_name.h + 5
+    local iterator_factory = function()
+      -- create list of manager units, the top-level managers come last
+      local manager_units = {}
+      local manager_unit = unit
+      while (manager_unit.data.managed_by and (manager_unit.id ~= manager_unit.data.managed_by)) do
+        manager_unit = engine:get_unit(manager_unit.data.managed_by)
+        table.insert(manager_units, manager_unit)
+      end
+      -- table.remove(manager_units, #manager_unit)
+      local idx = 1
+      local iterator = function()
+        if (idx <= #manager_units) then
+          local prev_idx = idx
+          idx = idx + 1
+          return prev_idx, manager_units[prev_idx]
+        end
+      end
+      return iterator, nil, true
     end
-    return tab_data
+    local hint = 'ui.unit-info.tab.management.hint'
+    local icon_states = engine.renderer.theme.tabs.attachments
+    return self:_construct_units_tab(hint, icon_states, iterator_factory)
   end
 end
 
