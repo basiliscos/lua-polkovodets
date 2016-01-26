@@ -42,6 +42,7 @@ function Interface.create(engine)
         game_panel = nil,
       },
       opened_windows = 0,
+      reference_corner = nil, -- only for top window
       window_order = {}, -- key: window, value order = z-index
     }
   }
@@ -81,13 +82,24 @@ function Interface:bind_ctx(context)
 
   local layout_fn = function(window, content_w, content_h)
     -- calculate window center
+    local order = assert(self.drawing.window_order[window])
     local x = math.modf(w/2 - content_w/2)
     local y = math.modf(h/2 - content_h/2)
-    local order = assert(self.drawing.window_order[window])
-    local total = assert(self.drawing.opened_windows)
-    local z_index = total - order
-    x = x - (20 * z_index)
-    y = y - (35 * z_index)
+    -- calculate top-level window, and put it always in the center
+    if (order == self.drawing.opened_windows and not(self.drawing.reference_corner)) then
+      self.drawing.reference_corner = {x, y}
+    else
+      -- non-top-level windows should be moved a bit top-left relative
+      -- to the corner of the top one
+      if (self.drawing.reference_corner) then
+          -- calculate them only if we already calculated top-level window position
+        local total = assert(self.drawing.opened_windows)
+        local z_index = total - order
+        x, y = table.unpack(self.drawing.reference_corner)
+        x = x - (25 * z_index)
+        y = y - (25 * z_index)
+      end
+    end
     return x, y
   end
 
@@ -163,6 +175,7 @@ function Interface:add_window(id, data)
   opened_windows = opened_windows + 1
   self.drawing.opened_windows = opened_windows
   self.drawing.window_order[window] = opened_windows
+  self.drawing.reference_corner = nil -- will be filled by layering_fn
 
   window:bind_ctx(self.context)
 
@@ -185,8 +198,9 @@ function Interface:remove_window(window, do_not_emit_update)
   opened_windows = opened_windows - 1
   self.drawing.opened_windows = opened_windows
   self.drawing.window_order[window] = nil
+  self.drawing.reference_corner = nil -- will be filled by layering_fn
 
-table.remove(self.drawing.objects, idx)
+  table.remove(self.drawing.objects, idx)
   if (not do_not_emit_update) then
     self.engine.mediator:publish({ "view.update" })
   end
