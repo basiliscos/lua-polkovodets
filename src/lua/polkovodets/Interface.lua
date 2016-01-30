@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -199,6 +199,18 @@ function Interface:remove_window(window, do_not_emit_update)
   self.drawing.opened_windows = opened_windows
   self.drawing.window_order[window] = nil
   self.drawing.reference_corner = nil -- will be filled by layering_fn
+
+  -- need to trigger windows re-layering
+  local prev_window
+  for window, order in pairs(self.drawing.window_order) do
+    if (order == opened_windows) then
+      prev_window = window
+    end
+  end
+  if (prev_window) then
+    prev_window:unbind_ctx(self.context)
+    prev_window:bind_ctx(self.context)
+  end
 
   table.remove(self.drawing.objects, idx)
   if (not do_not_emit_update) then
