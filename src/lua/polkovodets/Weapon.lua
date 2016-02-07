@@ -55,10 +55,10 @@ function Weapon.create(engine, data)
    end
 
    local class = assert(unit_lib.weapons.classes.hash[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
-   assert(unit_lib.weapons.types.hash[w_type])
-   local category = assert(unit_lib.weapons.categories.hash[w_category], "category " .. w_category .. " is not available")
-   assert(unit_lib.weapons.movement_types.hash[movement_type])
-   assert(unit_lib.weapons.target_types.hash[target_type])
+   assert(unit_lib.weapons.types.hash[w_type], 'no weapon type "' .. w_type .. '" for weapon ' .. id)
+   local category = assert(unit_lib.weapons.categories.hash[w_category], "category '" .. w_category .. "' is not available for weapon " .. id)
+   assert(unit_lib.weapons.movement_types.hash[movement_type], "movement type '" .. movement_type .. "' is not available for weapon " .. id)
+   assert(unit_lib.weapons.target_types.hash[target_type], "target type '" .. target_type .. "' is not available for weapon " .. id)
    assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
 
    for attack_type, v in pairs(unit_lib.weapons.target_types.hash) do
