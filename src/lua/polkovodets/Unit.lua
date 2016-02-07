@@ -387,12 +387,16 @@ function Unit:_marched_weapons()
    -- pass 1: determine transport capabilites
    for idx, weapon_instance in pairs(united_staff) do
       local transport_capability, value = weapon_instance:is_capable('TRANSPORTS_%w+')
-      if (value == 'TRUE') then
+      -- print("id" .. weapon_instance.id .. inspect(weapon_instance.weapon.flags))
+      -- intepret anything as true, in future it might be possible to define
+      -- weight/volume transport capabilities
+      if (value) then
          local transport_kind = string.lower(string.gsub(transport_capability, 'TRANSPORTS_', ''))
          local prev_value = transport_for[transport_kind] or 0
          transport_for[transport_kind] = prev_value + weapon_instance:quantity()
       end
    end
+   -- print("transport_for " .. inspect(transport_for))
 
    -- pass 2: put into transpots related weapons
    for idx, weapon_instance in pairs(united_staff) do
@@ -524,7 +528,7 @@ function Unit:move_to(dst_tile)
         end
         assert(min_tile)
         current_tile = min_tile
-        -- print("prev tile " .. min_tile.id)
+        -- print("current_tile " .. min_tile.id .. ", min cost: " .. min_cost)
         return (min_tile ~= src_tile) and min_tile or nil
       end
     end

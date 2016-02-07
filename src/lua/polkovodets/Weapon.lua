@@ -70,7 +70,6 @@ function Weapon.create(engine, data)
    local flags = {}
    for flag, value in pairs(category.flags) do flags[flag] = value end
    for flag, value in pairs(data.flags) do flags[flag] = value end
-   -- print(inspect(flags))
 
    local o = {
       id            = id,
