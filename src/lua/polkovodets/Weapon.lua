@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -40,9 +40,9 @@ function Weapon.create(engine, data)
     attacks[k] = tonumber(v)
    end
 
-   assert(data.defend)
+   assert(data.defence)
    local defends = {}
-   for k, v in pairs(data.defend) do
+   for k, v in pairs(data.defence) do
     defends[k] = tonumber(v)
    end
 
