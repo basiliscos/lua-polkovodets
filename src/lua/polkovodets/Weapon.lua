@@ -69,6 +69,7 @@ function Weapon.create(engine, data)
    -- gather all flags
    local flags = {}
    for flag, value in pairs(category.flags) do flags[flag] = value end
+   for flag, value in pairs(class.flags) do flags[flag] = value end
    for flag, value in pairs(data.flags) do flags[flag] = value end
 
    local o = {

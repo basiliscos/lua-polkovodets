@@ -25,6 +25,7 @@ function WeaponClass.create(engine, data)
   local id = assert(data.id)
   local order = assert(data.order)
   local icon_path = assert(data.icon)
+  local flags = assert(data.flags)
 
   local gfx_dir = engine:get_gfx_dir()
   local icon_path = gfx_dir .. '/' .. icon_path
@@ -37,6 +38,7 @@ function WeaponClass.create(engine, data)
     id    = id,
     order = order,
     icons = icon_for_style,
+    flags = flags,
   }
   return setmetatable(o, WeaponClass)
 end

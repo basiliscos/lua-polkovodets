@@ -243,13 +243,14 @@ end
 
 
 function Renderer:_draw_cursor()
-   local state, x, y = SDL.getMouseState()
-   local kind = self.engine.state.action
-   -- print("cursor kind " .. kind)
-   local cursor = self.theme:get_cursor(kind)
-   local cursor_size = self.theme.data.cursors.size
-   local dst = { w = cursor_size, h = cursor_size, x = x, y = y }
-   assert(self.sdl_renderer:copy(cursor.texture, nil, dst))
+  local state, x, y = SDL.getMouseState()
+  local kind = self.engine.state.action
+  assert(kind, "cursor kind has to be defined")
+  -- print("cursor kind " .. kind)
+  local cursor = self.theme:get_cursor(kind)
+  local cursor_size = self.theme.data.cursors.size
+  local dst = { w = cursor_size, h = cursor_size, x = x, y = y }
+  assert(self.sdl_renderer:copy(cursor.texture, nil, dst))
 end
 
 
