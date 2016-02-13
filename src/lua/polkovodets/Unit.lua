@@ -770,6 +770,7 @@ function Unit:update_actions_map()
       for idx, weapon_instance in pairs(united_staff) do
          if (weapon_instance.data.can_attack) then
             for layer, range in pairs(weapon_instance.weapon.data.range) do
+               --print(weapon_instance.id .. " " .. range)
                -- we use range +1 to avoid zero-based indices
                for r = 0, range do
                   local layer_capabilites = weapon_capabilites[layer] or {}
@@ -785,7 +786,8 @@ function Unit:update_actions_map()
          end
       end
       -- print("wc: " .. inspect(weapon_capabilites))
-      -- print("wc: " .. inspect(weapon_capabilites.surface[1]))
+      -- print("wc: " .. inspect(_.keys(weapon_capabilites.surface[1])))
+      -- print("wc: " .. inspect(_.map(weapon_capabilites.surface[1], function(idx, v) return v.id end)))
 
 
       local get_fire_kinds = function(weapon_instance, distance, enemy_unit)
@@ -898,7 +900,7 @@ function Unit:update_actions_map()
    self.data.actions_map = actions_map
    self.engine.mediator:publish({ "view.update" });
 
-   -- print(inspect(actions_map.move))
+   -- print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)
