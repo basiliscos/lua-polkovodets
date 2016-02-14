@@ -79,6 +79,17 @@ function UnitLib:load(unit_file)
    self.weapons.categories = load_hash(weapons_data, 'categories')
    self.weapons.types = load_hash(weapons_data, 'types')
 
+   -- validate movement types
+   local terrain_types = engine:get_map().terrain.terrain_types
+   for i, movement_type in pairs(self.weapons.movement_types.list) do
+    for j, terrain_type in pairs(terrain_types) do
+     local mt_id = movement_type.id
+     local tt_id = terrain_type.id
+      assert(terrain_type.move_cost[mt_id],
+        "no '" .. mt_id .. "' movement type costs defined on terrain type '" .. tt_id .. "'")
+    end
+   end
+
    -- make unit_lib available via engine
    engine.unit_lib = self
 
