@@ -170,7 +170,7 @@ function Converter:_convert_csv()
         local column = 1
         for value in string.gmatch(line, '[^;]*;?') do
            --  remove the last ;
-           if (column < #structure_at) then
+           if (string.sub(value, -1, #value) == ';') then
               value = string.sub(value, 1, -2)
            end
            if (column <= columns) then
