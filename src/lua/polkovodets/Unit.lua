@@ -409,6 +409,7 @@ function Unit:_marched_weapons()
       end
       if (not transported) then table.insert(list, weapon_instance) end
    end
+   -- print("marched weapons " .. inspect(_.map(list, function(idx, v) return v.id end)))
    return list
 end
 
@@ -440,11 +441,16 @@ function Unit:move_cost(tile)
    local costs = {} -- k: weapon id, v: movement cost
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
       local movement_type = weapon_instance.weapon.movement_type
+      -- print("cost for " .. movement_type)
       local value = cost_for[movement_type][weather]
       if (value == 'A') then value = weapon_instance.weapon.data.movement -- all movement points
       elseif (value == 'X') then value = math.maxinteger end              -- impassable
+
+      if (value == 0) then value = math.maxinteger end
+      -- assert(value > 0, "movement costs for weapon instance " .. weapon_instance.id .. " cannot be zero, when moving to tile " .. tile.id)
       costs[weapon_instance.id] = value
    end
+   -- print("move to " .. tile.id .. " costs: " .. inspect(costs))
    return Vector.create(costs)
 end
 
