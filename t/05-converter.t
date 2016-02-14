@@ -416,4 +416,37 @@ rus_11019;19-я пехотная дивизия;rus_1401;7;10;0;marching;5;;left
   })
 end)
 
+subtest("armys-parse-bug", function()
+   local csv_data = [[
+id;name;unit_definition_id;x;y;entr;state;exp;managed_by;orientation;attach;^staff;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;/^
+rus_61002;1-я смешанная самолётная дивизия;rus_7428;9;9;0;flying;5;;left;;;rus_811;41;rus_802;41;rus_878;41;rus_872;41;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+]]
+  local c = Converter.create(create_iterator(csv_data))
+  local data = c:convert()
+  print(inspect(data))
+  ok(data, "got converted data")
+  is(#data, 1, "1 row in data")
+  is_deeply(data, {
+    {
+      entr = "0",
+      exp = "5",
+      id = "rus_61002",
+      name = "1-я смешанная самолётная дивизия",
+      orientation = "left",
+      staff = {
+        rus_802 = "41",
+        rus_811 = "41",
+        rus_872 = "41",
+        rus_878 = "41"
+      },
+      state = "flying",
+      unit_definition_id = "rus_7428",
+      x = "9",
+      y = "9"
+    }
+  })
+end)
+
+
 done_testing()

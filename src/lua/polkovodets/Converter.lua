@@ -132,8 +132,7 @@ function Converter:_convert_csv()
       elseif ((cmd.command == 'zoom-out') or (cmd.command == 'hash.finish')) then
          table.remove(stack)
       elseif (cmd.command == 'sparse-hash.start') then
-         -- local value = stack[#stack][cmd.to] or {}
-         local value = {}
+         local value = stack[#stack][cmd.to] or {}
          stack[#stack][cmd.to] = value
          table.insert(stack, value)
          table.insert(stack, '_/EMPTY/_')
