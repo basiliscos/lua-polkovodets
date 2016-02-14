@@ -39,7 +39,10 @@ function Converter:_analyze_header()
    local column = 1
    local hashes_exist = false
    local has_hash = false
-   for h in string.gmatch(header, '[^;]+') do
+   local has_sparse_hash = false
+   for h in string.gmatch(header, '[^;]*;?') do
+      -- remove the last ;
+      if (string.sub(h, -1, #h) == ';') then  h = string.sub(h, 1, -2) end
       if (string.find(h, '<') == 1) then
          h = string.sub(h, 2)
          structure_at[column] = { command = 'zoom-in', to = h }
@@ -55,6 +58,12 @@ function Converter:_analyze_header()
       elseif (h == '/!') then
          structure_at[column] = { command = 'hash.finish' }
          has_hash = false
+      elseif (string.find(h, '^', 1, true) == 1) then
+         structure_at[column] = { command = 'sparse-hash.start', to = string.sub(h, 2) }
+         has_sparse_hash = true
+      elseif (h == '/^') then
+         structure_at[column] = { command = 'sparse-hash.finish' }
+         has_sparse_hash = false
       else
          if (has_hash) then
             assert(structure_at[column -1].command == 'hash.start' or structure_at[column -2].command == 'hash.start')
@@ -62,8 +71,12 @@ function Converter:_analyze_header()
                and 'put.key'
                or 'put.value'
             structure_at[column] = {command = cmd}
-         else
+         elseif (has_sparse_hash) then
+            structure_at[column] = {command = "sparse-hash.process"}
+         elseif (#h > 0) then
             structure_at[column] = {command = 'put', to = h}
+          else
+            structure_at[column] = { command = 'ignore'}
          end
       end
       column = column + 1
@@ -71,7 +84,7 @@ function Converter:_analyze_header()
    end
    self.columns = column - 1
    self.structure_at = structure_at
-   -- print(inspect(structure_at))
+   -- print("headers: " .. #structure_at .. " : " .. inspect(structure_at))
 end
 
 function Converter:_convert_csv()
@@ -82,10 +95,6 @@ function Converter:_convert_csv()
 
    local items = {}
    local stack = {}
-
-   -- local current_item
-   -- local last_hash
-   -- local last_key
 
    local push_out = function()
       if (#stack) then
@@ -122,7 +131,36 @@ function Converter:_convert_csv()
          table.insert(stack, value)
       elseif ((cmd.command == 'zoom-out') or (cmd.command == 'hash.finish')) then
          table.remove(stack)
+      elseif (cmd.command == 'sparse-hash.start') then
+         -- local value = stack[#stack][cmd.to] or {}
+         local value = {}
+         stack[#stack][cmd.to] = value
+         table.insert(stack, value)
+         table.insert(stack, '_/EMPTY/_')
+      elseif (cmd.command == 'sparse-hash.finish') then
+         local value = table.remove(stack)
+         assert(value == '_/EMPTY/_', "stack must contain empty marker after end of processing sparse hash")
+         -- remove hash itself
+         table.remove(stack)
+      elseif (cmd.command == 'sparse-hash.process') then
+         -- ignore empty values
+         if (#value > 0) then
+           local top = table.remove(stack)
+           if (top == '_/EMPTY/_') then
+             -- just put key on the stack
+             table.insert(stack, value)
+           else
+             -- pop key & hash, update hash with key = value, put hash back with empty marker
+             local key = top
+             local hash = table.remove(stack)
+             hash[key] = value
+             table.insert(stack, hash)
+             table.insert(stack, '_/EMPTY/_')
+             -- print (key .. " => " .. value)
+           end
+         end
       end
+
    end
 
 

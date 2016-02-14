@@ -77,7 +77,7 @@ name;nation;weap_type;weap_class;weap_category;target_type;movement;move_type;ra
                         },
                         def_air = "9",
                         def_ground = "11",
-                        icon_id = "weapon/rus/armory/RusTank01.png;",
+                        icon_id = "weapon/rus/armory/RusTank01.png",
                         move_type = "tracked",
                         movement = "5",
                         name = 'Маневренный бронеход "Витязь" обр.1930',
@@ -100,7 +100,7 @@ name;nation;weap_type;weap_class;weap_category;target_type;movement;move_type;ra
                         },
                         def_air = "7",
                         def_ground = "6",
-                        icon_id = "weapon/rus/infantry/RusInf01.png;",
+                        icon_id = "weapon/rus/infantry/RusInf01.png",
                         move_type = "leg",
                         movement = "3",
                         name = "Стрелковое отделение обр.1935",
@@ -353,5 +353,67 @@ wc_tractor;Тягачи;;TRANSPORTS_TOWED;TRUE;
            })
         end
 )
+
+subtest("armys-parse", function()
+   local csv_data = [[
+id;name;unit_definition_id;x;y;entr;state;exp;managed_by;orientation;attach;^staff;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;/^
+rus_11019;19-я пехотная дивизия;rus_1401;7;10;0;marching;5;;left;;;rus_6;1;rus_7;1;rus_8;3;rus_9;10;rus_10;7;rus_11;40;rus_15;42;rus_20;5;rus_19;26;rus_18;26;rus_25;324;rus_30;27;rus_43;108;rus_34;34;rus_36;12;rus_37;15;rus_38;1;rus_40;27;rus_45;6;rus_46;27;rus_622;81;rus_624;54;rus_631;18;rus_510;18;rus_558;6;rus_525;24;rus_553;24;rus_571;12;rus_656;18;;;rus_663;18;rus_679;18;rus_683;18;rus_685;18;rus_289;105;rus_276;96;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ]]
+  local c = Converter.create(create_iterator(csv_data))
+  local data = c:convert()
+  -- print(inspect(data[1]))
+  ok(data, "got converted data")
+  is(#data, 1, "1 row in data")
+  is_deeply(data, {
+    {
+      entr = "0",
+      exp = "5",
+      id = "rus_11019",
+      name = "19-я пехотная дивизия",
+      orientation = "left",
+      staff = {
+        rus_10 = "7",
+        rus_11 = "40",
+        rus_15 = "42",
+        rus_18 = "26",
+        rus_19 = "26",
+        rus_20 = "5",
+        rus_25 = "324",
+        rus_276 = "96",
+        rus_289 = "105",
+        rus_30 = "27",
+        rus_34 = "34",
+        rus_36 = "12",
+        rus_37 = "15",
+        rus_38 = "1",
+        rus_40 = "27",
+        rus_43 = "108",
+        rus_45 = "6",
+        rus_46 = "27",
+        rus_510 = "18",
+        rus_525 = "24",
+        rus_553 = "24",
+        rus_558 = "6",
+        rus_571 = "12",
+        rus_6 = "1",
+        rus_622 = "81",
+        rus_624 = "54",
+        rus_631 = "18",
+        rus_656 = "18",
+        rus_663 = "18",
+        rus_679 = "18",
+        rus_683 = "18",
+        rus_685 = "18",
+        rus_7 = "1",
+        rus_8 = "3",
+        rus_9 = "10"
+      },
+      state = "marching",
+      unit_definition_id = "rus_1401",
+      x = "7",
+      y = "10"
+    }
+  })
+end)
 
 done_testing()
