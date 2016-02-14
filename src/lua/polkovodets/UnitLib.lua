@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ function UnitLib:load(unit_file)
       local class = assert(data.unit_class)
       local staff = assert(data.staff)
 
-      assert(unit_classes.hash[class])
+      assert(unit_classes.hash[class], "no class '" .. class .. "' found for unit definition " .. id)
       assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
       for weapon_type, quantity in ipairs(staff) do
          assert(quantity)

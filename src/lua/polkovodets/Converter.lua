@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -128,26 +128,31 @@ function Converter:_convert_csv()
 
    local line = iterator()
    while (line) do
-      local column = 1
-      for value in string.gmatch(line, '[^;]*;?') do
-         --  remove the last ;
-         if (column < #structure_at) then
-            value = string.sub(value, 1, -2)
-         end
-         if (column <= columns) then
-            -- print("v: " .. column .. " " .. (value or 'nil'))
-            if (string.find(value, '#', nil, true)) then -- make a list of values
-              local array = {}
-              for v in string.gmatch(value, '([^#]+)#?') do
-                table.insert(array, v)
+      local success, msg = pcall(function()
+        local column = 1
+        for value in string.gmatch(line, '[^;]*;?') do
+           --  remove the last ;
+           if (column < #structure_at) then
+              value = string.sub(value, 1, -2)
+           end
+           if (column <= columns) then
+              -- print("v: " .. column .. " " .. (value or 'nil'))
+              if (string.find(value, '#', nil, true)) then -- make a list of values
+                local array = {}
+                for v in string.gmatch(value, '([^#]+)#?') do
+                  table.insert(array, v)
+                end
+                value = array
+              elseif (string.find(value, '\\')) then -- windows backslashes => unix slashes
+                 value = string.gsub(value, '\\', '/')
               end
-              value = array
-            elseif (string.find(value, '\\')) then -- windows backslashes => unix slashes
-               value = string.gsub(value, '\\', '/')
-            end
-            push_value(value, column)
-            column = column + 1
-         end
+              push_value(value, column)
+              column = column + 1
+           end
+        end
+      end)
+      if (not success) then
+        error("cannot convert line " .. line .. " : "  .. msg)
       end
       line = iterator()
    end

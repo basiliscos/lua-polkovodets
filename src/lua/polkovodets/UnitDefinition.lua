@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -45,12 +45,12 @@ function UnitDefinition.create(engine, data)
       state_icons[state] = texture
    end
    if (unit_type_id == 'ut_land') then
-      assert(state_icons.attacking, 'land unit must have "attacking" icon')
-      assert(state_icons.defending, 'land unit must have "defending" icon')
-      assert(state_icons.marching, 'land unit must have "marching" icon')
+      assert(state_icons.attacking, 'land unit definition ' .. data.id  .. ' must have "attacking" icon')
+      assert(state_icons.defending, 'land unit definition ' .. data.id  .. 'must have "defending" icon')
+      assert(state_icons.marching, 'land unit  definition ' .. data.id  .. 'must have "marching" icon')
    elseif (unit_type_id == 'ut_air') then
-      assert(state_icons.flying, 'air unit must have "flying" icon')
-      assert(state_icons.landed, 'air unit must have "landed" icon')
+      assert(state_icons.flying, 'air unit definition ' .. data.id  .. ' must have "flying" icon')
+      assert(state_icons.landed, 'air unit definition ' .. data.id  .. ' must have "landed" icon')
    end
 
    local nation = assert(engine.nation_for[data.nation])
