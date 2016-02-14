@@ -54,6 +54,9 @@ function UnitDefinition.create(engine, data)
    end
 
    local nation = assert(engine.nation_for[data.nation])
+   local staff_size = 0
+   for k, v in pairs(data.staff) do staff_size = staff_size + 1 end
+   assert(staff_size > 0, "unit definition " .. data.id .. " cannot be without weapons")
 
    local o = {
       engine      = engine,

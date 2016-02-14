@@ -48,6 +48,10 @@ function Unit.create(engine, data, player)
 
    local possible_efficiencies = {'high', 'avg', 'low'}
 
+   local staff_size = 0
+   for k, v in pairs(data.staff) do staff_size = staff_size + 1 end
+   assert(staff_size > 0, "unit " .. data.id .. " cannot be without weapons instances")
+
    local o = {
       id         = data.id,
       name       = data.name,
@@ -409,7 +413,9 @@ function Unit:_marched_weapons()
       end
       if (not transported) then table.insert(list, weapon_instance) end
    end
+   assert(#list, "ooops! nobody moves?")
    -- print("marched weapons " .. inspect(_.map(list, function(idx, v) return v.id end)))
+   -- print("marched weapons " .. #united_staff)
    return list
 end
 
@@ -906,7 +912,7 @@ function Unit:update_actions_map()
    self.data.actions_map = actions_map
    self.engine.mediator:publish({ "view.update" });
 
-   -- print(inspect(actions_map.attack))
+   -- print(inspect(actions_map.move))
 end
 
 function Unit:is_capable(flag_mask)
