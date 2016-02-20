@@ -964,7 +964,8 @@ function Unit:subordinate(subject)
       print("unit " .. subject.id .. " managed by " .. self.id)
    else -- subordinate command unit (manager)
       subject_manage_level = tonumber(subject_manage_level)
-      assert(subject_manage_level > manage_level)
+      assert(subject_manage_level > manage_level, "unit " .. subject.id .. " (level " .. subject_manage_level .. ") "
+        .. "cannot be subordinated to unit " .. self.id .. " (level " .. manage_level .. ")")
 
       local k, managed_managers_level_limit = self:is_capable('MANAGED_MANAGERS_LEVEL_LIMIT')
 
@@ -981,8 +982,8 @@ function Unit:subordinate(subject)
             end
          end
          assert(total_subjects < managed_managers_level_limit,
-                "not able to subordinate " .. subject.id .. ": already have " .. total_subjects
-                   .. " manager units of level " .. subject_manage_level
+                "not able to subordinate '" .. subject.id .. "' to '" .. self.id ..  "', which already has "
+                  .. total_subjects .. " manager units of level " .. subject_manage_level
          )
       end
 
