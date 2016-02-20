@@ -189,7 +189,7 @@ function Converter:_convert_csv()
         end
       end)
       if (not success) then
-        error("cannot convert line " .. line .. " : "  .. msg)
+        error("cannot convert line " .. line .. " : "  .. msg .. ", stack: " .. inspect(stack))
       end
       line = iterator()
    end

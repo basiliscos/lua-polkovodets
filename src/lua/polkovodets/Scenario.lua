@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ function Scenario:load(file)
 	  local x = tonumber(obj_data.x) + 1
 	  local y = tonumber(obj_data.y) + 1
       table.insert(objectives, obj_data)
-	  local tile = map.tiles[x][y]
+	  local tile = assert(map.tiles[x][y], " tile " .. x  .. ":" .. y .. " does not exist")
 	  tile.data.nation = nation
 	  tile.data.objective = objective
    end
