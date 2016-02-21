@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ local SDL	= require "SDL"
 local image = require "SDL.image"
 local inspect = require('inspect')
 local ttf = require "SDL.ttf"
+local OrderedSet = require "OrderedSet"
 
 local Image = require 'polkovodets.utils.Image'
 local Interface = require 'polkovodets.Interface'
@@ -45,9 +46,9 @@ function Renderer.create(engine, window, sdl_renderer)
     resources      = {},
     fonts          = {},
     handlers       = {
-      mouse_click = {},
-      mouse_move  = {},
-      idle        = {},
+      mouse_click = OrderedSet.new(),
+      mouse_move  = OrderedSet.new(),
+      idle        = OrderedSet.new(),
     },
   }
   -- hide system mouse pointer
@@ -100,21 +101,14 @@ end
 function Renderer:add_handler(event_type, cb)
   assert(cb)
   local handlers = assert(self.handlers[event_type], "handlers for " .. event_type .. " is n/a")
-  table.insert(handlers, cb)
+  handlers:insert(cb)
   -- print(string.format("added handler for %s: %s ", event_type, cb))
 end
 
 function Renderer:remove_handler(event_type, cb)
   assert(cb, "cannot non-defined callback for " .. event_type)
   local handlers = assert(self.handlers[event_type], "event " .. event_type .. " cannot be handled")
-  local found_idx
-  for idx, handler in ipairs(handlers) do
-    if (handler == cb) then
-      found_idx = idx
-    end
-  end
-  assert(found_idx, string.format('handler for %s not found, cannot remove %s', event_type, cb))
-  table.remove(handlers, found_idx)
+  handlers:remove(cb)
   -- print(string.format("removed handler for %s: %s ", event_type, cb))
 end
 
@@ -288,8 +282,8 @@ function Renderer:main_loop()
         x       = x,
         y       = y,
       }
-      for idx = #self.handlers.mouse_move, 1, -1 do
-        local handler = self.handlers.mouse_move[idx]
+      -- process handlers in stack (FILO) order
+      for idx, handler in self.handlers.mouse_move:pairs(true) do
         local stop_propagation = handler(event)
         if (stop_propagation) then break end
       end
@@ -306,8 +300,7 @@ function Renderer:main_loop()
         button  = button,
       }
       -- process handlerss in stack (FILO) order
-      for idx = #self.handlers.mouse_click, 1, -1 do
-        local handler = self.handlers.mouse_click[idx]
+      for idx, handler in self.handlers.mouse_click:pairs(true) do
         local stop_propagation = handler(event)
         if (stop_propagation) then break end
       end
@@ -317,8 +310,8 @@ function Renderer:main_loop()
         x       = x,
         y       = y,
       }
-      for idx = #self.handlers.idle, 1, -1 do
-        local handler = self.handlers.idle[idx]
+      -- process handlers in stack (FILO) order
+      for idx, handler in self.handlers.idle:pairs(true) do
         local stop_propagation = handler(event)
         if (stop_propagation) then break end
       end
