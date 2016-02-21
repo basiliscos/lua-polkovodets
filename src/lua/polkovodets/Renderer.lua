@@ -196,10 +196,6 @@ function Renderer:prepare_drawers()
     theme         = self.theme,
     renderer      = self,
     state         = engine.state,
-    mouse         = {
-      x = 0,
-      y = 0,
-    },
     events_source = {
       add_handler    = function(event_type, cb) return self:add_handler(event_type, cb) end,
       remove_handler = function(event_type, cb) return self:remove_handler(event_type, cb) end,
@@ -211,19 +207,17 @@ function Renderer:prepare_drawers()
     engine.map,
     interface,
   }
-  print("d = " .. #drawers)
 
   -- view update handler
   engine.mediator:subscribe({ "view.update" }, function()
 
-  print("view.update")
+    print("view.update")
     _.each(drawers, function(k, v) v:unbind_ctx(context) end)
 
     local mouse_state, x, y = SDL.getMouseState()
-    context.mouse = {
-      x = x,
-      y = y,
-    }
+    local mouse = context.state.mouse
+    mouse.x = x
+    mouse.y = y
 
     _.each(drawers, function(k, v) v:bind_ctx(context) end)
   end)

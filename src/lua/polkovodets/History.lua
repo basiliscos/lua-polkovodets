@@ -152,7 +152,7 @@ function _Record:bind_ctx(context)
       return updated
     end
 
-    update_participants(context.mouse.x, context.mouse.y, context.state.active_tile.id)
+    update_participants(context.state.mouse.x, context.state.mouse.y, context.state.active_tile.id)
 
     local icon = over_icon and context.theme.history.battle_hilight or context.theme.history.battle
 

@@ -64,6 +64,10 @@ function Engine.create(language)
       actual_records = {},
       popups         = {},
       mouse_hint     = nil,
+      mouse          = {
+        x = 0,
+        y = 0,
+      },
     },
   }
   setmetatable(e,Engine)

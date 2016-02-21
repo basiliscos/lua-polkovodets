@@ -158,7 +158,7 @@ function Unit:bind_ctx(context)
     do_hilight_unit_flag =  unit_flag_region:is_over(x, y)
     return do_hilight_unit_flag
   end
-  update_unit_flag(context.mouse.x, context.mouse.y)
+  update_unit_flag(context.state.mouse.x, context.state.mouse.y)
 
   -- unit state
   local size = self.definition.data.size
@@ -338,7 +338,7 @@ function Unit:bind_ctx(context)
     return update_action(event.tile_id, event.x, event.y)
   end
 
-  update_action(context.state.active_tile.id, context.mouse.x, context.mouse.y)
+  update_action(context.state.active_tile.id, context.state.mouse.x, context.state.mouse.y)
 
   context.events_source.add_handler('mouse_click', mouse_click)
   context.events_source.add_handler('mouse_move', mouse_move)
@@ -961,7 +961,7 @@ function Unit:subordinate(subject)
       end
       -- all OK, can subordinate
       table.insert(self.data.subordinated, subject)
-      print("unit " .. subject.id .. " managed by " .. self.id)
+      -- print("unit " .. subject.id .. " managed by " .. self.id)
    else -- subordinate command unit (manager)
       subject_manage_level = tonumber(subject_manage_level)
       assert(subject_manage_level > manage_level, "unit " .. subject.id .. " (level " .. subject_manage_level .. ") "
@@ -989,7 +989,7 @@ function Unit:subordinate(subject)
 
       -- all, OK, can subordinate
       table.insert(self.data.subordinated, subject)
-      print("manager unit " .. subject.id .. " managed by " .. self.id)
+      -- print("manager unit " .. subject.id .. " managed by " .. self.id)
    end
 end
 
