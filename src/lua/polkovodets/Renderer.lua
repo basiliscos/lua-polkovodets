@@ -24,9 +24,9 @@ local SDL	= require "SDL"
 local image = require "SDL.image"
 local inspect = require('inspect')
 local ttf = require "SDL.ttf"
-local OrderedSet = require "OrderedSet"
 
 local Image = require 'polkovodets.utils.Image'
+local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 local Interface = require 'polkovodets.Interface'
 local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
@@ -46,9 +46,9 @@ function Renderer.create(engine, window, sdl_renderer)
     resources      = {},
     fonts          = {},
     handlers       = {
-      mouse_click = OrderedSet.new(),
-      mouse_move  = OrderedSet.new(),
-      idle        = OrderedSet.new(),
+      mouse_click = OrderedHandlers.new(),
+      mouse_move  = OrderedHandlers.new(),
+      idle        = OrderedHandlers.new(),
     },
   }
   -- hide system mouse pointer
@@ -283,10 +283,7 @@ function Renderer:main_loop()
         y       = y,
       }
       -- process handlers in stack (FILO) order
-      for idx, handler in self.handlers.mouse_move:pairs(true) do
-        local stop_propagation = handler(event)
-        if (stop_propagation) then break end
-      end
+      self.handlers.mouse_move:apply(function(cb) return cb(event) end)
     elseif (t == SDL.event.MouseButtonUp) then
       local state, x, y = SDL.getMouseState()
       local button = (e.button == SDL.mouseButton.Left)
@@ -300,10 +297,7 @@ function Renderer:main_loop()
         button  = button,
       }
       -- process handlerss in stack (FILO) order
-      for idx, handler in self.handlers.mouse_click:pairs(true) do
-        local stop_propagation = handler(event)
-        if (stop_propagation) then break end
-      end
+      self.handlers.mouse_click:apply(function(cb) return cb(event) end)
     else
       local state, x, y = SDL.getMouseState()
       local event = {
@@ -311,10 +305,7 @@ function Renderer:main_loop()
         y       = y,
       }
       -- process handlers in stack (FILO) order
-      for idx, handler in self.handlers.idle:pairs(true) do
-        local stop_propagation = handler(event)
-        if (stop_propagation) then break end
-      end
+      self.handlers.idle:apply(function(cb) return cb(event) end)
     end
     sdl_renderer:clear()
     self:_draw_world()

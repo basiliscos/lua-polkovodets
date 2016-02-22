@@ -24,6 +24,7 @@ local Parser = require 'polkovodets.Parser'
 local Terrain = require 'polkovodets.Terrain'
 local Tile = require 'polkovodets.Tile'
 local inspect = require('inspect')
+local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 
 
 local SCROLL_TOLERANCE = 5
@@ -37,7 +38,7 @@ function Map.create(engine)
       mouse_move  = nil,
       idle        = nil,
       objects     = {},
-      -- k: original fn, value: proxied (map) fn
+      -- k: tile_id, value: ordered set of callbacks
       proxy       = {
         mouse_move  = {},
         mouse_click = {},
@@ -109,21 +110,30 @@ function Map:load(map_file)
   }
 end
 
-function Map:_get_remove_hanlder(context)
-  return function(event_type, cb)
-      if (event_type == 'mouse_move') then
-        local proxy = assert(self.drawing.proxy[event_type][cb])
-        self.drawing.proxy[event_type][cb] = nil
-        return context.events_source.remove_handler(event_type, proxy)
-      elseif (event_type == 'mouse_click') then
-        local proxy = assert(self.drawing.proxy[event_type][cb])
-        self.drawing.proxy[event_type][cb] = nil
-        return context.events_source.remove_handler(event_type, proxy)
-      else
-        return context.events_source.remove_handler(event_type, cb)
-      end
-    end
+function Map:_get_event_source()
+  return {
+    add_handler    = function(event_type, tile_id, cb) return self:_add_hanlder(event_type, tile_id, cb) end,
+    remove_handler = function(event_type, tile_id, cb) return self:_remove_hanlder(event_type, tile_id, cb) end,
+  }
 end
+
+
+function Map:_add_hanlder(event_type, tile_id, cb)
+  assert(event_type and tile_id and cb)
+  local tile_to_set = assert(self.drawing.proxy[event_type])
+  local set = tile_to_set[tile_id] or OrderedHandlers.new()
+  set:insert(cb)
+  tile_to_set[tile_id] = set
+end
+
+
+function Map:_remove_hanlder(event_type, tile_id, cb)
+  assert(event_type and tile_id and cb)
+  local tile_to_set = assert(self.drawing.proxy[event_type])
+  local set = assert(tile_to_set[tile_id])
+  set:remove(cb)
+end
+
 
 function Map:bind_ctx(context)
   local engine = self.engine
@@ -167,30 +177,7 @@ function Map:bind_ctx(context)
     }
   }
   map_context.active_layer = engine.active_layer
-
-  -- proxy mouse click and mouse move callbacks, to provide actual
-  -- tile context
-  local create_proxy = function(event_type, cb)
-    local proxy = function(event)
-      local proxied_ctx = _.clone(event, true)
-      proxied_ctx.tile_id = context.state.active_tile.id
-      return cb(proxied_ctx)
-    end
-    self.drawing.proxy[event_type][cb] = proxy
-    return context.events_source.add_handler(event_type, proxy)
-  end
-  map_context.events_source = {
-    add_handler = function(event_type, cb)
-      if (event_type == 'mouse_move') then
-        return create_proxy(event_type, cb)
-      elseif (event_type == 'mouse_click') then
-        return create_proxy(event_type, cb)
-      else
-        context.events_source.add_handler(event_type, cb)
-      end
-    end,
-    remove_handler = self:_get_remove_hanlder(context),
-  }
+  map_context.events_source = self:_get_event_source()
 
   local u = context.state.selected_unit
 
@@ -277,14 +264,16 @@ function Map:bind_ctx(context)
 
   local mouse_move = function(event)
     local new_tile = self.engine:pointer_to_tile(event.x, event.y)
+    local tile_new = self.tiles[new_tile[1]][new_tile[2]]
     local old_tile = context.state.active_tile
     if (new_tile and ((old_tile.data.x ~= new_tile[1]) or (old_tile.data.y ~= new_tile[2])) ) then
       local tile_old = engine.state.active_tile
-      local tile_new = self.tiles[new_tile[1]][new_tile[2]]
+      event.tile_id = tile_new.id
       engine.state.active_tile = tile_new
       -- print("refreshing " .. tile_old.id .. " => " .. tile_new.id)
 
-      local refresh = function(list)
+      local refresh = function(tile)
+        local list = drawers_per_tile[tile.id]
         if (list) then
           for idx, drawer in pairs(list) do
             drawer:unbind_ctx(map_context)
@@ -292,16 +281,34 @@ function Map:bind_ctx(context)
           end
         end
       end
-      refresh(drawers_per_tile[tile_old.id])
-      refresh(drawers_per_tile[tile_new.id])
-      -- need to be sure, that map handlers are added on the top of other
-      -- handlers to be sure, that they are handled first
-      context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
-      context.events_source.add_handler('mouse_move', self.drawing.mouse_move)
+      refresh(tile_old)
+      refresh(tile_new)
+
+      -- apply handlers for old tile
+      local ordered_handlers = self.drawing.proxy.mouse_move[tile_old.id]
+      if (ordered_handlers) then
+        ordered_handlers:apply(function(cb) return cb(event) end)
+      end
+
       --engine.mediator:publish({ "view.update" })
+    end
+
+    -- apply hanlders for the new/current tile
+    local ordered_handlers = self.drawing.proxy.mouse_move[tile_new.id]
+    if (ordered_handlers) then
+      ordered_handlers:apply(function(cb) return cb(event) end)
     end
   end
 
+  local mouse_click = function(event)
+    local tile_coord = self.engine:pointer_to_tile(event.x, event.y)
+    local tile = self.tiles[tile_coord[1]][tile_coord[2]]
+    event.tile_id = tile.id
+    local ordered_handlers = self.drawing.proxy.mouse_click[tile.id]
+    if (ordered_handlers) then
+      ordered_handlers:apply(function(cb) return cb(event) end)
+    end
+  end
 
   local map_w, map_h = engine.map.width, engine.map.height
   local map_sw, map_sh = engine.gui.map_sw, engine.gui.map_sh
@@ -336,6 +343,7 @@ function Map:bind_ctx(context)
   _.each(drawers, function(k, v) v:bind_ctx(map_context) end)
 
   context.events_source.add_handler('mouse_move', mouse_move)
+  context.events_source.add_handler('mouse_click', mouse_click)
   context.events_source.add_handler('idle', idle)
 
   self.drawing.objects = drawers
@@ -346,12 +354,11 @@ end
 
 function Map:unbind_ctx(context)
   local map_ctx = _.clone(context, true)
-  map_ctx.events_source = {
-    remove_handler = self:_get_remove_hanlder(context)
-  }
+  map_ctx.events_source = self:_get_event_source()
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_ctx) end)
 
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
+  context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
 
   self.drawing.fn = nil
   self.drawing.idle = nil
