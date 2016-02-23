@@ -209,9 +209,7 @@ function Renderer:prepare_drawers()
     _.each(drawers, function(k, v) v:unbind_ctx(context) end)
 
     local mouse_state, x, y = SDL.getMouseState()
-    local mouse = context.state.mouse
-    mouse.x = x
-    mouse.y = y
+    context.state:set_mouse(x, y)
 
     _.each(drawers, function(k, v) v:bind_ctx(context) end)
   end)
@@ -232,7 +230,7 @@ end
 
 function Renderer:_draw_cursor()
   local state, x, y = SDL.getMouseState()
-  local kind = self.engine.state.action
+  local kind = self.engine.state:get_action()
   assert(kind, "cursor kind has to be defined")
   -- print("cursor kind " .. kind)
   local cursor = self.theme:get_cursor(kind)

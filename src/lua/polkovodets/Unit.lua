@@ -159,7 +159,8 @@ function Unit:bind_ctx(context)
     do_hilight_unit_flag =  unit_flag_region:is_over(x, y)
     return do_hilight_unit_flag
   end
-  update_unit_flag(context.state.mouse.x, context.state.mouse.y)
+  local mouse = context.state:get_mouse()
+  update_unit_flag(mouse.x, mouse.y)
 
   -- unit state
   local size = self.definition.data.size
@@ -176,7 +177,8 @@ function Unit:bind_ctx(context)
   end
 
   local u = context.state.selected_unit
-  if (u and context.state.active_tile.id == self.tile.id) then
+  local active_tile = context.state:get_active_tile()
+  if (u and active_tile.id == self.tile.id) then
     local actions_map = u.data.actions_map
     if (actions_map and actions_map.attack[self.tile.id]) then
       attack_kinds = u:get_attack_kinds(self.tile)
@@ -258,12 +260,12 @@ function Unit:bind_ctx(context)
         return true
       end
       -- may be we click on other unit to select it
-      if (context.state.action == 'default') then
+      local action = context.state:get_action()
+      if (action == 'default') then
         if (is_over_change_attack_icon(event.x, event.y)) then
           attack_kind_idx = attack_kind_idx + 1
           if (attack_kind_idx > #attack_kinds) then attack_kind_idx = 1 end
-          local action = attack_kinds[attack_kind_idx]
-          self.engine.state.action = action
+          self.engine.state.set_action(attack_kinds[attack_kind_idx])
           return true
         elseif (self.engine.current_player == self.player) then
           context.state.selected_unit = self
@@ -274,7 +276,6 @@ function Unit:bind_ctx(context)
           return true
         end
       else
-        local action = context.state.action
         local actor = assert(context.state.selected_unit, "no selected unit for action " .. action)
         local method_for = {
           merge              = 'merge_at',
@@ -309,7 +310,6 @@ function Unit:bind_ctx(context)
           return false
         end
       end
-      self.engine.state.action = action
 
       -- update attack kind possibility
       if (change_attack) then
@@ -326,9 +326,8 @@ function Unit:bind_ctx(context)
         hint   = self.engine:translate('map.unit_info')
       end
 
-      self.engine.state.action = action
-      self.engine.state.mouse_hint = hint
-      self.engine.reactor:publish("mouse-hint.change")
+      self.engine.state:set_action(action)
+      self.engine.state:set_mouse_hint(hint)
       -- print("move mouse over " .. tile_id .. ", action: "  .. action)
       return true
     else
@@ -341,7 +340,8 @@ function Unit:bind_ctx(context)
     return update_action(event.tile_id, event.x, event.y)
   end
 
-  update_action(context.state.active_tile.id, context.state.mouse.x, context.state.mouse.y)
+  local active_tile = context.state:get_active_tile()
+  update_action(active_tile.id, mouse.x, mouse.y)
 
   self.drawing.bind_tile = self.tile
   context.events_source.add_handler('mouse_click', self.drawing.bind_tile.id, mouse_click)

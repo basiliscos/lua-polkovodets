@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ function UnitPanel.create(engine)
           subordinated:update_actions_map()
           engine.state.selected_unit = subordinated
         else
-          engine.state.popups.detach_panel = true
+          engine.state:activate_panel('detach_panel', true)
         end
         engine.reactor:publish("view.update")
       end

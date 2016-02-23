@@ -101,7 +101,7 @@ function Map:load(map_file)
   self.tile_for = tile_for
   -- print(inspect(tiles[1][1]))
 
-  engine.state.active_tile = self.tiles[1][1]
+  engine.state:set_active_tile(self.tiles[1][1])
   self.tile_geometry = {
     w        = terrain.hex_width,
     h        = terrain.hex_height,
@@ -266,11 +266,10 @@ function Map:bind_ctx(context)
     local new_tile = self.engine:pointer_to_tile(event.x, event.y)
     if (not new_tile) then return end
     local tile_new = self.tiles[new_tile[1]][new_tile[2]]
-    local old_tile = context.state.active_tile
-    if (new_tile and ((old_tile.data.x ~= new_tile[1]) or (old_tile.data.y ~= new_tile[2])) ) then
-      local tile_old = engine.state.active_tile
+    local tile_old = context.state:get_active_tile()
+    if (new_tile and ((tile_old.data.x ~= new_tile[1]) or (tile_old.data.y ~= new_tile[2])) ) then
       event.tile_id = tile_new.id
-      engine.state.active_tile = tile_new
+      engine.state:set_active_tile(tile_new)
       -- print("refreshing " .. tile_old.id .. " => " .. tile_new.id)
 
       local refresh = function(tile)
@@ -290,8 +289,6 @@ function Map:bind_ctx(context)
       if (ordered_handlers) then
         ordered_handlers:apply(function(cb) return cb(event) end)
       end
-
-      engine.reactor:publish('map.active_tile.change')
     end
 
     -- apply hanlders for the new/current tile

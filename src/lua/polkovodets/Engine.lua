@@ -26,6 +26,7 @@ local i18n = require 'i18n'
 local Tile = require 'polkovodets.Tile'
 local History = require 'polkovodets.History'
 local Reactor = require 'polkovodets.utils.Reactor'
+local State = require 'polkovodets.State'
 
 
 function Engine.create(language)
@@ -35,6 +36,12 @@ function Engine.create(language)
   i18n.load(messages)
   i18n.setLocale(lang)
 
+  local reactor = Reactor.create({
+    'model.update', 'mouse-hint.change', 'map.active_tile.change',
+    'action.change',
+    'view.update',
+  })
+
   local e = {
     turn               = 0,
     messages           = messages,
@@ -43,7 +50,7 @@ function Engine.create(language)
     history_layer      = false,
     total_players      = 0,
     active_layer       = 'surface',
-    reactor            = Reactor.create({'model.update', 'mouse-hint.change', 'map.active_tile.change', 'view.update'}),
+    reactor            = reactor,
     gui = {
       map_x = 0,
       map_y = 0,
@@ -57,18 +64,14 @@ function Engine.create(language)
     options = {
       show_grid = true,
     },
+    state          = State.create(reactor)
+    --[[
     state          = {
       landscape_only = false,
-      active_tile    = nil,
       action         = 'default',
       actual_records = {},
-      popups         = {},
-      mouse_hint     = nil,
-      mouse          = {
-        x = 0,
-        y = 0,
-      },
     },
+    ]]
   }
   setmetatable(e,Engine)
   e.history = History.create(e)

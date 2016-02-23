@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,7 +43,8 @@ function DetachPanel.create(engine, button_anchor_id)
     table.insert(o.button_list, button)
     local idx = #o.button_list
     table.insert(o.callbacks, function()
-      engine.state.popups.detach_panel = false
+
+      engine.state:activate_panel('detach_panel', false)
       local u = assert(engine.state.selected_unit)
       local subordinated = u.data.attached[idx]
       subordinated:update_actions_map()
@@ -61,7 +62,8 @@ end
 
 function DetachPanel:bind_ctx(context)
   local engine = self.engine
-  if (engine.state.popups.detach_panel) then
+  local active_panels = engine.state:get_active_panels()
+  if (active_panels.detach_panel) then
     self.ctx_bound = true
     local theme = assert(context.theme)
     local u = engine.state.selected_unit
@@ -95,7 +97,8 @@ function DetachPanel:bind_ctx(context)
     -- mouse click has been handled by button, that means, user clicked
     -- outsied of buttos, and the "popup" (detach panel) should be closed
     local mouse_click = function(event)
-      engine.state.popups.detach_panel = false
+
+      engine.state:activate_panel('detach_panel', false)
       return false -- allow further event propagation
     end
     context.events_source.add_handler('mouse_click', mouse_click)
@@ -108,7 +111,8 @@ function DetachPanel:bind_ctx(context)
 end
 
 function DetachPanel:unbind_ctx(context)
-  if (self.ctx_bound and self.engine.state.popups.detach_panel) then
+  local active_panels = self.engine.state:get_active_panels()
+  if (self.ctx_bound and active_panels.detach_panel) then
     self.ctx_bound = false
     _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
     HorizontalPanel.unbind_ctx(self, context)
@@ -119,7 +123,8 @@ function DetachPanel:unbind_ctx(context)
 end
 
 function DetachPanel:draw()
-  if (self.engine.state.popups.detach_panel) then
+  local active_panels = self.engine.state:get_active_panels()
+  if (active_panels.detach_panel) then
     -- drawing order generally does not matter
     HorizontalPanel.draw(self)
     _.each(self.drawing.objects, function(k, v) v:draw() end)
