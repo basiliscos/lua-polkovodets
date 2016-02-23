@@ -79,7 +79,7 @@ function Reactor:replay_masked_events()
   end
 
   if (queue) then
-    print("channel " .. channel .. "  has " .. #queue .. " events")
+    -- print("channel " .. channel .. "  has " .. #queue .. " events")
     local unique_queue = {}
     local zero_args = false
     while (#queue > 0) do
