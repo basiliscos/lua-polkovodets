@@ -264,6 +264,7 @@ function Map:bind_ctx(context)
 
   local mouse_move = function(event)
     local new_tile = self.engine:pointer_to_tile(event.x, event.y)
+    if (not new_tile) then return end
     local tile_new = self.tiles[new_tile[1]][new_tile[2]]
     local old_tile = context.state.active_tile
     if (new_tile and ((old_tile.data.x ~= new_tile[1]) or (old_tile.data.y ~= new_tile[2])) ) then
