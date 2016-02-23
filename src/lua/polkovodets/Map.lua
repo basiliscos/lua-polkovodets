@@ -347,6 +347,7 @@ function Map:bind_ctx(context)
   self.drawing.objects = drawers
   self.drawing.mouse_click = mouse_click
   self.drawing.mouse_move = mouse_move
+  self.drawing.idle = idle
   self.drawing.fn = draw_fn
 end
 
@@ -357,6 +358,7 @@ function Map:unbind_ctx(context)
 
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
   context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
+  context.events_source.remove_handler('idle', self.drawing.idle)
 
   self.drawing.fn = nil
   self.drawing.idle = nil
