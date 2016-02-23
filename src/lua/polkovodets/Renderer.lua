@@ -252,6 +252,7 @@ end
 
 function Renderer:main_loop()
   local engine = self.engine
+  engine.reactor:mask_events(true)
   local running = true
   local sdl_renderer = self.sdl_renderer
   local kind = SDL.eventWindow
@@ -307,6 +308,7 @@ function Renderer:main_loop()
       -- process handlers in stack (FILO) order
       self.handlers.idle:apply(function(cb) return cb(event) end)
     end
+    engine.reactor:replay_masked_events()
     sdl_renderer:clear()
     self:_draw_world()
     sdl_renderer:present()

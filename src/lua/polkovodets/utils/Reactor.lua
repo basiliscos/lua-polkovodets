@@ -24,13 +24,17 @@ Reactor.__index = Reactor
 function Reactor.create(channels)
   assert(#channels > 0)
   local subscribers = {}
+  local postponed   = {}
   for idx, channel in pairs(channels) do
     subscribers[channel] = OrderedSet.new()
+    postponed[channel] = {}
   end
 
   local o = {
+    masked      = false,
     channels    = channels,
     subscribers = subscribers,
+    postponed   = postponed,
   }
   return setmetatable(o, Reactor)
 end
@@ -47,8 +51,57 @@ end
 
 function Reactor:publish(channel, ...)
   local existing_subscribers = assert(self.subscribers[channel], 'no ' .. channel .. " exists")
-  for idx, cb in existing_subscribers:pairs() do
-    cb(channel, ...)
+  if (not self.masked) then
+    for idx, cb in existing_subscribers:pairs() do
+      cb(channel, ...)
+    end
+  else
+    local args = { ... }
+    local queue = self.postponed[channel]
+    table.insert(queue, args)
+  end
+end
+
+function Reactor:mask_events(value)
+  self.masked = value
+end
+
+function Reactor:replay_masked_events()
+  -- find non-empty queue with events
+::FIND_EVENS::
+  local queue, channel = nil, nil
+  for idx, c in pairs(self.channels) do
+    local q = self.postponed[c]
+    if (#q > 0) then
+      queue, channel = q, c
+      break
+    end
+  end
+
+  if (queue) then
+    print("channel " .. channel .. "  has " .. #queue .. " events")
+    local unique_queue = {}
+    local zero_args = false
+    while (#queue > 0) do
+      local args = table.remove(queue, 1)
+      if (#args == 0) then
+        if (not zero_args) then
+          table.insert(unique_queue, args)
+          zero_args = true
+        end
+      else
+        table.insert(unique_queue, args)
+      end
+    end
+
+    -- actual replay
+    local existing_subscribers = assert(self.subscribers[channel])
+    for i, args in pairs(unique_queue) do
+      for idx, cb in existing_subscribers:pairs() do
+        cb(channel, table.unpack(args))
+      end
+    end
+    goto FIND_EVENS
   end
 end
 
