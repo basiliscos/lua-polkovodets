@@ -203,7 +203,7 @@ function Renderer:prepare_drawers()
   }
 
   -- view update handler
-  engine.mediator:subscribe({ "view.update" }, function()
+  engine.reactor:subscribe("view.update", function()
 
     print("view.update")
     _.each(drawers, function(k, v) v:unbind_ctx(context) end)
@@ -226,7 +226,7 @@ function Renderer:prepare_drawers()
   _.each(drawers, function(k, v) v:bind_ctx(context) end)
 
   -- fire event to prepare all drawers
-  engine.mediator:publish({ "model.update" })
+  engine.reactor:publish("model.update")
 end
 
 

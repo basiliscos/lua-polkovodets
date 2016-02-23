@@ -61,7 +61,7 @@ function Button:bind_ctx(context)
       context.state.mouse_hint = self.hint
       if (context.state.action ~= 'default') then
         context.state.action = 'default'
-        self.engine.mediator:publish({ "view.update" })
+        self.engine.reactor:publish("view.update")
       end
       return true
     end

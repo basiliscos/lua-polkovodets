@@ -269,7 +269,7 @@ function Unit:bind_ctx(context)
           context.state.selected_unit = self
           print("selected unit " .. self.id)
           self:update_actions_map()
-          -- self.engine.mediator:publish({ "view.update" })
+          -- self.engine.reactor:publish("view.update")
           -- view.update event will be published by update_actions_map()
           return true
         end
@@ -489,7 +489,7 @@ function Unit:_check_death()
       if (self.engine.state.selected_unit == self) then
           self.engine.state.selected_unit = nil
       end
-      self.engine.mediator:publish({ "model.update" })
+      self.engine.reactor:publish("model.update")
     end
   end
 end
@@ -912,7 +912,7 @@ function Unit:update_actions_map()
    actions_map.attack  = get_attack_map()
 
    self.data.actions_map = actions_map
-   self.engine.mediator:publish({ "view.update" });
+   self.engine.reactor:publish("view.update");
 
    -- print(inspect(actions_map.move))
 end
@@ -1024,7 +1024,7 @@ end
 function Unit:change_orientation()
   local o = (self.data.orientation == 'left') and 'right' or 'left'
   self.data.orientation = o
-  self.engine.mediator:publish({ "view.update" })
+  self.engine.reactor:publish("view.update")
 end
 
 return Unit

@@ -290,7 +290,7 @@ function Map:bind_ctx(context)
         ordered_handlers:apply(function(cb) return cb(event) end)
       end
 
-      --engine.mediator:publish({ "view.update" })
+      --engine.reactor:publish(view.update")
     end
 
     -- apply hanlders for the new/current tile
@@ -335,7 +335,7 @@ function Map:bind_ctx(context)
 
     if (direction) then
       engine:update_shown_map()
-      engine.mediator:publish({ "view.update" })
+      engine.reactor:publish("view.update")
     end
     return true
   end

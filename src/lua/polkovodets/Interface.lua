@@ -180,7 +180,7 @@ function Interface:add_window(id, data)
   window:bind_ctx(self.context)
 
   print("created window" .. class_name)
-  self.engine.mediator:publish({ "view.update" })
+  self.engine.reactor:publish("view.update")
 end
 
 function Interface:remove_window(window, do_not_emit_update)
@@ -214,7 +214,7 @@ function Interface:remove_window(window, do_not_emit_update)
 
   table.remove(self.drawing.objects, idx)
   if (not do_not_emit_update) then
-    self.engine.mediator:publish({ "view.update" })
+    self.engine.reactor:publish("view.update")
   end
 end
 

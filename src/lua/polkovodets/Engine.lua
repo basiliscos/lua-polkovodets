@@ -25,7 +25,7 @@ local inspect = require('inspect')
 local i18n = require 'i18n'
 local Tile = require 'polkovodets.Tile'
 local History = require 'polkovodets.History'
-local Mediator = require("mediator")
+local Reactor = require 'polkovodets.utils.Reactor'
 
 
 function Engine.create(language)
@@ -43,7 +43,7 @@ function Engine.create(language)
     history_layer      = false,
     total_players      = 0,
     active_layer       = 'surface',
-    mediator           = Mediator(),
+    reactor            = Reactor.create({'model.update', 'view.update'}),
     gui = {
       map_x = 0,
       map_y = 0,
@@ -73,7 +73,7 @@ function Engine.create(language)
   setmetatable(e,Engine)
   e.history = History.create(e)
 
-  e.mediator:subscribe({ "model.update" }, function()
+  e.reactor:subscribe("model.update", function()
     e:_update_history_records()
   end)
   return e
@@ -83,7 +83,7 @@ function Engine:_update_history_records()
     local records = self.history:get_actual_records()
     self.state.actual_records = records
     if (#records) then
-      self.mediator:publish({ "view.update" })
+      self.reactor:publish("view.update")
     end
 end
 
@@ -123,7 +123,7 @@ function Engine:update_shown_map()
   end
   gui.map_sh = step
   print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
-  self.mediator:publish({ "view.update" })
+  self.reactor:publish("view.update")
 end
 
 
@@ -142,7 +142,7 @@ end
 function Engine:set_scenario(scenario)
   self.turn = 1
   self.scenario = scenario
-  self.mediator:publish({ "model.update" });
+  self.reactor:publish("model.update");
   self:update_shown_map()
 end
 function Engine:get_scenario(scenario) return self.scenario end
@@ -223,7 +223,7 @@ function Engine:end_turn()
     self:_set_current_player(self.current_player_idx + 1)
   end
   self.history_layer = true
-  self.mediator:publish({ "model.update" });
+  self.reactor:publish("model.update");
 end
 
 function Engine:current_weather()
@@ -338,7 +338,7 @@ function Engine:toggle_landscape()
   local value = not self.state.landscape_only
   self.state.landscape_only = value
   self.state.selected_unit = nil
-  self.mediator:publish({ "view.update" });
+  self.reactor:publish("view.update");
 end
 
 function Engine:toggle_layer()
@@ -346,13 +346,13 @@ function Engine:toggle_layer()
   current = (current == 'air') and 'surface' or 'air'
   print("active layer " .. current)
   self.active_layer = current
-  self.mediator:publish({ "view.update" });
+  self.reactor:publish("view.update");
 end
 
 function Engine:toggle_attack_priorities()
   if (self.selected_unit) then
     self.selected_unit:switch_attack_priorities()
-    self.mediator:publish({ "view.update" });
+    self.reactor:publish("view.update");
   end
 end
 

@@ -171,7 +171,7 @@ function _Record:bind_ctx(context)
 
     mouse_move = function(event)
       if (update_participants(event.x, event.y, event.tile_id)) then
-        context.renderer.engine.mediator:publish({ "view.update" })
+        context.renderer.engine.reactor:publish("view.update")
       end
       return icon_region:is_over(event.x, event.y)
     end
@@ -245,7 +245,7 @@ function History:record_player_action(action, context, success, results)
   local turn_records = self.records_at[turn_no] or {}
   table.insert(turn_records, record)
   self.records_at[turn_no] = turn_records
-  self.engine.mediator:publish({ "model.update" });
+  self.engine.reactor:publish("model.update");
 end
 
 function History:get_actual_records()

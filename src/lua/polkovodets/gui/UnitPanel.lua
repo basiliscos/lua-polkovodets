@@ -72,7 +72,7 @@ function UnitPanel.create(engine)
         else
           engine.state.popups.detach_panel = true
         end
-        engine.mediator:publish({ "view.update" })
+        engine.reactor:publish("view.update")
       end
       return true
     end,
