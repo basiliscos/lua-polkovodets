@@ -228,26 +228,6 @@ function Renderer:prepare_drawers()
 end
 
 
-function Renderer:_draw_cursor()
-  local state, x, y = SDL.getMouseState()
-  local kind = self.engine.state:get_action()
-  assert(kind, "cursor kind has to be defined")
-  -- print("cursor kind " .. kind)
-  local cursor = self.theme:get_cursor(kind)
-  local cursor_size = self.theme.data.cursors.size
-  local dst = { w = cursor_size, h = cursor_size, x = x, y = y }
-  assert(self.sdl_renderer:copy(cursor.texture, nil, dst))
-end
-
-
-function Renderer:_draw_world()
-   -- self:_check_scroll(0, 0) -- check scroll by mouse position
-   self.draw_function()
-   -- self:_draw_active_hex_info()
-   self:_draw_cursor()
-end
-
-
 function Renderer:main_loop()
   local engine = self.engine
   engine.reactor:mask_events(true)
@@ -281,6 +261,7 @@ function Renderer:main_loop()
         x       = x,
         y       = y,
       }
+      engine.state:set_mouse(x, y)
       -- process handlers in stack (FILO) order
       self.handlers.mouse_move:apply(function(cb) return cb(event) end)
     elseif (t == SDL.event.MouseButtonUp) then
@@ -308,7 +289,7 @@ function Renderer:main_loop()
     end
     engine.reactor:replay_masked_events()
     sdl_renderer:clear()
-    self:_draw_world()
+    self.draw_function()
     sdl_renderer:present()
   end
 end

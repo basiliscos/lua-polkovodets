@@ -98,6 +98,7 @@ function Reactor:replay_masked_events()
     local existing_subscribers = assert(self.subscribers[channel])
     for i, args in pairs(unique_queue) do
       for idx, cb in existing_subscribers:pairs() do
+        -- print(channel .. " => " .. #args)
         cb(channel, table.unpack(args))
       end
     end

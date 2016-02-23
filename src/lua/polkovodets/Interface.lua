@@ -24,6 +24,7 @@ local Image = require 'polkovodets.utils.Image'
 -- preload
 local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
+local Cursor = require ('polkovodets.gui.Cursor')
 require ('polkovodets.gui.BattleDetailsWindow')
 require ('polkovodets.gui.BattleSelectorPopup')
 require ('polkovodets.gui.UnitInfoWindow')
@@ -38,6 +39,7 @@ function Interface.create(engine)
     context = nil,
     drawing = {
       fn          = nil,
+      cursor      = Cursor.create(engine),
       helpers     = {
         active_tile_drawer = nil,
         mouse_hint_drawer = nil,
@@ -103,8 +105,7 @@ function Interface:bind_ctx(context)
   interface_ctx.window = {w = w, h = h}
   interface_ctx.layout_fn = layout_fn
 
-  local active_tile_change_listener = function()
-    local tile = context.state.active_tile
+  local active_tile_change_listener = function(event, tile)
     local draw_fn
     if (tile) then
       local str = string.format('%s (%d:%d)', tile.data.name, tile.data.x, tile.data.y)
@@ -139,8 +140,7 @@ function Interface:bind_ctx(context)
     self.drawing.helpers.active_tile_drawer = draw_fn
   end
 
-  local mouse_hint_change_listener = function()
-    local hint = context.state.mouse_hint
+  local mouse_hint_change_listener = function(event, hint)
     local draw_fn
     if (hint and #hint > 0) then
       local my_label = Image.create(sdl_renderer, font:renderUtf8(hint, "solid", color))
@@ -183,9 +183,13 @@ function Interface:bind_ctx(context)
     self.drawing.helpers.active_tile_drawer()
     self.drawing.helpers.mouse_hint_drawer()
     _.each(self.drawing.objects, function(k, v) v:draw() end)
+    self.drawing.cursor:draw()
   end
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(interface_ctx) end)
+  self.drawing.cursor:bind_ctx(interface_ctx)
+
+
   self.drawing.fn = draw_fn
   self.drawing.active_tile_change_listener = active_tile_change_listener
   self.drawing.mouse_hint_change_listener = mouse_hint_change_listener
@@ -193,6 +197,7 @@ function Interface:bind_ctx(context)
 end
 
 function Interface:unbind_ctx(context)
+  self.drawing.cursor:unbind_ctx(context)
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
   self.drawing.fn = nil
   self.engine.reactor:unsubscribe('map.active_tile.change', self.drawing.active_tile_change_listener)

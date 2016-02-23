@@ -38,7 +38,7 @@ function Engine.create(language)
 
   local reactor = Reactor.create({
     'model.update', 'mouse-hint.change', 'map.active_tile.change',
-    'action.change',
+    'action.change', 'mouse-position.change',
     'view.update',
   })
 

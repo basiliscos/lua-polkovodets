@@ -214,7 +214,7 @@ function Tile:bind_ctx(context)
       local u = context.state.selected_unit
       if (u) then
         context.state.selected_unit = nil
-        context.state.set_action('default')
+        context.state:set_action('default')
         self.engine.reactor:publish("view.update")
         return true
       end
@@ -230,6 +230,7 @@ function Tile:bind_ctx(context)
       elseif (u and u.data.actions_map.move[self.id]) then
         action = 'move'
       end
+      context.state:set_mouse_hint('')
       context.state:set_action(action)
       return true
     end

@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
+local inspect = require('inspect')
+local _ = require ("moses")
 
 local State = {}
 State.__index = State
@@ -34,7 +36,7 @@ end
 
 function State:set_active_tile(tile)
   self._active_tile = tile
-  self.reactor:publish('map.active_tile.change')
+  self.reactor:publish('map.active_tile.change', tile)
 end
 function State:get_active_tile() return self._active_tile end
 
@@ -48,7 +50,7 @@ function State:get_action() return self._action end
 
 function State:set_mouse_hint(str)
   self._mouse_hint = str
-  self.reactor:publish("mouse-hint.change")
+  self.reactor:publish("mouse-hint.change", str)
 end
 function State:get_mouse_hint() return self._mouse_hint end
 
@@ -56,7 +58,7 @@ function State:get_mouse_hint() return self._mouse_hint end
 function State:set_mouse(x, y)
   self._mouse.x = x
   self._mouse.y = y
-  -- self.reactor:publish("mouse.change")
+  self.reactor:publish('mouse-position.change')
 end
 function State:get_mouse() return self._mouse end
 
