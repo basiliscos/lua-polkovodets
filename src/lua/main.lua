@@ -56,7 +56,7 @@ local engine = Engine.create()
 local gui_renderer = Renderer.create(engine, window, renderer)
 
 local scenario = Scenario.create(engine)
-scenario:load('Test3')
+scenario:load('Test')
 
 gui_renderer:prepare_drawers()
 gui_renderer:main_loop()

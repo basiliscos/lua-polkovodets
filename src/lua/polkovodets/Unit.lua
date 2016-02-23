@@ -195,7 +195,8 @@ function Unit:bind_ctx(context)
           },
         }
         change_attack_region = Region.create(change_attack_x, y, change_attack_x + icon.w, y + icon.h)
-        local icon_kind = is_over_change_attack_icon(context.mouse.x, context.mouse.y)
+        local mouse = context.state:get_mouse()
+        local icon_kind = is_over_change_attack_icon(mouse.x, mouse.y)
           and 'hilight' or 'available'
         change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
       end

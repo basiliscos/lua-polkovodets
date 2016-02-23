@@ -54,6 +54,7 @@ function _Record:bind_ctx(context)
   local draw_fn
   local mouse_move, mouse_click
 
+  local tile_id
 
   if (self.action == 'unit/move') then
     local src_tile = context.map:lookup_tile(self.context.src_tile)
@@ -99,7 +100,7 @@ function _Record:bind_ctx(context)
       end
     end
   elseif (self.action == 'battle') then
-    local tile_id = self.context.tile
+    tile_id = self.context.tile
     local tile = context.map:lookup_tile(tile_id)
 
     local battle_icon = context.theme.history.battle
@@ -143,17 +144,19 @@ function _Record:bind_ctx(context)
           end
           updated = true
           local tile = context.map:lookup_tile(tile_id)
-          context.state.mouse_hint = context.renderer.engine:translate(
+          local hint = context.renderer.engine:translate(
             'map.battle-on-tile', {count = battles_count, tile = tile.data.x .. ":" .. tile.data.y}
           )
-          self.engine.reactor:publish("mouse-hint.change")
+          context.state.set_mouse_hint(hint)
           context.state.participant_locations = participant_locations
         end
       end
       return updated
     end
 
-    update_participants(context.state.mouse.x, context.state.mouse.y, context.state.active_tile.id)
+    local mouse = context.state:get_mouse()
+    local active_tile = context.state:get_active_tile()
+    update_participants(mouse.x, mouse.y, active_tile.id)
 
     local icon = over_icon and context.theme.history.battle_hilight or context.theme.history.battle
 
@@ -197,11 +200,11 @@ function _Record:bind_ctx(context)
   end
 
   if (mouse_move) then
-    context.events_source.add_handler('mouse_move', mouse_move)
+    context.events_source.add_handler('mouse_move', tile_id, mouse_move)
     self.drawing.mouse_move = mouse_move
   end
   if (mouse_click) then
-    context.events_source.add_handler('mouse_click', mouse_click)
+    context.events_source.add_handler('mouse_click', tile_id, mouse_click)
     self.drawing.mouse_click = mouse_click
   end
 
@@ -221,6 +224,9 @@ function _Record:unbind_ctx(context)
     context.state.participant_locations = {}
     context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
     self.drawing.mouse_move = nil
+  end
+  if (self.drawing.mouse_click) then
+    context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
     self.drawing.mouse_click = nil
   end
 end
