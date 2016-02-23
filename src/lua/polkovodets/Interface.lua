@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local inspect = require('inspect')
 local _ = require ("moses")
 
+local Image = require 'polkovodets.utils.Image'
+
 -- preload
 local GamePanel = require ('polkovodets.gui.GamePanel')
 local UnitPanel = require ('polkovodets.gui.UnitPanel')
@@ -36,6 +38,10 @@ function Interface.create(engine)
     context = nil,
     drawing = {
       fn          = nil,
+      helpers     = {
+        active_tile_drawer = nil,
+        mouse_hint_drawer = nil,
+      },
       mouse_click = nil,
       objects     = {},
       obj_by_type = {
@@ -44,6 +50,7 @@ function Interface.create(engine)
       opened_windows = 0,
       reference_corner = nil, -- only for top window
       window_order = {}, -- key: window, value order = z-index
+      active_tile_change_listener = nil,
     }
   }
   setmetatable(o, Interface)
@@ -68,17 +75,6 @@ function Interface:bind_ctx(context)
 
   local w, h = context.renderer.window:getSize()
   local sdl_renderer = context.renderer.sdl_renderer
-
-  local render_label = function(surface)
-    local texture = assert(sdl_renderer:createTextureFromSurface(surface))
-    local sw, sh = surface:getSize()
-    local label_x = math.modf(w/2 - sw/2)
-    local label_y = 25 - math.modf(sh/2)
-    return {
-      texture = texture,
-      dst     = {x = label_x, y = label_y, w = sw, h = sh},
-    }
-  end
 
   local layout_fn = function(window, content_w, content_h)
     -- calculate window center
@@ -107,38 +103,100 @@ function Interface:bind_ctx(context)
   interface_ctx.window = {w = w, h = h}
   interface_ctx.layout_fn = layout_fn
 
-  local rendered_hint
-  local labels = {}
-  local update_hint = function()
-    local hint = context.state.mouse_hint
-    if (hint ~= rendered_hint) then
-      labels = {}
-      if (hint and #hint > 0) then
-        font:setOutline(context.theme.data.active_hex.outline_width)
-        table.insert(labels, render_label(font:renderUtf8(hint, "solid", outline_color)))
-        font:setOutline(0)
-        table.insert(labels, render_label(font:renderUtf8(hint, "solid", color)))
+  local active_tile_change_listener = function()
+    local tile = context.state.active_tile
+    local draw_fn
+    if (tile) then
+      local str = string.format('%s (%d:%d)', tile.data.name, tile.data.x, tile.data.y)
+      local my_label = Image.create(sdl_renderer, font:renderUtf8(str, "solid", color))
+      local w, h = context.renderer.window:getSize()
+      local bg_texture = context.theme.window.background.texture
+
+      local padding = 10
+      local margin = 10
+
+      local bg_region = {
+        x = w - (padding + margin + my_label.w),
+        y = margin,
+        w = my_label.w + padding,
+        h = my_label.h + padding,
+      }
+
+      local label_region = {
+        x = math.modf(bg_region.x + bg_region.w/2 - my_label.w/2),
+        y = margin + padding/2,
+        w = my_label.w,
+        h = my_label.h,
+      }
+
+       draw_fn = function()
+        assert(sdl_renderer:copy(bg_texture, nil, bg_region))
+        assert(sdl_renderer:copy(my_label.texture, nil, label_region))
       end
+    else
+      draw_fn = function() end
     end
+    self.drawing.helpers.active_tile_drawer = draw_fn
   end
-  update_hint()
+
+  local mouse_hint_change_listener = function()
+    local hint = context.state.mouse_hint
+    local draw_fn
+    if (hint and #hint > 0) then
+      local my_label = Image.create(sdl_renderer, font:renderUtf8(hint, "solid", color))
+      local w, h = context.renderer.window:getSize()
+      local bg_texture = context.theme.window.background.texture
+
+      local padding = 10
+      local margin = 10
+
+      local bg_region = {
+        x = margin,
+        y = margin,
+        w = my_label.w + padding,
+        h = my_label.h + padding,
+      }
+
+      local label_region = {
+        x = math.modf(bg_region.x + bg_region.w/2 - my_label.w/2),
+        y = margin + padding/2,
+        w = my_label.w,
+        h = my_label.h,
+      }
+
+      draw_fn = function()
+        assert(sdl_renderer:copy(bg_texture, nil, bg_region))
+        assert(sdl_renderer:copy(my_label.texture, nil, label_region))
+      end
+    else
+      draw_fn = function() end
+    end
+    self.drawing.helpers.mouse_hint_drawer = draw_fn
+  end
+
+  self.engine.reactor:subscribe('map.active_tile.change', active_tile_change_listener)
+  self.engine.reactor:subscribe('mouse-hint.change', mouse_hint_change_listener)
+  active_tile_change_listener()
+  mouse_hint_change_listener()
 
   local draw_fn = function()
-    update_hint()
-    for idx, label_data in pairs(labels) do
-      assert(sdl_renderer:copy(label_data.texture, nil , label_data.dst))
-    end
+    self.drawing.helpers.active_tile_drawer()
+    self.drawing.helpers.mouse_hint_drawer()
     _.each(self.drawing.objects, function(k, v) v:draw() end)
   end
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(interface_ctx) end)
   self.drawing.fn = draw_fn
+  self.drawing.active_tile_change_listener = active_tile_change_listener
+  self.drawing.mouse_hint_change_listener = mouse_hint_change_listener
   self.context = interface_ctx
 end
 
 function Interface:unbind_ctx(context)
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
   self.drawing.fn = nil
+  self.engine.reactor:unsubscribe('map.active_tile.change', self.drawing.active_tile_change_listener)
+  self.engine.reactor:unsubscribe('mouse-hint.change', self.drawing.mouse_hint_change_listener)
 end
 
 function Interface:draw()

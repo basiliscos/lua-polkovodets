@@ -146,6 +146,7 @@ function _Record:bind_ctx(context)
           context.state.mouse_hint = context.renderer.engine:translate(
             'map.battle-on-tile', {count = battles_count, tile = tile.data.x .. ":" .. tile.data.y}
           )
+          self.engine.reactor:publish("mouse-hint.change")
           context.state.participant_locations = participant_locations
         end
       end

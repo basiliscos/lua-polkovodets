@@ -328,6 +328,7 @@ function Unit:bind_ctx(context)
 
       self.engine.state.action = action
       self.engine.state.mouse_hint = hint
+      self.engine.reactor:publish("mouse-hint.change")
       -- print("move mouse over " .. tile_id .. ", action: "  .. action)
       return true
     else

@@ -290,7 +290,7 @@ function Map:bind_ctx(context)
         ordered_handlers:apply(function(cb) return cb(event) end)
       end
 
-      --engine.reactor:publish(view.update")
+      engine.reactor:publish('map.active_tile.change')
     end
 
     -- apply hanlders for the new/current tile

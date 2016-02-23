@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ function Engine.create(language)
     history_layer      = false,
     total_players      = 0,
     active_layer       = 'surface',
-    reactor            = Reactor.create({'model.update', 'view.update'}),
+    reactor            = Reactor.create({'model.update', 'mouse-hint.change', 'map.active_tile.change', 'view.update'}),
     gui = {
       map_x = 0,
       map_y = 0,
