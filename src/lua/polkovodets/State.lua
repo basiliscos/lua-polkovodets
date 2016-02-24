@@ -31,6 +31,7 @@ function State.create(reactor)
     _mouse          = {x = 0, y = 0},
     _active_panels  = {},
     _actual_records = {},
+    _selected_unit  = nil,
   }
   return setmetatable(o, State)
 end
@@ -73,6 +74,11 @@ function State:set_actual_records(value)
   self.reactor:publish('history.update', value)
 end
 function State:get_actual_records() return self._actual_records end
+
+function State:set_selected_unit(value)
+  self._selected_unit = value
+end
+function State:get_selected_unit() return self._selected_unit end
 
 
 return State

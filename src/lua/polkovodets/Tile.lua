@@ -159,8 +159,8 @@ function Tile:bind_ctx(context)
 
     if (not landscape_only) then
       -- hilight managed units, participants, fog of war
-      if (context.state.selected_unit) then
-        local u = context.state.selected_unit
+      local u = context.state:get_selected_unit()
+      if (u) then
         local movement_area = u.data.actions_map.move
         local u_tile = u.tile or u.data.attached_to.tile
         if ((not movement_area[self.id]) and (u_tile.id ~= self.id)) then
@@ -191,17 +191,17 @@ function Tile:bind_ctx(context)
 
   local mouse_click = function(event)
     if (event.tile_id == self.id and event.button == 'left') then
-      local u = context.state.selected_unit
+      local u = context.state:get_selected_unit()
       local action = context.state:get_action()
       if (action == 'default') then
         if (u and u.tile.id ~= self.id) then
           print("unselecting unit")
-          context.state.selected_unit = nil
+          context.state:set_selected_unit(nil)
           self.engine.reactor:publish("map.update")
           return true
         end
       else
-        local actor = assert(context.state.selected_unit)
+        local actor = assert(context.state:get_selected_unit())
         local method_for = {
           move  = 'move_to',
           land  = 'land_to',
@@ -211,9 +211,9 @@ function Tile:bind_ctx(context)
         return true
       end
     elseif (event.button == 'right') then
-      local u = context.state.selected_unit
+      local u = context.state:get_selected_unit()
       if (u) then
-        context.state.selected_unit = nil
+        context.state:set_selected_unit(nil)
         context.state:set_action('default')
         self.engine.reactor:publish("map.update")
         return true
@@ -223,7 +223,7 @@ function Tile:bind_ctx(context)
 
   local mouse_move = function(event)
     if (event.tile_id == self.id) then
-      local u = context.state.selected_unit
+      local u = context.state:get_selected_unit()
       local action = 'default'
       if (u and u.data.actions_map.landing[self.id]) then
         action = 'land'

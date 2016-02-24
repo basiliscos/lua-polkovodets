@@ -38,6 +38,7 @@ function Map.create(engine)
       mouse_move  = nil,
       idle        = nil,
       context     = nil,
+      map_context = nil,
       objects     = {},
       -- k: tile_id, value: ordered set of callbacks
       proxy       = {
@@ -183,7 +184,7 @@ function Map:_on_map_update()
 
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_context) end)
 
-  local u = context.state.selected_unit
+  local u = context.state:get_selected_unit()
 
   local active_x, active_y = table.unpack(self.active_tile)
   local active_tile = self.tiles[active_x][active_y]
@@ -268,7 +269,9 @@ function Map:_on_map_update()
 
   _.each(drawers, function(k, v) v:bind_ctx(map_context) end)
 
+  self.drawing.map_context = map_context
   self.drawing.objects = drawers
+  self.drawing.drawers_per_tile = drawers_per_tile
   self.drawing.fn = draw_fn
 end
 
@@ -291,8 +294,8 @@ function Map:bind_ctx(context)
         local list = self.drawing.drawers_per_tile[tile.id]
         if (list) then
           for idx, drawer in pairs(list) do
-            drawer:unbind_ctx(map_context)
-            drawer:bind_ctx(map_context)
+            drawer:unbind_ctx(self.drawing.map_context)
+            drawer:bind_ctx(self.drawing.map_context)
           end
         end
       end

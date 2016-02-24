@@ -206,7 +206,7 @@ end
 
 function Engine:current_turn() return self.turn end
 function Engine:end_turn()
-  self.state.selected_unit = nil
+  self.state:set_selected_unit(nil)
   if (self.current_player_idx == self.total_players) then
     self.turn = self.turn + 1
     for k, unit in pairs(self.all_units) do
@@ -333,7 +333,7 @@ end
 function Engine:toggle_landscape()
   local value = not self.state.landscape_only
   self.state.landscape_only = value
-  self.state.selected_unit = nil
+  self.state:set_selected_unit(nil)
   self.reactor:publish("map.update");
 end
 
@@ -346,8 +346,9 @@ function Engine:toggle_layer()
 end
 
 function Engine:toggle_attack_priorities()
-  if (self.selected_unit) then
-    self.selected_unit:switch_attack_priorities()
+  local u = self.state:get_selected_unit()
+  if (u) then
+    u:switch_attack_priorities()
     self.reactor:publish("map.update");
   end
 end
