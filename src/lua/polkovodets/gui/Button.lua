@@ -58,7 +58,7 @@ function Button:bind_ctx(context)
   assert(self.hint)
   local mouse_move = function(event)
     if (region:is_over(event.x, event.y)) then
-      context.state.mouse_hint = self.hint
+      context.state:set_mouse_hint(self.hint)
       if (context.state.action ~= 'default') then
         context.state:set_action('default')
       end

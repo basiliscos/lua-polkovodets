@@ -49,7 +49,7 @@ function Popup:bind_ctx(context)
   local engine = self.engine
   local font = self.font
 
-  engine.state.mouse_hint = ''
+  engine.state:set_mouse_hint('')
 
   _.eachi(definitions, function(k, value)
     assert(value.label)

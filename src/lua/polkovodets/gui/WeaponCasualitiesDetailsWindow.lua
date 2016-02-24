@@ -49,7 +49,7 @@ end
 function WeaponCasualitiesDetailsWindow:bind_ctx(context)
   local engine = self.engine
   local theme = assert(context.renderer.theme)
-  engine.state.mouse_hint = ''
+  engine.state:set_mouse_hint('')
 
   local wcdw_ctx = _.clone(context, true)
 

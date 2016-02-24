@@ -420,7 +420,8 @@ end
 function UnitInfoWindow:bind_ctx(context)
   local engine = self.engine
   local theme = assert(context.renderer.theme)
-  engine.state.mouse_hint = ''
+
+  engine.state:set_mouse_hint('')
   local gui = self:_construct_gui();
 
   local unit_info_ctx = _.clone(context, true)
@@ -512,7 +513,7 @@ function UnitInfoWindow:bind_ctx(context)
 
   context.state.action = 'default'
   local mouse_move = function(event)
-    engine.state.mouse_hint = ''
+    -- engine.state:set_mouse_hint('')
     -- remove hilight from all tab icons, except the active one
     for idx, tab in ipairs(gui.tabs) do
       local icon = tab.icon
@@ -522,7 +523,7 @@ function UnitInfoWindow:bind_ctx(context)
     end
     local idx = is_over_tab_icons_region(event.x, event.y)
     if (idx) then
-      engine.state.mouse_hint = gui.tabs[idx].icon.hint
+      engine.state:set_mouse_hint(gui.tabs[idx].icon.hint)
       if (idx ~= gui.active_tab) then
         gui.tabs[idx].icon.current = 'hilight'
       end

@@ -275,7 +275,7 @@ end
 
 function BattleDetailsWindow:bind_ctx(context)
   local engine = self.engine
-  engine.state.mouse_hint = ''
+  engine.state.set_mouse_hint('')
 
   local record = self.record
   local classifyer, available_classes = self:_classy_battle_weapons(record)
@@ -481,19 +481,19 @@ function BattleDetailsWindow:bind_ctx(context)
 
   context.state.action = 'default'
   local mouse_move = function(event)
-    engine.state.mouse_hint = ''
+    engine.state.set_mouse_hint('')
     if (window_region:is_over(event.x, event.y)) then
       update_line_styles(event.x, event.y)
       for idx, unit_region in ipairs(unit_regions) do
         if (unit_region:is_over(event.x, event.y)) then
-          engine.state.mouse_hint = gui.units[idx].name
+          engine.state:set_mouse_hint(gui.units[idx].name)
         end
       end
       for idx, line_region in ipairs(line_regions) do
         if (line_region.whole:is_over(event.x, event.y)) then
           local class_id = gui.lines[idx].class_id
           local key = 'db.weapon-class.' .. class_id
-          engine.state.mouse_hint = engine:translate(key)
+          engine.state:set_mouse_hint(engine:translate(key))
         end
       end
     end
