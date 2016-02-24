@@ -289,8 +289,9 @@ function Engine:pointer_to_tile(x,y)
    local hex_y_offset = terrain.hex_y_offset
 
    local hex_x_delta = hex_w - hex_x_offset
+   local tile_x_delta = self.gui.map_x
 
-   local left_col = math.modf((x - hex_x_delta) / hex_x_offset) + 1
+   local left_col = (math.modf((x - hex_x_delta) / hex_x_offset) + 1) + (tile_x_delta % 2)
    local right_col = left_col + 1
    local top_row = math.modf(y / hex_h) + 1
    local bot_row = top_row + 1
@@ -303,7 +304,7 @@ function Engine:pointer_to_tile(x,y)
       {right_col, bot_row},
    }
    -- print("adj-tiles = " .. inspect(adj_tiles))
-   local tile_center_off = {math.modf(hex_w/2), math.modf(hex_h/2)}
+   local tile_center_off = {(tile_x_delta % 2 == 0) and math.modf(hex_w/2) or math.modf(hex_w/2 - hex_x_offset), math.modf(hex_h/2)}
    local get_tile_center = function(tx, ty)
       local top_x = (tx - 1) * hex_x_offset
       local top_y = ((ty - 1) * hex_h) - ((tx % 2 == 1) and hex_y_offset or 0)
@@ -327,7 +328,7 @@ function Engine:pointer_to_tile(x,y)
    end
    local active_tile = adj_tiles[nearest_idx]
    -- print("active_tile = " .. inspect(active_tile))
-   local tx = active_tile[1] + 1 + self.gui.map_x
+   local tx = active_tile[1] + ((tile_x_delta % 2 == 0) and 1 or 0 ) + tile_x_delta
    local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + self.gui.map_y
 
    if (tx > 0 and tx <= map.width and ty > 0 and ty <= map.height) then
