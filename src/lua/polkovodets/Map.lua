@@ -37,12 +37,14 @@ function Map.create(engine)
       fn          = nil,
       mouse_move  = nil,
       idle        = nil,
+      context     = nil,
       objects     = {},
       -- k: tile_id, value: ordered set of callbacks
       proxy       = {
         mouse_move  = {},
         mouse_click = {},
-      }
+      },
+      drawers_per_tile = {},
     }
   }
   setmetatable(m, Map)
@@ -134,10 +136,10 @@ function Map:_remove_hanlder(event_type, tile_id, cb)
   set:remove(cb)
 end
 
-
-function Map:bind_ctx(context)
+function Map:_on_map_update()
   local engine = self.engine
   local terrain = self.terrain
+  local context = self.drawing.context
 
   local start_map_x = engine.gui.map_x
   local start_map_y = engine.gui.map_y
@@ -178,6 +180,8 @@ function Map:bind_ctx(context)
   }
   map_context.active_layer = engine.active_layer
   map_context.events_source = self:_get_event_source()
+
+  _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_context) end)
 
   local u = context.state.selected_unit
 
@@ -262,6 +266,17 @@ function Map:bind_ctx(context)
     _.each(drawers, function(k, v) v:draw() end)
   end
 
+  _.each(drawers, function(k, v) v:bind_ctx(map_context) end)
+
+  self.drawing.objects = drawers
+  self.drawing.fn = draw_fn
+end
+
+
+function Map:bind_ctx(context)
+  local engine = self.engine
+  local terrain = self.terrain
+
   local mouse_move = function(event)
     local new_tile = self.engine:pointer_to_tile(event.x, event.y)
     if (not new_tile) then return end
@@ -273,7 +288,7 @@ function Map:bind_ctx(context)
       -- print("refreshing " .. tile_old.id .. " => " .. tile_new.id)
 
       local refresh = function(tile)
-        local list = drawers_per_tile[tile.id]
+        local list = self.drawing.drawers_per_tile[tile.id]
         if (list) then
           for idx, drawer in pairs(list) do
             drawer:unbind_ctx(map_context)
@@ -308,6 +323,7 @@ function Map:bind_ctx(context)
     end
   end
 
+
   local map_w, map_h = engine.map.width, engine.map.height
   local map_sw, map_sh = engine.gui.map_sw, engine.gui.map_sh
   local window_w, window_h = context.renderer.window:getSize()
@@ -333,28 +349,39 @@ function Map:bind_ctx(context)
 
     if (direction) then
       engine:update_shown_map()
-      engine.reactor:publish("view.update")
     end
     return true
   end
 
-  _.each(drawers, function(k, v) v:bind_ctx(map_context) end)
+
+  local map_update_listener = function()
+    print("map.update")
+    self:_on_map_update(context)
+  end
+
+  engine.reactor:subscribe("map.update", map_update_listener)
 
   context.events_source.add_handler('mouse_move', mouse_move)
   context.events_source.add_handler('mouse_click', mouse_click)
   context.events_source.add_handler('idle', idle)
 
-  self.drawing.objects = drawers
+  self.drawing.context = context
   self.drawing.mouse_click = mouse_click
   self.drawing.mouse_move = mouse_move
   self.drawing.idle = idle
-  self.drawing.fn = draw_fn
+  self.drawing.map_update_listener = map_update_listener
+
+  self.drawing.fn = function() end
+  engine.reactor:publish("map.update")
+  -- self.drawing.fn is initialized indirectly via map.update handler
 end
 
 function Map:unbind_ctx(context)
   local map_ctx = _.clone(context, true)
   map_ctx.events_source = self:_get_event_source()
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_ctx) end)
+
+  self.engine.reactor:unsubscribe("map.update", self.drawing.map_update_listener)
 
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
   context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
@@ -363,7 +390,8 @@ function Map:unbind_ctx(context)
   self.drawing.fn = nil
   self.drawing.idle = nil
   self.drawing.mouse_move = nil
-  self.drawing.objects = nil
+  self.drawing.objects = {}
+  self.drawing.context = nil
 end
 
 function Map:draw()

@@ -60,8 +60,7 @@ function Button:bind_ctx(context)
     if (region:is_over(event.x, event.y)) then
       context.state.mouse_hint = self.hint
       if (context.state.action ~= 'default') then
-        context.state.action = 'default'
-        self.engine.reactor:publish("view.update")
+        context.state:set_action('default')
       end
       return true
     end

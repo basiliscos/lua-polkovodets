@@ -72,7 +72,7 @@ function UnitPanel.create(engine)
         else
           engine.state:activate_panel('detach_panel', true)
         end
-        engine.reactor:publish("view.update")
+        engine.reactor:publish("ui.update")
       end
       return true
     end,

@@ -49,7 +49,7 @@ function DetachPanel.create(engine, button_anchor_id)
       local subordinated = u.data.attached[idx]
       subordinated:update_actions_map()
       engine.state.selected_unit = subordinated
-      engine.reactor:publish("view.update")
+      engine.reactor:publish("ui.update")
       return true
     end)
   end

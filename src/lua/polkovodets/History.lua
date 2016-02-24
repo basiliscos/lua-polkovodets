@@ -175,7 +175,7 @@ function _Record:bind_ctx(context)
 
     mouse_move = function(event)
       if (update_participants(event.x, event.y, event.tile_id)) then
-        context.renderer.engine.reactor:publish("view.update")
+        context.renderer.engine.reactor:publish("map.update")
       end
       return icon_region:is_over(event.x, event.y)
     end

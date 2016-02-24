@@ -197,7 +197,7 @@ function Tile:bind_ctx(context)
         if (u and u.tile.id ~= self.id) then
           print("unselecting unit")
           context.state.selected_unit = nil
-          self.engine.reactor:publish("view.update")
+          self.engine.reactor:publish("map.update")
           return true
         end
       else
@@ -215,7 +215,7 @@ function Tile:bind_ctx(context)
       if (u) then
         context.state.selected_unit = nil
         context.state:set_action('default')
-        self.engine.reactor:publish("view.update")
+        self.engine.reactor:publish("map.update")
         return true
       end
     end

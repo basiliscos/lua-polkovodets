@@ -39,7 +39,8 @@ function Engine.create(language)
   local reactor = Reactor.create({
     'model.update', 'mouse-hint.change', 'map.active_tile.change',
     'action.change', 'mouse-position.change',
-    'view.update',
+    'map.update', 'ui.update',
+    'full.refresh'
   })
 
   local e = {
@@ -86,7 +87,7 @@ function Engine:_update_history_records()
     local records = self.history:get_actual_records()
     self.state.actual_records = records
     if (#records) then
-      self.reactor:publish("view.update")
+      self.reactor:publish("map.update")
     end
 end
 
@@ -126,7 +127,7 @@ function Engine:update_shown_map()
   end
   gui.map_sh = step
   print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
-  self.reactor:publish("view.update")
+  self.reactor:publish("map.update")
 end
 
 
@@ -342,7 +343,7 @@ function Engine:toggle_landscape()
   local value = not self.state.landscape_only
   self.state.landscape_only = value
   self.state.selected_unit = nil
-  self.reactor:publish("view.update");
+  self.reactor:publish("map.update");
 end
 
 function Engine:toggle_layer()
@@ -350,13 +351,13 @@ function Engine:toggle_layer()
   current = (current == 'air') and 'surface' or 'air'
   print("active layer " .. current)
   self.active_layer = current
-  self.reactor:publish("view.update");
+  self.reactor:publish("map.update");
 end
 
 function Engine:toggle_attack_priorities()
   if (self.selected_unit) then
     self.selected_unit:switch_attack_priorities()
-    self.reactor:publish("view.update");
+    self.reactor:publish("map.update");
   end
 end
 

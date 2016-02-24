@@ -202,10 +202,10 @@ function Renderer:prepare_drawers()
     interface,
   }
 
-  -- view update handler
-  engine.reactor:subscribe("view.update", function()
+  -- full.refresh handler
+  engine.reactor:subscribe("full.refresh", function()
 
-    print("view.update")
+    print("full.refresh")
     _.each(drawers, function(k, v) v:unbind_ctx(context) end)
 
     local mouse_state, x, y = SDL.getMouseState()
@@ -224,7 +224,7 @@ function Renderer:prepare_drawers()
   _.each(drawers, function(k, v) v:bind_ctx(context) end)
 
   -- fire event to prepare all drawers
-  engine.reactor:publish("model.update")
+  engine.reactor:publish("full.refresh")
 end
 
 
@@ -244,6 +244,7 @@ function Renderer:main_loop()
       or e.event == kind.Minimized or e.event ==  kind.Maximized) then
       self.size = table.pack(self.window:getSize())
       engine:update_shown_map()
+      engine.reactor:publish("full.refresh")
       end
     elseif (t == SDL.event.KeyUp) then
       if (e.keysym.sym == SDL.key.e) then
