@@ -489,7 +489,7 @@ function Unit:_check_death()
       if (self.engine.state.selected_unit == self) then
           self.engine.state.selected_unit = nil
       end
-      self.engine.reactor:publish("model.update")
+      self.engine.reactor:publish("map.update")
     end
   end
 end

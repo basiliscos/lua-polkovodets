@@ -225,7 +225,7 @@ function Map:_on_map_update()
     end
   end
 
-  local actual_records = context.state.actual_records
+  local actual_records = context.state:get_actual_records()
   local landscape_only = context.state.landscape_only
 
   -- bttles are always shown

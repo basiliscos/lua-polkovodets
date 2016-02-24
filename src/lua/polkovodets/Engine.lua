@@ -37,9 +37,9 @@ function Engine.create(language)
   i18n.setLocale(lang)
 
   local reactor = Reactor.create({
-    'model.update', 'mouse-hint.change', 'map.active_tile.change',
+    'mouse-hint.change', 'map.active_tile.change',
     'action.change', 'mouse-position.change',
-    'map.update', 'ui.update',
+    'map.update', 'history.update', 'ui.update',
     'full.refresh'
   })
 
@@ -69,26 +69,18 @@ function Engine.create(language)
     --[[
     state          = {
       landscape_only = false,
-      action         = 'default',
-      actual_records = {},
     },
     ]]
   }
   setmetatable(e,Engine)
   e.history = History.create(e)
 
-  e.reactor:subscribe("model.update", function()
-    e:_update_history_records()
+  e.reactor:subscribe("history.update", function(event, records)
+    if (#records > 0) then
+      e.reactor:publish("map.update")
+    end
   end)
   return e
-end
-
-function Engine:_update_history_records()
-    local records = self.history:get_actual_records()
-    self.state.actual_records = records
-    if (#records) then
-      self.reactor:publish("map.update")
-    end
 end
 
 function Engine:translate(key, values)
@@ -146,7 +138,6 @@ end
 function Engine:set_scenario(scenario)
   self.turn = 1
   self.scenario = scenario
-  self.reactor:publish("model.update");
   self:update_shown_map()
 end
 function Engine:get_scenario(scenario) return self.scenario end
@@ -227,7 +218,7 @@ function Engine:end_turn()
     self:_set_current_player(self.current_player_idx + 1)
   end
   self.history_layer = true
-  self.reactor:publish("model.update");
+  self.reactor:publish("full.refresh");
 end
 
 function Engine:current_weather()
