@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -63,7 +63,8 @@ function GamePanel.create(engine)
       return true
     end,
     toggle_landscape = function()
-      engine:toggle_landscape()
+      engine.state:set_selected_unit(nil)
+      engine.state:set_landscape_only(not engine:get_landscape_only())
       return true
     end
   }
@@ -93,6 +94,7 @@ function GamePanel:bind_ctx(context)
     }
   end
 
+  local state = self.engine.state
   -- specific button context
   gamepanel_ctx.button[self.buttons.end_turn.id].image = theme.buttons.end_turn.normal
   gamepanel_ctx.button[self.buttons.end_turn.id].callback = self.callbacks.end_turn
@@ -105,7 +107,7 @@ function GamePanel:bind_ctx(context)
   gamepanel_ctx.button[self.buttons.toggle_history.id].image = theme.buttons.toggle_history[history_state]
   gamepanel_ctx.button[self.buttons.toggle_history.id].callback = self.callbacks.toggle_history
 
-  local landscape_state = self.engine.state.landscape_only and 'active' or 'inactive'
+  local landscape_state = state:get_landscape_only() and 'active' or 'inactive'
   gamepanel_ctx.button[self.buttons.toggle_landscape.id].image = theme.buttons.toggle_landscape[landscape_state]
   gamepanel_ctx.button[self.buttons.toggle_landscape.id].callback = self.callbacks.toggle_landscape
 

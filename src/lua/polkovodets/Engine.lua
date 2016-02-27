@@ -67,11 +67,6 @@ function Engine.create(language)
       show_grid = true,
     },
     state          = State.create(reactor)
-    --[[
-    state          = {
-      landscape_only = false,
-    },
-    ]]
   }
   setmetatable(e,Engine)
   e.history = History.create(e)
@@ -328,14 +323,6 @@ function Engine:pointer_to_tile(x,y)
       return {tx, ty}
       -- print(string.format("active tile = %d:%d", tx, ty))
    end
-end
-
-
-function Engine:toggle_landscape()
-  local value = not self.state.landscape_only
-  self.state.landscape_only = value
-  self.state:set_selected_unit(nil)
-  self.reactor:publish("map.update");
 end
 
 function Engine:toggle_layer()

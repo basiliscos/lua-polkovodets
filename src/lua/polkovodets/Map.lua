@@ -227,12 +227,11 @@ function Map:_on_map_update()
   end
 
   local actual_records = context.state:get_actual_records()
-  local landscape_only = context.state.landscape_only
 
   -- bttles are always shown
   local shown_records = {}
 
-  if (not landscape_only) then
+  if (not context.state:get_landscape_only()) then
     shown_records = _.select(actual_records, battles)
     if (u) then
       shown_records = _.append(shown_records, _.select(actual_records, my_unit_movements))

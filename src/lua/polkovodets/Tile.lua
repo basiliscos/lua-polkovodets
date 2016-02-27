@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ function Tile:bind_ctx(context)
   local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
 
-  local landscape_only = context.state.landscape_only
+  local landscape_only = context.state:get_landscape_only()
   local show_grid = engine.options.show_grid
 
   -- draw nation flag in city, unless there is unit (then unit flag will be drawn)

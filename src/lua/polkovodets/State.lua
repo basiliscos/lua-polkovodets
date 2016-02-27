@@ -32,6 +32,7 @@ function State.create(reactor)
     _active_panels  = {},
     _actual_records = {},
     _selected_unit  = nil,
+    _landscape_only = nil,
   }
   return setmetatable(o, State)
 end
@@ -81,6 +82,11 @@ function State:set_selected_unit(value)
 end
 function State:get_selected_unit() return self._selected_unit end
 
+function State:set_landscape_only(value)
+  self._landscape_only = value
+  self.reactor:publish('map.update', value)
+end
+function State:get_landscape_only() return self._landscape_only end
 
 return State
 
