@@ -275,7 +275,7 @@ end
 
 function BattleDetailsWindow:bind_ctx(context)
   local engine = self.engine
-  engine.state.set_mouse_hint('')
+  engine.state:set_mouse_hint('')
 
   local record = self.record
   local classifyer, available_classes = self:_classy_battle_weapons(record)
@@ -333,7 +333,8 @@ function BattleDetailsWindow:bind_ctx(context)
       return styles
     end)
   end
-  update_line_styles(context.mouse.x, context.mouse.y)
+  local mouse = engine.state:get_mouse()
+  update_line_styles(mouse.x, mouse.y)
 
   local get_line_image = function(idx, side, property)
     local line = gui.lines[idx]
@@ -481,7 +482,7 @@ function BattleDetailsWindow:bind_ctx(context)
 
   context.state.action = 'default'
   local mouse_move = function(event)
-    engine.state.set_mouse_hint('')
+    engine.state:set_mouse_hint('')
     if (window_region:is_over(event.x, event.y)) then
       update_line_styles(event.x, event.y)
       for idx, unit_region in ipairs(unit_regions) do
