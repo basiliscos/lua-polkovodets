@@ -645,7 +645,7 @@ function Unit:merge_at(dst_tile)
    aux_unit.data.attached_to = core_unit
    dst_tile:set_unit(core_unit, layer)
 
-   self.engine.state.set_selected_unit(core_unit)
+   self.engine.state:set_selected_unit(core_unit)
    core_unit:update_actions_map()
 end
 
