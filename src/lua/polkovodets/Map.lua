@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -284,9 +284,9 @@ function Map:bind_ctx(context)
     local new_tile = self.engine:pointer_to_tile(event.x, event.y)
     if (not new_tile) then return end
     local tile_new = self.tiles[new_tile[1]][new_tile[2]]
+    event.tile_id = tile_new.id
     local tile_old = context.state:get_active_tile()
     if (new_tile and ((tile_old.data.x ~= new_tile[1]) or (tile_old.data.y ~= new_tile[2])) ) then
-      event.tile_id = tile_new.id
       engine.state:set_active_tile(tile_new)
       -- print("refreshing " .. tile_old.id .. " => " .. tile_new.id)
 

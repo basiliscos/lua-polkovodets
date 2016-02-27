@@ -36,6 +36,7 @@ function _Record.create(player, turn_no, action, context, success, results)
     success = success,
     results = results,
     drawing = {
+      tile_id     = nil,
       fn          = nil,
       mouse_move  = nil,
       mouse_click = nil,
@@ -147,7 +148,7 @@ function _Record:bind_ctx(context)
           local hint = context.renderer.engine:translate(
             'map.battle-on-tile', {count = battles_count, tile = tile.data.x .. ":" .. tile.data.y}
           )
-          context.state.set_mouse_hint(hint)
+          context.state:set_mouse_hint(hint)
           context.state.participant_locations = participant_locations
         end
       end
@@ -201,9 +202,11 @@ function _Record:bind_ctx(context)
 
   if (mouse_move) then
     context.events_source.add_handler('mouse_move', tile_id, mouse_move)
+    self.drawing.tile_id = tile_id
     self.drawing.mouse_move = mouse_move
   end
   if (mouse_click) then
+    self.drawing.tile_id = tile_id
     context.events_source.add_handler('mouse_click', tile_id, mouse_click)
     self.drawing.mouse_click = mouse_click
   end
@@ -222,12 +225,15 @@ function _Record:unbind_ctx(context)
     -- reset hilighting participants battle, as we leave the tile
     -- and, hence, the battle icon
     context.state.participant_locations = {}
-    context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
+    context.events_source.remove_handler('mouse_move', self.drawing.tile_id, self.drawing.mouse_move)
     self.drawing.mouse_move = nil
   end
   if (self.drawing.mouse_click) then
-    context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
+    context.events_source.remove_handler('mouse_click', self.drawing.tile_id, self.drawing.mouse_click)
     self.drawing.mouse_click = nil
+  end
+  if (self.drawing.tile_id) then
+    self.drawing.tile_id = nil
   end
 end
 
