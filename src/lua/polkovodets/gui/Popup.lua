@@ -97,7 +97,8 @@ function Popup:bind_ctx(context)
     end)
   end
 
-  update_line_styles(context.mouse.x, context.mouse.y)
+  local mouse = engine.state:get_mouse()
+  update_line_styles(mouse.x, mouse.y)
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
 
