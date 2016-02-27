@@ -77,6 +77,7 @@ function State:get_actual_records() return self._actual_records end
 
 function State:set_selected_unit(value)
   self._selected_unit = value
+  self.reactor:publish('unit.selected', value)
 end
 function State:get_selected_unit() return self._selected_unit end
 

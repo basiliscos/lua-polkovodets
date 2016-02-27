@@ -37,6 +37,7 @@ function Engine.create(language)
   i18n.setLocale(lang)
 
   local reactor = Reactor.create({
+    'unit.selected',
     'mouse-hint.change', 'map.active_tile.change',
     'action.change', 'mouse-position.change',
     'map.update', 'history.update', 'ui.update',

@@ -52,7 +52,7 @@ function UnitPanel.create(engine)
 
   o.callbacks = {
     change_orientation = function()
-      local u = engine.state.selected_unit
+      local u = engine.state:get_selected_unit()
       if (u) then
         u:change_orientation()
       end
@@ -62,13 +62,13 @@ function UnitPanel.create(engine)
       return true
     end,
     detach = function()
-      local u = engine.state.selected_unit
+      local u = engine.state:get_selected_unit()
       if (u and #u.data.attached > 0) then
         local attached_units = #u.data.attached
         if (attached_units == 1) then
           local subordinated = u.data.attached[1]
           subordinated:update_actions_map()
-          engine.state.selected_unit = subordinated
+          engine.state:set_selected_unit(subordinated)
         else
           engine.state:activate_panel('detach_panel', true)
         end
@@ -108,9 +108,10 @@ function UnitPanel:bind_ctx(context)
     }
   end
 
-  local u = self.engine.state.selected_unit
+  local u = self.engine.state:get_selected_unit()
   -- specific button context
   local can_change_orientation = u and 'available' or 'disabled'
+  print(can_change_orientation)
   gamepanel_ctx.button[self.buttons.change_orientation.id].image = theme.buttons.change_orientation[can_change_orientation]
   gamepanel_ctx.button[self.buttons.change_orientation.id].callback = self.callbacks.change_orientation
 
