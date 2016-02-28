@@ -25,11 +25,17 @@ Button.__index = Button
 local _count = 1
 
 function Button.create(engine, data)
+  assert(data.hint)
+  assert(data.image)
+  assert(data.callback)
   local o = {
     id     = tostring(_count),
     hint   = data.hint,
     engine = engine,
+    data   = data,
     drawing = {
+      context     = nil,
+      region      = nil,
       fn          = nil,
       mouse_click = nil,
       mouse_move  = nil,
@@ -40,40 +46,55 @@ function Button.create(engine, data)
   return setmetatable(o, Button)
 end
 
-function Button:bind_ctx(context)
-  local my_ctx = assert(context.button[self.id])
-  local x = assert(my_ctx.x)
-  local y = assert(my_ctx.y)
-  local image = assert(my_ctx.image)
+function Button:update_image(image)
+  self.data.image = image
+  self:_update()
+end
 
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
+function Button:_update()
+  local context = self.drawing.context
+  local x = assert(context.x)
+  local y = assert(context.y)
+  local image = assert(self.data.image)
+
+  local sdl_renderer = assert(self.engine.renderer.sdl_renderer)
   local dst = { x = x, y = y,  w = image.w, h = image.h }
   local region = Region.create(x, y, x + image.h, y + image.h)
 
-  local callback = assert(my_ctx.callback)
   local drawing_fn = function()
     assert(sdl_renderer:copy(image.texture, nil, dst))
   end
 
-  assert(self.hint)
+  self.drawing.region = region
+  self.drawing.fn = drawing_fn
+
+end
+
+function Button:bind_ctx(context)
+  local my_ctx = assert(context.button[self.id])
+  self.drawing.context = my_ctx
+
+  self:_update()
+
   local mouse_move = function(event)
-    if (region:is_over(event.x, event.y)) then
+    if (self.drawing.region:is_over(event.x, event.y)) then
       context.state:set_mouse_hint(self.hint)
-      if (context.state.action ~= 'default') then
+      if (context.state:get_action() ~= 'default') then
         context.state:set_action('default')
       end
       return true
     end
   end
   local mouse_click = function(event)
-    if (region:is_over(event.x, event.y)) then return callback() end
+    if (self.drawing.region:is_over(event.x, event.y)) then
+      return self.data.callback()
+    end
   end
 
   context.events_source.add_handler('mouse_click', mouse_click)
   context.events_source.add_handler('mouse_move', mouse_move)
   self.drawing.mouse_move = mouse_move
   self.drawing.mouse_click = mouse_click
-  self.drawing.fn = drawing_fn
 end
 
 function Button:unbind_ctx(context)
@@ -82,6 +103,8 @@ function Button:unbind_ctx(context)
   self.drawing.mouse_move = nil
   self.drawing.mouse_click = nil
   self.drawing.fn = nil
+  self.drawing.region = nil
+  self.drawing.context = nil
 end
 
 function Button:draw()

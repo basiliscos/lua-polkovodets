@@ -659,7 +659,7 @@ end
 
 function Unit:attack_on(tile, fire_type)
   self:_check_death()
-  local enemy_unit = tile:get_any_unit(self.engine.active_layer)
+  local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
   assert(enemy_unit)
   self:_update_orientation(enemy_unit.tile, self.tile)
   local i_casualities, p_casualities, i_participants, p_participants

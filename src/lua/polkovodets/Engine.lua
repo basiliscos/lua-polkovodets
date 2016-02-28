@@ -51,7 +51,6 @@ function Engine.create(language)
     current_player_idx = nil,
     history_layer      = false,
     total_players      = 0,
-    active_layer       = 'surface',
     reactor            = reactor,
     gui = {
       map_x = 0,
@@ -213,7 +212,7 @@ function Engine:end_turn()
   else
     self:_set_current_player(self.current_player_idx + 1)
   end
-  self.history_layer = true
+  self.state:set_recent_history(true)
   self.reactor:publish("full.refresh");
 end
 
@@ -325,14 +324,6 @@ function Engine:pointer_to_tile(x,y)
    end
 end
 
-function Engine:toggle_layer()
-  local current = self.active_layer
-  current = (current == 'air') and 'surface' or 'air'
-  print("active layer " .. current)
-  self.active_layer = current
-  self.reactor:publish("map.update");
-end
-
 function Engine:toggle_attack_priorities()
   local u = self.state:get_selected_unit()
   if (u) then
@@ -340,15 +331,5 @@ function Engine:toggle_attack_priorities()
     self.reactor:publish("map.update");
   end
 end
-
-function Engine:toggle_history()
-  self.history_layer = not self.history_layer
-  self:_update_history_records()
-end
-
-function Engine:show_history()
-  return self.history_layer
-end
-
 
 return Engine

@@ -28,6 +28,9 @@ setmetatable(GamePanel, HorizontalPanel)
 
 function GamePanel.create(engine)
   local o = HorizontalPanel.create(engine)
+  local theme = engine.renderer.theme
+
+
   setmetatable(o, GamePanel)
   o.button_geometry = {
     w = engine.renderer.theme.buttons.end_turn.normal.w,
@@ -35,39 +38,60 @@ function GamePanel.create(engine)
   }
 
   o.buttons = {
-    end_turn = end_turn,
+    --end_turn = end_turn,
   }
-  local add_button = function(key)
-    local button = Button.create(engine, {
-      hint = engine:translate('ui.button.' .. key),
-    })
-    table.insert(o.drawing.objects, button)
-    o.buttons[key] = button
-  end
-  add_button('toggle_landscape')
-  add_button('toggle_history')
-  add_button('toggle_layer')
-  add_button('end_turn')
 
+  local state = engine.state
   o.callbacks = {
     end_turn = function()
       engine:end_turn()
       return true
     end,
     toggle_layer = function()
-      engine:toggle_layer()
+      local new_value = (state:get_active_layer() == 'air') and 'surface' or 'air'
+      print("active layer " .. new_value)
+      local image = theme.buttons.toggle_layer[new_value]
+      o.buttons.toggle_layer:update_image(image)
+
+      state:set_active_layer(new_value)
       return true
     end,
     toggle_history = function()
-      engine:toggle_history()
+      local new_value = not state:get_recent_history()
+      local button_state = new_value and 'active' or 'inactive'
+      local image = theme.buttons.toggle_history[button_state]
+      o.buttons.toggle_history:update_image(image)
+
+      local actual_records = engine.history:get_actual_records()
+      state:set_actual_records(actual_records)
+      state:set_recent_history(new_value)
       return true
     end,
     toggle_landscape = function()
-      engine.state:set_selected_unit(nil)
-      engine.state:set_landscape_only(not engine:get_landscape_only())
+      local new_value = not state:get_landscape_only()
+      local landscape_state = new_value and 'active' or 'inactive'
+      local image = theme.buttons.toggle_landscape[landscape_state]
+      o.buttons.toggle_landscape:update_image(image)
+
+      state:set_selected_unit(nil)
+      state:set_landscape_only(new_value)
       return true
     end
   }
+
+  local add_button = function(key, image)
+    local button = Button.create(engine, {
+      image    = image,
+      hint     = engine:translate('ui.button.' .. key),
+      callback = o.callbacks[key],
+    })
+    table.insert(o.drawing.objects, button)
+    o.buttons[key] = button
+  end
+  add_button('toggle_landscape', theme.buttons.toggle_landscape.inactive)
+  add_button('toggle_history', theme.buttons.toggle_history.inactive)
+  add_button('toggle_layer', theme.buttons.toggle_layer[state:get_active_layer()])
+  add_button('end_turn', theme.buttons.end_turn.normal)
 
   return o
 end
@@ -94,24 +118,21 @@ function GamePanel:bind_ctx(context)
     }
   end
 
+  _.each(self.drawing.objects, function(k, v) v:bind_ctx(gamepanel_ctx) end)
+
+  -- actualize current values / images
   local state = self.engine.state
-  -- specific button context
-  gamepanel_ctx.button[self.buttons.end_turn.id].image = theme.buttons.end_turn.normal
-  gamepanel_ctx.button[self.buttons.end_turn.id].callback = self.callbacks.end_turn
-
-  local layer = self.engine.active_layer
-  gamepanel_ctx.button[self.buttons.toggle_layer.id].image = theme.buttons.toggle_layer[layer]
-  gamepanel_ctx.button[self.buttons.toggle_layer.id].callback = self.callbacks.toggle_layer
-
-  local history_state = self.engine.history_layer and 'active' or 'inactive'
-  gamepanel_ctx.button[self.buttons.toggle_history.id].image = theme.buttons.toggle_history[history_state]
-  gamepanel_ctx.button[self.buttons.toggle_history.id].callback = self.callbacks.toggle_history
 
   local landscape_state = state:get_landscape_only() and 'active' or 'inactive'
-  gamepanel_ctx.button[self.buttons.toggle_landscape.id].image = theme.buttons.toggle_landscape[landscape_state]
-  gamepanel_ctx.button[self.buttons.toggle_landscape.id].callback = self.callbacks.toggle_landscape
+  local landscape_image = theme.buttons.toggle_landscape[landscape_state]
+  self.buttons.toggle_landscape:update_image(landscape_image)
 
-  _.each(self.drawing.objects, function(k, v) v:bind_ctx(gamepanel_ctx) end)
+  local history_state = state:get_recent_history() and 'active' or 'inactive'
+  local history_image = theme.buttons.toggle_history[history_state]
+  self.buttons.toggle_history:update_image(history_image)
+
+  local layer_image = theme.buttons.toggle_layer[state:get_active_layer()]
+  self.buttons.toggle_layer:update_image(layer_image)
 
   HorizontalPanel.bind_ctx(self, gamepanel_ctx)
 end

@@ -33,6 +33,8 @@ function State.create(reactor)
     _actual_records = {},
     _selected_unit  = nil,
     _landscape_only = nil,
+    _recent_history = nil,
+    _active_layer   = 'surface',
   }
   return setmetatable(o, State)
 end
@@ -87,6 +89,18 @@ function State:set_landscape_only(value)
   self.reactor:publish('map.update', value)
 end
 function State:get_landscape_only() return self._landscape_only end
+
+function State:set_recent_history(value)
+  self._recent_history = value
+  self.reactor:publish('map.update', value)
+end
+function State:get_recent_history() return self._recent_history end
+
+function State:set_active_layer(value)
+  self._active_layer = value
+  self.reactor:publish('map.update', value)
+end
+function State:get_active_layer() return self._active_layer end
 
 return State
 

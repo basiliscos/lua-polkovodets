@@ -179,7 +179,8 @@ function Map:_on_map_update()
       engine.gui.map_sy - (engine.gui.map_y * terrain.hex_height),
     }
   }
-  map_context.active_layer = engine.active_layer
+  local active_layer = engine.state:get_active_layer()
+  map_context.active_layer = active_layer
   map_context.events_source = self:_get_event_source()
 
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_context) end)
@@ -188,7 +189,7 @@ function Map:_on_map_update()
 
   local active_x, active_y = table.unpack(self.active_tile)
   local active_tile = self.tiles[active_x][active_y]
-  local hilight_unit = u or (active_tile and active_tile:get_unit(engine.active_layer))
+  local hilight_unit = u or (active_tile and active_tile:get_unit(active_layer))
   map_context.subordinated = {}
   if (hilight_unit) then
     for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
@@ -237,7 +238,7 @@ function Map:_on_map_update()
       shown_records = _.append(shown_records, _.select(actual_records, my_unit_movements))
     end
 
-    if (engine:show_history()) then
+    if (engine.state:get_recent_history()) then
       shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
     end
     -- print("shown records " .. #shown_records)
