@@ -30,7 +30,6 @@ function Button.create(engine, data)
   assert(data.callback)
   local o = {
     id     = tostring(_count),
-    hint   = data.hint,
     engine = engine,
     data   = data,
     drawing = {
@@ -46,8 +45,12 @@ function Button.create(engine, data)
   return setmetatable(o, Button)
 end
 
-function Button:update_image(image)
-  self.data.image = image
+function Button:update_data(data)
+  for _, k in pairs({'hint', 'image', 'callback'}) do
+    if (data[k]) then
+      self.data[k] = data[k]
+    end
+  end
   self:_update()
 end
 
@@ -56,6 +59,7 @@ function Button:_update()
   local x = assert(context.x)
   local y = assert(context.y)
   local image = assert(self.data.image)
+  local state = self.engine.state
 
   local sdl_renderer = assert(self.engine.renderer.sdl_renderer)
   local dst = { x = x, y = y,  w = image.w, h = image.h }
@@ -78,7 +82,8 @@ function Button:bind_ctx(context)
 
   local mouse_move = function(event)
     if (self.drawing.region:is_over(event.x, event.y)) then
-      context.state:set_mouse_hint(self.hint)
+      local hint = context.state:get_mouse_hint()
+      if (hint ~= self.data.hint) then context.state:set_mouse_hint(self.data.hint) end
       if (context.state:get_action() ~= 'default') then
         context.state:set_action('default')
       end

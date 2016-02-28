@@ -143,6 +143,7 @@ function Interface:bind_ctx(context)
   local mouse_hint_change_listener = function(event, hint)
     local draw_fn
     if (hint and #hint > 0) then
+      -- print("hint: " .. hint)
       local my_label = Image.create(sdl_renderer, font:renderUtf8(hint, "solid", color))
       local w, h = context.renderer.window:getSize()
       local bg_texture = context.theme.window.background.texture
@@ -188,7 +189,6 @@ function Interface:bind_ctx(context)
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(interface_ctx) end)
   self.drawing.cursor:bind_ctx(interface_ctx)
-
 
   self.drawing.fn = draw_fn
   self.drawing.active_tile_change_listener = active_tile_change_listener
