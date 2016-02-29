@@ -40,7 +40,8 @@ function Engine.create(language)
     'unit.selected',
     'mouse-hint.change', 'map.active_tile.change',
     'action.change', 'mouse-position.change',
-    'map.update', 'history.update', 'ui.update',
+    'map.update', 'history.update',
+    'ui.update',
     'full.refresh'
   })
 

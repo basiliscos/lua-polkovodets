@@ -69,6 +69,7 @@ function State:get_mouse() return self._mouse end
 
 function State:activate_panel(panel, value)
   self._active_panels[panel] = value
+  self.reactor:publish('ui.update', value)
 end
 function State:get_active_panels() return self._active_panels end
 

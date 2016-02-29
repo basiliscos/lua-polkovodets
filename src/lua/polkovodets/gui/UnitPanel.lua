@@ -86,11 +86,9 @@ function UnitPanel.create(engine)
   add_button('information', theme.buttons.information.disabled)
   add_button('detach', theme.buttons.detach.disabled)
 
-  --[[
   local detach_panel = DetachPanel.create(engine, o.buttons.detach.id)
   o.detach_panel = detach_panel
   table.insert(o.drawing.objects, detach_panel)
-  ]]
 
   return o
 end
