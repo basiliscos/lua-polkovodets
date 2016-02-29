@@ -194,7 +194,7 @@ function Tile:bind_ctx(context)
       local u = context.state:get_selected_unit()
       local action = context.state:get_action()
       if (action == 'default') then
-        if (u and u.tile.id ~= self.id) then
+        if (u and (not u.tile or (u.tile.id ~= self.id))) then
           print("unselecting unit")
           context.state:set_selected_unit(nil)
           self.engine.reactor:publish("map.update")
