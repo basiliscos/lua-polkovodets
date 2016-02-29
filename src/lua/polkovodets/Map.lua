@@ -318,11 +318,15 @@ function Map:bind_ctx(context)
 
   local mouse_click = function(event)
     local tile_coord = self.engine:pointer_to_tile(event.x, event.y)
-    local tile = self.tiles[tile_coord[1]][tile_coord[2]]
-    event.tile_id = tile.id
-    local ordered_handlers = self.drawing.proxy.mouse_click[tile.id]
-    if (ordered_handlers) then
-      ordered_handlers:apply(function(cb) return cb(event) end)
+    -- tile coord might be nil, if the shown area is greater than map
+    -- i.e. the click has been performed outside of the map
+    if (tile_coord) then
+      local tile = self.tiles[tile_coord[1]][tile_coord[2]]
+      event.tile_id = tile.id
+      local ordered_handlers = self.drawing.proxy.mouse_click[tile.id]
+      if (ordered_handlers) then
+        ordered_handlers:apply(function(cb) return cb(event) end)
+      end
     end
   end
 
