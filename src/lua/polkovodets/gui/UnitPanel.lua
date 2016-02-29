@@ -126,16 +126,20 @@ function UnitPanel:bind_ctx(context)
     self.buttons.information:update_data({ image = theme.buttons.information[can_view_information]} )
 
     local detach_state = 'disabled'
+    local detach_hint
     if (u and #u.data.attached > 0) then
       detach_state = 'available'
-      local hint = (#u.data.attached == 1)
+      detach_hint = (#u.data.attached == 1)
         and engine:translate('ui.button.detach_unit', {name = u.data.attached[1].name })
          or engine:translate('ui.button.detach')
-      self.buttons.detach:update_data({
-        image = theme.buttons.detach[detach_state],
-        hint  = hint
-      })
+    else
+      detach_hint = engine:translate('ui.button.detach')
     end
+    self.buttons.detach:update_data({
+      image = theme.buttons.detach[detach_state],
+      hint  = detach_hint,
+    })
+
   end
 
   _.each(self.drawing.objects, function(k, v) v:bind_ctx(gamepanel_ctx) end)
