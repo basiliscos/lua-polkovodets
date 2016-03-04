@@ -46,12 +46,11 @@ function Interface.create(engine)
       },
       mouse_click = nil,
       objects     = {},
+      windows     = {},
       obj_by_type = {
         game_panel = nil,
       },
       opened_windows = 0,
-      reference_corner = nil, -- only for top window
-      window_order = {}, -- key: window, value order = z-index
       active_tile_change_listener = nil,
     }
   }
@@ -77,29 +76,6 @@ function Interface:bind_ctx(context)
 
   local w, h = context.renderer.window:getSize()
   local sdl_renderer = context.renderer.sdl_renderer
-
-  local layout_fn = function(window, content_w, content_h)
-    -- calculate window center
-    local order = assert(self.drawing.window_order[window])
-    local x = math.modf(w/2 - content_w/2)
-    local y = math.modf(h/2 - content_h/2)
-    -- calculate top-level window, and put it always in the center
-    if (order == self.drawing.opened_windows and not(self.drawing.reference_corner)) then
-      self.drawing.reference_corner = {x, y}
-    else
-      -- non-top-level windows should be moved a bit top-left relative
-      -- to the corner of the top one
-      if (self.drawing.reference_corner) then
-          -- calculate them only if we already calculated top-level window position
-        local total = assert(self.drawing.opened_windows)
-        local z_index = total - order
-        x, y = table.unpack(self.drawing.reference_corner)
-        x = x - (25 * z_index)
-        y = y - (25 * z_index)
-      end
-    end
-    return x, y
-  end
 
   local interface_ctx = _.clone(context, true)
   interface_ctx.window = {w = w, h = h}
@@ -194,6 +170,8 @@ function Interface:bind_ctx(context)
   self.drawing.active_tile_change_listener = active_tile_change_listener
   self.drawing.mouse_hint_change_listener = mouse_hint_change_listener
   self.context = interface_ctx
+
+  self:_layout_windows();
 end
 
 function Interface:unbind_ctx(context)
@@ -206,6 +184,27 @@ end
 
 function Interface:draw()
   self.drawing.fn()
+end
+
+function Interface:_layout_windows()
+  local w, h = self.context.renderer.window:getSize()
+  local windows = self.drawing.windows
+  if (#windows > 0) then
+    local top_descriptor = windows[#windows]
+    local window_w, window_h = table.unpack(top_descriptor.dimensions)
+    local x = math.modf(w/2 - window_w / 2)
+    local y = math.modf(h/2 - window_h / 2)
+    top_descriptor.window:set_position(x, y)
+
+    -- calculate positions for all windows below the top
+    for i = 1, #windows - 1 do
+      local descriptor = windows[i]
+      local z_index = #windows - i
+      descriptor.window:set_position(x - 25 * z_index, y - 25 * z_index)
+    end
+  end
+
+  self.engine.reactor:publish("ui.update")
 end
 
 function Interface:add_window(id, data)
@@ -232,24 +231,23 @@ function Interface:add_window(id, data)
   local class = require ('polkovodets.gui.' .. class_name)
   local window = class.create(self.engine, data)
 
+  local dimensions = window:bind_ctx(self.context)
+  local obj_index = #self.drawing.objects + 1,
   table.insert(self.drawing.objects, window)
+  table.insert(self.drawing.windows, {
+    window     = window,
+    dimensions = dimensions,
+    obj_index  = obj_index,
+  })
 
-  local opened_windows = self.drawing.opened_windows
-  opened_windows = opened_windows + 1
-  self.drawing.opened_windows = opened_windows
-  self.drawing.window_order[window] = opened_windows
-  self.drawing.reference_corner = nil -- will be filled by layering_fn
-
-  window:bind_ctx(self.context)
-
-  print("created window: " .. class_name)
-  self.engine.reactor:publish("ui.update")
+  print("created window: " .. class_name .. "(" .. #self.drawing.windows .. ")")
+  self:_layout_windows()
 end
 
 function Interface:remove_window(window, do_not_emit_update)
-  local idx
-  for i, o in ipairs(self.drawing.objects) do
-    if (o == window) then
+  local idx, obj_idx
+  for i, o in ipairs(self.drawing.windows) do
+    if (o.window == window) then
       idx = i
       break
     end
@@ -257,28 +255,12 @@ function Interface:remove_window(window, do_not_emit_update)
   assert(idx, "cannot find window to remove")
   window:unbind_ctx(self.context)
 
-  local opened_windows = self.drawing.opened_windows
-  opened_windows = opened_windows - 1
-  self.drawing.opened_windows = opened_windows
-  self.drawing.window_order[window] = nil
-  self.drawing.reference_corner = nil -- will be filled by layering_fn
+  table.remove(self.drawing.objects, obj_idx)
+  table.remove(self.drawing.windows, idx)
 
-  -- need to trigger windows re-layering
-  local prev_window
-  for window, order in pairs(self.drawing.window_order) do
-    if (order == opened_windows) then
-      prev_window = window
-    end
-  end
-  if (prev_window) then
-    prev_window:unbind_ctx(self.context)
-    prev_window:bind_ctx(self.context)
-  end
-
-  table.remove(self.drawing.objects, idx)
   print("window " .. idx .. " removed")
   if (not do_not_emit_update) then
-    self.engine.reactor:publish("ui.update")
+    self:_layout_windows()
   end
 end
 

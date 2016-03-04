@@ -38,6 +38,7 @@ function UnitInfoWindow.create(engine, data)
   o.drawing.content_fn = nil
   o.content = { active_tab = 1 }
   o.unit = assert(data)
+  o.drawing.position = {0, 0}
   return o
 end
 
@@ -417,144 +418,179 @@ function UnitInfoWindow:_construct_gui()
   return gui
 end
 
-function UnitInfoWindow:bind_ctx(context)
+function UnitInfoWindow:_on_ui_update(show)
   local engine = self.engine
-  local theme = assert(context.renderer.theme)
+  local context = self.drawing.context
 
-  engine.state:set_mouse_hint('')
-  local gui = self:_construct_gui();
+  local handlers_bound = self.handlers_bound
 
-  local unit_info_ctx = _.clone(context, true)
+  if (show) then
+    local theme = assert(context.renderer.theme)
 
-  local content_w = gui.content_size.w
-  local content_h = gui.content_size.h
-  local x, y = context.layout_fn(self, content_w, content_h)
+    engine.state:set_mouse_hint('')
+    local gui = self.drawing.gui
 
-  local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
+    local unit_info_ctx = _.clone(context, true)
 
-  unit_info_ctx.x = x
-  unit_info_ctx.y = y
-  unit_info_ctx.content_size = {
-    w = content_w,
-    h = content_h,
-  }
-  local window_region = Region.create(x, y, x + self.contentless_size.w + content_w, y + self.contentless_size.h + content_h)
-  local tab_x_min, tab_y_min = content_x + gui.tabs_region.x_min, content_y + gui.tabs_region.y_min
-  local tab_x_max, tab_y_max = content_x + gui.tabs_region.x_max, content_y + gui.tabs_region.y_max
-  local tab_content_region = Region.create(tab_x_min, tab_y_min, tab_x_max, tab_y_max)
+    local content_w = gui.content_size.w
+    local content_h = gui.content_size.h
+    local x, y = table.unpack(self.drawing.position)
 
-  local tab_icon_regions = _.map(gui.tabs, function(idx, tab)
-    local icon_data = tab.icon
-    local tab_image = icon_data.states[icon_data.current]
-    local x, y = content_x + icon_data.dx, content_y + icon_data.dy
-    return Region.create(x, y, x + tab_image.w, y + tab_image.h)
-  end)
+    local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 
-  local is_over_tab_icons_region = function(x,y)
-    for idx, tab_icon_area in ipairs(tab_icon_regions) do
-      if (tab_icon_area:is_over(x, y)) then
-        return idx
-      end
-    end
-  end
+    unit_info_ctx.x = x
+    unit_info_ctx.y = y
+    unit_info_ctx.content_size = {
+      w = content_w,
+      h = content_h,
+    }
+    local window_region = Region.create(x, y, x + self.contentless_size.w + content_w, y + self.contentless_size.h + content_h)
+    local tab_x_min, tab_y_min = content_x + gui.tabs_region.x_min, content_y + gui.tabs_region.y_min
+    local tab_x_max, tab_y_max = content_x + gui.tabs_region.x_max, content_y + gui.tabs_region.y_max
+    local tab_content_region = Region.create(tab_x_min, tab_y_min, tab_x_max, tab_y_max)
 
-
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
-  self.drawing.content_fn = function()
-    -- background
-    assert(sdl_renderer:copy(theme.window.background.texture, nil,
-      {x = content_x, y = content_y, w = content_w, h = content_h}
-    ))
-
-    local element_drawer = function(idx, e)
-      local image = e.image
-      assert(sdl_renderer:copy(image.texture, nil,
-        {x = content_x + e.dx, y = content_y + e.dy, w = image.w, h = image.h}
-      ))
-    end
-    -- header
-    _.each(gui.elements, element_drawer)
-
-    -- draw active tab active elements
-    local tab_elements = gui.tabs[gui.active_tab].active
-    _.each(tab_elements, element_drawer)
-
-    -- draw all tab labels
-    _.each(gui.tabs, function(idx, tab)
+    local tab_icon_regions = _.map(gui.tabs, function(idx, tab)
       local icon_data = tab.icon
       local tab_image = icon_data.states[icon_data.current]
-      assert(sdl_renderer:copy(tab_image.texture, nil,
-        {x = content_x + icon_data.dx, y = content_y + icon_data.dy, w = tab_image.w, h = tab_image.h}
-      ))
+      local x, y = content_x + icon_data.dx, content_y + icon_data.dy
+      return Region.create(x, y, x + tab_image.w, y + tab_image.h)
     end)
 
-  end
-
-  local mouse_click = function(event)
-    if (window_region:is_over(event.x, event.y)) then
-      local idx = is_over_tab_icons_region(event.x, event.y)
-      if (idx) then -- swithing tab
-        local prev_tab = gui.tabs[gui.active_tab]
-        local new_tab = gui.tabs[idx]
-        prev_tab.icon.current = 'available'
-        new_tab.icon.current = 'active'
-        gui.active_tab = idx
-        -- remember active tab between ctx bind/unbind
-        self.content.active_tab = idx
-      else -- some action inside tab content, delegate
-        gui.tabs[gui.active_tab]:mouse_click(event)
-      end
-    else
-      -- just close the window
-      engine.interface:remove_window(self)
-    end
-    return true -- stop further event propagation
-  end
-
-  context.state.action = 'default'
-  local mouse_move = function(event)
-    -- engine.state:set_mouse_hint('')
-    -- remove hilight from all tab icons, except the active one
-    for idx, tab in ipairs(gui.tabs) do
-      local icon = tab.icon
-      if (idx ~= gui.active_tab) then
-        icon.current = 'available'
+    local is_over_tab_icons_region = function(x,y)
+      for idx, tab_icon_area in ipairs(tab_icon_regions) do
+        if (tab_icon_area:is_over(x, y)) then
+          return idx
+        end
       end
     end
-    local idx = is_over_tab_icons_region(event.x, event.y)
-    if (idx) then
-      engine.state:set_mouse_hint(gui.tabs[idx].icon.hint)
-      if (idx ~= gui.active_tab) then
-        gui.tabs[idx].icon.current = 'hilight'
+    engine.state:set_action('default')
+    -- unpdate drawer
+    HorizontalPanel.bind_ctx(self, unit_info_ctx)
+
+
+    local sdl_renderer = assert(context.renderer.sdl_renderer)
+    self.drawing.content_fn = function()
+      -- background
+      assert(sdl_renderer:copy(theme.window.background.texture, nil,
+        {x = content_x, y = content_y, w = content_w, h = content_h}
+      ))
+
+      local element_drawer = function(idx, e)
+        local image = e.image
+        assert(sdl_renderer:copy(image.texture, nil,
+          {x = content_x + e.dx, y = content_y + e.dy, w = image.w, h = image.h}
+        ))
       end
+      -- header
+      _.each(gui.elements, element_drawer)
+
+      -- draw active tab active elements
+      local tab_elements = gui.tabs[gui.active_tab].active
+      _.each(tab_elements, element_drawer)
+
+      -- draw all tab labels
+      _.each(gui.tabs, function(idx, tab)
+        local icon_data = tab.icon
+        local tab_image = icon_data.states[icon_data.current]
+        assert(sdl_renderer:copy(tab_image.texture, nil,
+          {x = content_x + icon_data.dx, y = content_y + icon_data.dy, w = tab_image.w, h = tab_image.h}
+        ))
+      end)
+      HorizontalPanel.draw(self)
     end
-    if (not(idx) and tab_content_region:is_over(event.x, event.y)) then
-      -- need to shift coordinate system
-      gui.tabs[gui.active_tab].mouse_move(event.x - tab_x_min, event.y - tab_y_min)
+
+    if (not handlers_bound) then
+      self.handlers_bound = true
+      local mouse_click = function(event)
+        if (window_region:is_over(event.x, event.y)) then
+          local idx = is_over_tab_icons_region(event.x, event.y)
+          if (idx) then -- swithing tab
+            local prev_tab = gui.tabs[gui.active_tab]
+            local new_tab = gui.tabs[idx]
+            prev_tab.icon.current = 'available'
+            new_tab.icon.current = 'active'
+            gui.active_tab = idx
+            -- remember active tab between ctx bind/unbind
+            self.content.active_tab = idx
+          else -- some action inside tab content, delegate
+            gui.tabs[gui.active_tab]:mouse_click(event)
+          end
+        else
+          -- just close the window
+          engine.interface:remove_window(self)
+        end
+        return true -- stop further event propagation
+      end
+
+      local mouse_move = function(event)
+        -- engine.state:set_mouse_hint('')
+        -- remove hilight from all tab icons, except the active one
+        for idx, tab in ipairs(gui.tabs) do
+          local icon = tab.icon
+          if (idx ~= gui.active_tab) then
+            icon.current = 'available'
+          end
+        end
+        local idx = is_over_tab_icons_region(event.x, event.y)
+        if (idx) then
+          engine.state:set_mouse_hint(gui.tabs[idx].icon.hint)
+          if (idx ~= gui.active_tab) then
+            gui.tabs[idx].icon.current = 'hilight'
+          end
+        end
+        if (not(idx) and tab_content_region:is_over(event.x, event.y)) then
+          -- need to shift coordinate system
+          gui.tabs[gui.active_tab].mouse_move(event.x - tab_x_min, event.y - tab_y_min)
+        end
+        return true -- stop further event propagation
+      end
+
+
+      context.events_source.add_handler('mouse_click', mouse_click)
+      context.events_source.add_handler('mouse_move', mouse_move)
+      self.content.mouse_click = mouse_click
+      self.content.mouse_move = mouse_move
     end
-    return true -- stop further event propagation
+  elseif (self.handlers_bound) then
+    self.handlers_bound = false
+    context.events_source.remove_handler('mouse_click', self.content.mouse_click)
+    context.events_source.remove_handler('mouse_move', self.content.mouse_move)
+    self.content.mouse_click = mouse_click
+    self.content.mouse_move = mouse_move
+    self.drawing.content_fn = function() end
+    HorizontalPanel.unbind_ctx(self, unit_info_ctx)
   end
+end
 
-  context.events_source.add_handler('mouse_click', mouse_click)
-  context.events_source.add_handler('mouse_move', mouse_move)
-  self.content.mouse_click = mouse_click
-  self.content.mouse_move = mouse_move
+function UnitInfoWindow:bind_ctx(context)
+  local engine = self.engine
+  local gui = self:_construct_gui()
 
-  HorizontalPanel.bind_ctx(self, unit_info_ctx)
+  local ui_update_listener = function() return self:_on_ui_update(true) end
+
+  self.drawing.context = context
+  self.drawing.ui_update_listener = ui_update_listener
+  self.drawing.gui = gui
+
+  engine.reactor:subscribe('ui.update', ui_update_listener)
+
+  local w, h = gui.content_size.w + self.contentless_size.w, gui.content_size.h + self.contentless_size.h
+  return {w, h}
+end
+
+function UnitInfoWindow:set_position(x, y)
+  self.drawing.position = {x, y}
 end
 
 function UnitInfoWindow:unbind_ctx(context)
-  context.events_source.remove_handler('mouse_click', self.content.mouse_click)
-  context.events_source.remove_handler('mouse_move', self.content.mouse_move)
-  self.content.mouse_click = nil
-  self.content.mouse_move = nil
-  self.drawing.content_fn = nil
-  HorizontalPanel.unbind_ctx(self, context)
+  self:_on_ui_update(false)
+  self.engine.reactor:unsubscribe('ui.update', self.drawing.ui_update_listener)
+  self.drawing.ui_update_listener = nil
+  self.drawing.context = nil
 end
 
 function UnitInfoWindow:draw()
   self.drawing.content_fn()
-  HorizontalPanel.draw(self)
 end
 
 return UnitInfoWindow
