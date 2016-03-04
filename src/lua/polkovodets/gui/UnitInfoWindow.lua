@@ -551,12 +551,12 @@ function UnitInfoWindow:_on_ui_update(show)
       self.content.mouse_click = mouse_click
       self.content.mouse_move = mouse_move
     end
-  elseif (self.handlers_bound) then
+  elseif (self.handlers_bound) then  -- unbind everything
     self.handlers_bound = false
     context.events_source.remove_handler('mouse_click', self.content.mouse_click)
     context.events_source.remove_handler('mouse_move', self.content.mouse_move)
-    self.content.mouse_click = mouse_click
-    self.content.mouse_move = mouse_move
+    self.content.mouse_click = nil
+    self.content.mouse_move = nil
     self.drawing.content_fn = function() end
     HorizontalPanel.unbind_ctx(self, unit_info_ctx)
   end
