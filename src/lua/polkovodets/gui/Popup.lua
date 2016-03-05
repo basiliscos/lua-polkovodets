@@ -33,6 +33,10 @@ local HILIGHT_COLOR = 0xFFFFFF
 function Popup.create(engine, close_fn, definitions, initial_position)
   assert(initial_position)
   local o = {
+    -- mimic window properties
+    properties  = {
+      floating = false,
+    },
     engine      = engine,
     close_fn    = close_fn,
     definitions = definitions,
