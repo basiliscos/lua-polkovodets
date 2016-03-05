@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -46,12 +46,10 @@ function WeaponCasualitiesDetailsWindow.create(engine, data)
   return o
 end
 
-function WeaponCasualitiesDetailsWindow:bind_ctx(context)
+function WeaponCasualitiesDetailsWindow:_construct_gui()
   local engine = self.engine
-  local theme = assert(context.renderer.theme)
-  engine.state:set_mouse_hint('')
-
-  local wcdw_ctx = _.clone(context, true)
+  local theme = engine.renderer.theme
+  local context = self.context
 
   local font = self.font
   local wi_ids = _.keys(self.participants)
@@ -86,7 +84,7 @@ function WeaponCasualitiesDetailsWindow:bind_ctx(context)
   local was_label = create_image(engine:translate('ui.window.battle_details.header.was'), HILIGHT_COLOR)
   local casualities_label = create_image(engine:translate('ui.window.battle_details.header.casualities'), HILIGHT_COLOR)
 
-  local dx = content_x + 10 + max_w
+  dx = content_x + 10 + max_w
   local headers = {}
   table.insert(headers, {
     label = was_label,
@@ -133,84 +131,124 @@ function WeaponCasualitiesDetailsWindow:bind_ctx(context)
   local content_w = dx + headers[#headers].label.w + 10
   local content_h = dy
 
-  -- the window content could be drawn outside of the system window,
-  -- make shoure, that this will not happen
-  local x, y = self.initial_position.x, self.initial_position.y
-  local offscreen_dx = x + content_w + self.contentless_size.w - context.window.w
-  local offscreen_dy = y + content_h + self.contentless_size.h - context.window.h
-
-  if (offscreen_dx > 0) then x = x - offscreen_dx end
-  if (offscreen_dy > 0) then y = y - offscreen_dy end
-
-  -- provide details for parent widget
-  wcdw_ctx.content_size = {
-    w = content_w,
-    h = content_h,
+  return {
+    headers = headers,
+    lines   = lines,
+    w       = content_w,
+    h       = content_h,
   }
-  wcdw_ctx.x = x
-  wcdw_ctx.y = y
+end
 
-  -- print(inspect(lines))
-  -- print(inspect(headers))
+function WeaponCasualitiesDetailsWindow:_on_ui_update(show)
+  local engine = self.engine
+  local context = self.drawing.context
 
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
-  local draw_fn = function()
-    -- background
-    assert(sdl_renderer:copy(theme.window.background.texture, nil,
-      {x = x + content_x, y = y + content_y, w = content_w, h = content_h}
-    ))
+  local handlers_bound = self.handlers_bound
 
-    -- headers
-    for idx, header in pairs(headers) do
+  if (show) then
+    local sdl_renderer = assert(context.renderer.sdl_renderer)
+    local theme = engine.renderer.theme
+    local gui = self.drawing.gui
+    local x, y = self.initial_position.x, self.initial_position.y
+    local content_x, content_y = self.contentless_size.dx, self.contentless_size.dy
+
+    -- precalculage: bg
+    local bg_box = {x = x + content_x, y = y + content_y, w = gui.w, h = gui.h}
+
+    -- precalculage: headers
+    for idx, header in pairs(gui.headers) do
       local label = header.label
-      assert(sdl_renderer:copy(label.texture, nil,
-        {x = x + header.dx, y = y + header.dy, w = label.w, h = label.h}
-      ))
+      header.box = {x = x + header.dx, y = y + header.dy, w = label.w, h = label.h}
     end
 
-    -- labels
-    for idx, labels in pairs(lines) do
+    -- precalculage: lines
+    for idx, labels in pairs(gui.lines) do
       for idx2, label in pairs (labels) do
-        assert(sdl_renderer:copy(label.label.texture, nil,
-          {x = x + label.dx, y = y + label.dy, w = label.label.w, h = label.label.h}
-        ))
+        label.box = {x = x + label.dx, y = y + label.dy, w = label.label.w, h = label.label.h}
       end
     end
+
+    context.x, context.y = x, y
+    HorizontalPanel.bind_ctx(self, context)
+    self.drawing.content_fn = function()
+      -- background
+      assert(sdl_renderer:copy(theme.window.background.texture, nil, bg_box))
+
+      -- headers
+      for idx, header in pairs(gui.headers) do
+        local label = header.label
+        assert(sdl_renderer:copy(label.texture, nil, header.box))
+      end
+
+      -- labels
+      for idx, labels in pairs(gui.lines) do
+        for idx2, label in pairs (labels) do
+          assert(sdl_renderer:copy(label.label.texture, nil, label.box))
+        end
+      end
+      HorizontalPanel.draw(self)
+    end
+
+    if (not handlers_bound) then
+      self.handlers_bound = true
+      -- just to prevent scrolling / hints update
+      local mouse_move = function()
+        return true -- stop further event propagation
+      end
+
+      -- just dispose current window
+      local mouse_click = function()
+        engine.interface:remove_window(self)
+        return true -- stop further event propagation
+      end
+
+      self.content.mouse_click = mouse_click
+      self.content.mouse_move = mouse_move
+      context.events_source.add_handler('mouse_click', self.content.mouse_click)
+      context.events_source.add_handler('mouse_move', self.content.mouse_move)
+    end
+  elseif (self.handlers_bound) then  -- unbind everything
+    self.handlers_bound = false
+    context.events_source.remove_handler('mouse_click', self.content.mouse_click)
+    context.events_source.remove_handler('mouse_move', self.content.mouse_move)
+    self.content.mouse_click = nil
+    self.content.mouse_move = nil
+    self.drawing.content_fn = function() end
+    HorizontalPanel.unbind_ctx(self, context)
   end
+end
 
-  -- just to prevent scrolling / hints update
-  local mouse_move = function(event)
-    return true -- stop further event propagation
-  end
+function WeaponCasualitiesDetailsWindow:bind_ctx(context)
+  local engine = self.engine
 
-  -- just dispose current window
-  local mouse_click = function(event)
-    engine.interface:remove_window(self)
-    return true -- stop further event propagation
-  end
+  local gui = self:_construct_gui()
+  local w, h = gui.w + self.contentless_size.w, gui.h + self.contentless_size.h
+  local wcdw_ctx = _.clone(context, true)
+  wcdw_ctx.content_size = { w = w, h = h }
 
-  context.events_source.add_handler('mouse_click', mouse_click)
-  context.events_source.add_handler('mouse_move', mouse_move)
+  local ui_update_listener = function() return self:_on_ui_update(true) end
 
-  self.content.mouse_move = mouse_move
-  self.content.mouse_click = mouse_click
+  self.drawing.context = wcdw_ctx
+  self.drawing.ui_update_listener = ui_update_listener
+  self.drawing.gui = gui
 
-  self.drawing.content_fn = draw_fn
-  HorizontalPanel.bind_ctx(self, wcdw_ctx)
+  engine.reactor:subscribe('ui.update', ui_update_listener)
+
+  return {w, h}
 end
 
 function WeaponCasualitiesDetailsWindow:unbind_ctx(context)
-  context.events_source.remove_handler('mouse_click', self.content.mouse_click)
-  context.events_source.remove_handler('mouse_move', self.content.mouse_move)
-  self.content.mouse_click = nil
-  self.content.mouse_move = nil
-  self.drawing.content_fn = nil
-  HorizontalPanel.unbind_ctx(self, context)
+  self:_on_ui_update(false)
+  self.engine.reactor:unsubscribe('ui.update', self.drawing.ui_update_listener)
+  self.drawing.ui_update_listener = nil
+  self.drawing.context = nil
 end
 
 function WeaponCasualitiesDetailsWindow:draw()
   self.drawing.content_fn()
-  HorizontalPanel.draw(self)
 end
+
+-- ignore, always draw at mouse click point
+function WeaponCasualitiesDetailsWindow:set_position() end
 
 return WeaponCasualitiesDetailsWindow
