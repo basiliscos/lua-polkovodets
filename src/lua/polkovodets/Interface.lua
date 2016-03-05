@@ -215,24 +215,6 @@ function Interface:_layout_windows()
           descriptor.window:set_position(x - 25 * z_index, y - 25 * z_index)
         end
       end
-
-      --[[
-      local centered_windows = 0
-      for i = 1, #windows do
-        if (not windows[i].window.properties.floating) then
-          centered_windows = centered_windows + 1
-        end
-      end
-      print("centered_windows = " .. centered_windows)
-      local z_index = top_descriptor.window.properties.floating and 0 or 1
-      for i = 1, #windows - 1 do
-        local descriptor = windows[i]
-        if (not descriptor.window.properties.floating) then z_index = z_index + 1 end
-        local idx = centered_windows - z_index
-        print("idx = " .. idx)
-        descriptor.window:set_position(x - 25 * idx, y - 25 * idx)
-      end
-      ]]
     end
   end
 
