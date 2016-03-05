@@ -20,14 +20,14 @@ local inspect = require('inspect')
 local _ = require ("moses")
 
 local Button = require ('polkovodets.gui.Button')
-local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
+local Widget = require ('polkovodets.gui.Widget')
 
 local DetachPanel = {}
 DetachPanel.__index = DetachPanel
-setmetatable(DetachPanel, HorizontalPanel)
+setmetatable(DetachPanel, Widget)
 
 function DetachPanel.create(engine, button_anchor_id)
-  local o = HorizontalPanel.create(engine)
+  local o = Widget.create(engine)
   setmetatable(o, DetachPanel)
   o.button_geometry = {
     w = engine.renderer.theme.buttons.end_turn.normal.w,
@@ -76,7 +76,7 @@ function DetachPanel:_on_ui_update(show)
     self.drawing.mouse_click = nil
     _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
     self.already_active = false
-    HorizontalPanel.unbind_ctx(self, detach_ctx)
+    Widget.unbind_ctx(self, detach_ctx)
     self.drawing.objects = {}
   end
 
@@ -125,7 +125,7 @@ function DetachPanel:_on_ui_update(show)
       table.insert(self.drawing.objects, button)
     end
 
-    HorizontalPanel.bind_ctx(self, detach_ctx)
+    Widget.bind_ctx(self, detach_ctx)
   end
 
 end
@@ -157,7 +157,7 @@ function DetachPanel:draw()
   local active_panels = self.engine.state:get_active_panels()
   if (active_panels.detach_panel) then
     -- drawing order generally does not matter
-    HorizontalPanel.draw(self)
+    Widget.draw(self)
     _.each(self.drawing.objects, function(k, v) v:draw() end)
   end
 end

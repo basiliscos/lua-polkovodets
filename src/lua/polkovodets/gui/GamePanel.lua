@@ -20,14 +20,14 @@ local inspect = require('inspect')
 local _ = require ("moses")
 
 local Button = require ('polkovodets.gui.Button')
-local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
+local Widget = require ('polkovodets.gui.Widget')
 
 local GamePanel = {}
 GamePanel.__index = GamePanel
-setmetatable(GamePanel, HorizontalPanel)
+setmetatable(GamePanel, Widget)
 
 function GamePanel.create(engine)
-  local o = HorizontalPanel.create(engine)
+  local o = Widget.create(engine)
   local theme = engine.renderer.theme
 
   setmetatable(o, GamePanel)
@@ -100,13 +100,10 @@ function GamePanel:bind_ctx(context)
   local gamepanel_ctx = _.clone(context, true)
   local content_w = self.button_geometry.w * #self.drawing.objects
   local content_h = self.button_geometry.h
-  gamepanel_ctx.content_size = { w = content_w, h = content_h}
 
   local window = assert(context.window)
   local x = window.w - (self.contentless_size.w + content_w)
   local y = window.h - (self.contentless_size.h + content_h)
-  gamepanel_ctx.x = x
-  gamepanel_ctx.y = y
 
   -- generic buttons context
   gamepanel_ctx.button = {}
@@ -133,17 +130,16 @@ function GamePanel:bind_ctx(context)
   local layer_image = theme.buttons.toggle_layer[state:get_active_layer()]
   self.buttons.toggle_layer:update_data({ image = layer_image})
 
-  HorizontalPanel.bind_ctx(self, gamepanel_ctx)
+  Widget.update_drawer(self, x, y, content_w, content_h)
 end
 
 function GamePanel:unbind_ctx(context)
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(context) end)
-  HorizontalPanel.unbind_ctx(self, context)
 end
 
 function GamePanel:draw()
   -- drawing order generally does not matter
-  HorizontalPanel.draw(self)
+  Widget.draw(self)
   _.each(self.drawing.objects, function(k, v) v:draw() end)
 end
 

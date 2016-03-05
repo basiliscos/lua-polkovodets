@@ -19,13 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local inspect = require('inspect')
 local _ = require ("moses")
 
-local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
+local Widget = require ('polkovodets.gui.Widget')
 local Image = require 'polkovodets.utils.Image'
 local Region = require 'polkovodets.utils.Region'
 
 local UnitInfoWindow = {}
 UnitInfoWindow.__index = UnitInfoWindow
-setmetatable(UnitInfoWindow, HorizontalPanel)
+setmetatable(UnitInfoWindow, Widget)
 
 local TTILE_FONT_SIZE = 16
 local DEFAULT_FONT_SIZE = 12
@@ -33,7 +33,7 @@ local DEFAULT_COLOR = 0xAAAAAA
 local HILIGHT_COLOR = 0xFFFFFF
 
 function UnitInfoWindow.create(engine, data)
-  local o = HorizontalPanel.create(engine)
+  local o = Widget.create(engine)
   setmetatable(o, UnitInfoWindow)
   o.drawing.content_fn = nil
   o.content = { active_tab = 1 }
@@ -430,20 +430,12 @@ function UnitInfoWindow:_on_ui_update(show)
     engine.state:set_mouse_hint('')
     local gui = self.drawing.gui
 
-    local unit_info_ctx = _.clone(context, true)
-
     local content_w = gui.content_size.w
     local content_h = gui.content_size.h
     local x, y = table.unpack(self.drawing.position)
 
     local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
 
-    unit_info_ctx.x = x
-    unit_info_ctx.y = y
-    unit_info_ctx.content_size = {
-      w = content_w,
-      h = content_h,
-    }
     local window_region = Region.create(x, y, x + self.contentless_size.w + content_w, y + self.contentless_size.h + content_h)
     local tab_x_min, tab_y_min = content_x + gui.tabs_region.x_min, content_y + gui.tabs_region.y_min
     local tab_x_max, tab_y_max = content_x + gui.tabs_region.x_max, content_y + gui.tabs_region.y_max
@@ -464,8 +456,7 @@ function UnitInfoWindow:_on_ui_update(show)
       end
     end
     engine.state:set_action('default')
-    -- unpdate drawer
-    HorizontalPanel.bind_ctx(self, unit_info_ctx)
+    Widget.update_drawer(self, x, y, content_w, content_h)
 
 
     local sdl_renderer = assert(context.renderer.sdl_renderer)
@@ -496,7 +487,7 @@ function UnitInfoWindow:_on_ui_update(show)
           {x = content_x + icon_data.dx, y = content_y + icon_data.dy, w = tab_image.w, h = tab_image.h}
         ))
       end)
-      HorizontalPanel.draw(self)
+      Widget.draw(self)
     end
 
     if (not handlers_bound) then
@@ -558,7 +549,6 @@ function UnitInfoWindow:_on_ui_update(show)
     self.content.mouse_click = nil
     self.content.mouse_move = nil
     self.drawing.content_fn = function() end
-    HorizontalPanel.unbind_ctx(self, unit_info_ctx)
   end
 end
 

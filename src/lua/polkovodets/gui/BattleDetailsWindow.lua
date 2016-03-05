@@ -20,13 +20,13 @@ local inspect = require('inspect')
 local _ = require ("moses")
 
 local Button = require ('polkovodets.gui.Button')
-local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
+local Widget = require ('polkovodets.gui.Widget')
 local Image = require 'polkovodets.utils.Image'
 local Region = require 'polkovodets.utils.Region'
 
 local BattleDetailsWindow = {}
 BattleDetailsWindow.__index = BattleDetailsWindow
-setmetatable(BattleDetailsWindow, HorizontalPanel)
+setmetatable(BattleDetailsWindow, Widget)
 
 local FONT_SIZE = 12
 local AVAILABLE_COLOR = 0xAAAAAA
@@ -34,7 +34,7 @@ local HILIGHT_COLOR = 0xFFFFFF
 
 
 function BattleDetailsWindow.create(engine, data)
-  local o = HorizontalPanel.create(engine)
+  local o = Widget.create(engine)
   setmetatable(o, BattleDetailsWindow)
   o.drawing.content_fn = nil
   o.content = {}
@@ -416,9 +416,7 @@ function BattleDetailsWindow:_on_ui_update(show)
           h = p_casualities.h,
         }))
 
-        HorizontalPanel.draw(self)
-
-        _.each(self.drawing.objects, function(k, v) v:draw() end)
+        Widget.draw(self)
       end
 
       -- table header
@@ -440,9 +438,7 @@ function BattleDetailsWindow:_on_ui_update(show)
       }))
       assert(sdl_renderer:setDrawColor(prev_color))
     end
-    HorizontalPanel.bind_ctx(self, details_ctx)
-
-    _.each(self.drawing.objects, function(k, v) v:bind_ctx(details_ctx) end)
+    Widget.update_drawer(self, x, y, content_w, content_h)
 
     if (not handlers_bound) then
       self.handlers_bound = true

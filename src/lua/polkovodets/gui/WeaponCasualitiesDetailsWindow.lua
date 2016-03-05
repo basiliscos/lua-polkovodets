@@ -19,12 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local inspect = require('inspect')
 local _ = require ("moses")
 
-local HorizontalPanel = require ('polkovodets.gui.HorizontalPanel')
+local Widget = require ('polkovodets.gui.Widget')
 local Image = require 'polkovodets.utils.Image'
 
 local WeaponCasualitiesDetailsWindow = {}
 WeaponCasualitiesDetailsWindow.__index = WeaponCasualitiesDetailsWindow
-setmetatable(WeaponCasualitiesDetailsWindow, HorizontalPanel)
+setmetatable(WeaponCasualitiesDetailsWindow, Widget)
 
 local FONT_SIZE = 12
 local AVAILABLE_COLOR = 0xAAAAAA
@@ -32,7 +32,7 @@ local HILIGHT_COLOR = 0xFFFFFF
 
 
 function WeaponCasualitiesDetailsWindow.create(engine, data)
-  local o = HorizontalPanel.create(engine)
+  local o = Widget.create(engine, true) -- floating window
   setmetatable(o, WeaponCasualitiesDetailsWindow)
   o.drawing.content_fn = nil
   o.content = {}
@@ -168,8 +168,7 @@ function WeaponCasualitiesDetailsWindow:_on_ui_update(show)
       end
     end
 
-    context.x, context.y = x, y
-    HorizontalPanel.bind_ctx(self, context)
+    Widget.update_drawer(self, x, y, gui.w, gui.h)
     self.drawing.content_fn = function()
       -- background
       assert(sdl_renderer:copy(theme.window.background.texture, nil, bg_box))
@@ -186,7 +185,7 @@ function WeaponCasualitiesDetailsWindow:_on_ui_update(show)
           assert(sdl_renderer:copy(label.label.texture, nil, label.box))
         end
       end
-      HorizontalPanel.draw(self)
+      Widget.draw(self)
     end
 
     if (not handlers_bound) then
@@ -214,7 +213,6 @@ function WeaponCasualitiesDetailsWindow:_on_ui_update(show)
     self.content.mouse_click = nil
     self.content.mouse_move = nil
     self.drawing.content_fn = function() end
-    HorizontalPanel.unbind_ctx(self, context)
   end
 end
 
