@@ -245,6 +245,7 @@ function Interface:add_window(id, data)
 end
 
 function Interface:remove_window(window, do_not_emit_update)
+  assert(window)
   local idx, obj_idx
   for i, o in ipairs(self.drawing.windows) do
     if (o.window == window) then
@@ -259,9 +260,7 @@ function Interface:remove_window(window, do_not_emit_update)
   table.remove(self.drawing.windows, idx)
 
   print("window " .. idx .. " removed")
-  if (not do_not_emit_update) then
-    self:_layout_windows()
-  end
+  self:_layout_windows()
 end
 
 return Interface
