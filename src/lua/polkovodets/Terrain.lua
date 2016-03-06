@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,44 +34,36 @@ function Terrain.create(engine)
    return o
 end
 
-
-function Terrain:load(terrain_file)
+function Terrain:generate(hex_geometry, weather_types_data, terrain_types_data, icon_for)
    local engine = self.engine
-   local path = engine.get_definitions_dir() .. '/' .. terrain_file
-   print('loading landscape ' .. path)
-   local parser = Parser.create(path)
-   self.parser = parser
 
    -- hex tile geometry
-   local hex = assert(parser:get_value('hex'), 'no hex in ' .. terrain_file)
-   self.hex_width = tonumber(hex['width'])
-   self.hex_height = tonumber(hex['height'])
-   self.hex_x_offset = tonumber(hex['x_offset'])
-   self.hex_y_offset = tonumber(hex['y_offset'])
+  self.hex_width    = tonumber(hex_geometry['width'])
+  self.hex_height   = tonumber(hex_geometry['height'])
+  self.hex_x_offset = tonumber(hex_geometry['x_offset'])
+  self.hex_y_offset = tonumber(hex_geometry['y_offset'])
 
-   -- load generic landscape icons
-   local gfx_dir = engine:get_gfx_dir()
-   local icon_for = assert(parser:get_value('image'))
-   local load_icon = function(key)
-      local icon_file = icon_for[key]
-      assert(icon_file, "cannot find icon for '" .. key .. "' in " .. path)
-      local path = gfx_dir .. '/' .. icon_file
-      self.icons[key] = path
-      engine.renderer:load_texture(path)
-   end
-   load_icon('grid')
-   load_icon('frame')
-   load_icon('fog')
-   load_icon('managed')
-   load_icon('participant')
-   local fog_image = self:get_icon('fog')
-   assert(fog_image.texture:setAlphaMod(40))
+  -- load generic landscape icons
+  local gfx_dir = engine:get_gfx_dir()
+  local load_icon = function(key)
+    local icon_file = icon_for[key]
+    assert(icon_file, "cannot find icon for '" .. key .. "'")
+    local path = gfx_dir .. '/' .. icon_file
+    self.icons[key] = path
+    engine.renderer:load_texture(path)
+  end
+  load_icon('grid')
+  load_icon('frame')
+  load_icon('fog')
+  load_icon('managed')
+  load_icon('participant')
+  -- hard-coded value
+  local fog_image = self:get_icon('fog')
+  assert(fog_image.texture:setAlphaMod(40))
 
    -- weather
-   local weather_file = assert(parser:get_value('weather-types'))
-   local weather_parser = Parser.create(engine.get_definitions_dir() .. '/' .. weather_file)
    local weather = {}
-   for k, data in pairs(weather_parser:get_raw_data()) do
+   for k, data in pairs(weather_types_data) do
       local id = assert(data.id)
       weather[id] = data
    end
@@ -79,14 +71,12 @@ function Terrain:load(terrain_file)
 
    -- terrain types
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
-   local terrain_types_file = assert(parser:get_value('terrain-types'))
-   local tt_parser = Parser.create(engine.get_definitions_dir() .. '/' .. terrain_types_file)
    local renderer = engine.renderer
    local hex_width = self.hex_width
    local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, hex_width, 0) end
 
    local terrain_types = {}
-   for k, data in pairs(tt_parser:get_raw_data()) do
+   for k, data in pairs(terrain_types_data) do
       local id = assert(data.id)
       terrain_types[id] = data
       local image_for = assert(data.image)
@@ -115,6 +105,27 @@ function Terrain:load(terrain_file)
    end
    self.terrain_images = terrain_images
    self.terrain_types = terrain_types
+end
+
+function Terrain:load(terrain_file)
+   local engine = self.engine
+   local path = engine.get_definitions_dir() .. '/' .. terrain_file
+   local parser = Parser.create(path)
+   self.parser = parser
+
+   local hex_geometry       = assert(parser:get_value('hex'), 'no hex in ' .. terrain_file)
+   local icon_for           = assert(parser:get_value('image'))
+   -- weather data
+   local weather_file       = assert(parser:get_value('weather-types'))
+   local weather_parser     = Parser.create(engine.get_definitions_dir() .. '/' .. weather_file)
+   local weather_types      = weather_parser:get_raw_data()
+
+   -- terrain types data
+   local terrain_types_file = assert(parser:get_value('terrain-types'))
+   local tt_parser          = Parser.create(engine.get_definitions_dir() .. '/' .. terrain_types_file)
+   local terrain_types_data = tt_parser:get_raw_data()
+
+   self:generate(hex_geometry, weather_types, terrain_types_data, icon_for)
 end
 
 function Terrain:get_type(name)

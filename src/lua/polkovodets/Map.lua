@@ -128,10 +128,8 @@ function Map:_fill_tiles(tile_generator)
   self.tile_for = tile_for
 end
 
-function Map:generate(w, h, terrain_file, tile_generator)
+function Map:generate(w, h, terrain, tile_generator)
   local engine = self.engine
-  local terrain = Terrain.create(engine)
-  terrain:load(terrain_file)
   self:_set_terrain(terrain)
 
   self.width = w

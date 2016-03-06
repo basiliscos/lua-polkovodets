@@ -7,25 +7,37 @@ local inspect = require('inspect')
 
 local Map = require 'polkovodets.Map'
 local Engine = require 'polkovodets.Engine'
+local Terrain = require 'polkovodets.Terrain'
+local Tile = require 'polkovodets.Tile'
+
 local DummyRenderer = require 't.DummyRenderer'
+local SampleData = require 't.SampleData'
 
 local engine = Engine.create()
 DummyRenderer.create(engine, 640, 480)
+
 local map = Map.create(engine)
 ok(map)
 
-map:load('data/db/scenarios/Test/map01')
+local terrain = Terrain.create(engine)
+SampleData.generate_terrain(terrain)
 
-is(#map.tiles, 15)
-is(#map.tiles[1], 15)
-local first_tile = map.tiles[1][1]
-ok(first_tile)
+local tiles_generator = function(terrain, x, y)
+  local tile_data = {
+    x            = x,
+    y            = y,
+    name         = 'dummy',                -- does not matter
+    image_idx    = 1,                      -- does not matter
+    terrain_name = 'dummy-name',           -- does not matter
+    terrain_type = terrain:get_type('c'),  -- clear
+  }
+  return Tile.create(engine, terrain, tile_data)
+end
+map:generate(10, 10, terrain, tiles_generator)
 
-is(first_tile.data.x, 1)
-is(first_tile.data.y, 1)
-is(first_tile.data.y, 1)
-is(first_tile.data.image_idx, 14)
-is(first_tile.data.name, 'Clear')
+ok(map.tiles[1][1])
+ok(map.tiles[10][10])
+ok(map:lookup_tile(map.tiles[1][1].id))
 
 engine:set_map(map)
 engine:update_shown_map()
@@ -77,6 +89,7 @@ subtest("adjascent tiles",
         end
 )
 
+
 subtest("distances",
         function()
            local start = map.tiles[5][3]
@@ -94,6 +107,7 @@ subtest("distances",
            is(map.tiles[4][6]:distance_to(map.tiles[3][5]), 2)
         end
 )
+
 
 subtest("screen coordinates to tiles",
   function()
