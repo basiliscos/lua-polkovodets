@@ -69,17 +69,12 @@ function Map:load(map_file)
   local engine = self.engine
   local terrain = Terrain.create(engine)
   terrain:load(terrain_file)
-  self.terrain = terrain
+  self:_set_terrain(terrain)
 
   local tiles_data = parser:get_list_value('tiles')
   local tile_names = parser:get_list_value('names')
 
-  -- 2 dimentional array, [x:y]
-  local tiles = {}
-  local tile_for = {} -- key: tile_id, value: tile object
-  for x = 1,self.width do
-    local column = {}
-    for y = 1,self.height do
+  local tiles_generator = function(terrain, x, y)
       local idx = (y-1) * self.width + x
       local datum = tiles_data[idx]
       local terrain_name = string.sub(datum,1,1)
@@ -87,24 +82,24 @@ function Map:load(map_file)
       local terrain_type = terrain:get_type(terrain_name)
       local name = tile_names[idx] or terrain_name
       local tile_data = {
-        x = x,
-        y = y,
-        name = name,
+        x            = x,
+        y            = y,
+        name         = name,
         terrain_name = terrain_name,
-        image_idx = image_idx,
+        image_idx    = image_idx,
         terrain_type = terrain_type,
       }
       local tile = Tile.create(engine, terrain, tile_data)
-      column[ y ] = tile
-      tile_for[tile.id] = tile
-    end
-    tiles[x] = column
+      return tile
   end
-  self.tiles = tiles
-  self.tile_for = tile_for
-  -- print(inspect(tiles[1][1]))
+  self:_fill_tiles(tiles_generator)
 
   engine.state:set_active_tile(self.tiles[1][1])
+end
+
+function Map:_set_terrain(terrain)
+  self.terrain = terrain
+
   self.tile_geometry = {
     w        = terrain.hex_width,
     h        = terrain.hex_height,
@@ -112,6 +107,39 @@ function Map:load(map_file)
     y_offset = terrain.hex_y_offset,
   }
 end
+
+function Map:_fill_tiles(tile_generator)
+  local engine = self.engine
+  local terrain = self.terrain
+
+  -- 2 dimentional array, [x:y]
+  local tiles = {}
+  local tile_for = {} -- key: tile_id, value: tile object
+  for x = 1, self.width do
+    local column = {}
+    for y = 1, self.height do
+      local tile = tile_generator(terrain, x, y)
+      column[ y ] = tile
+      tile_for[tile.id] = tile
+    end
+    tiles[x] = column
+  end
+  self.tiles = tiles
+  self.tile_for = tile_for
+end
+
+function Map:generate(w, h, terrain_file, tile_generator)
+  local engine = self.engine
+  local terrain = Terrain.create(engine)
+  terrain:load(terrain_file)
+  self:_set_terrain(terrain)
+
+  self.width = w
+  self.height = h
+  self:_fill_tiles(tile_generator)
+  engine.state:set_active_tile(self.tiles[1][1])
+end
+
 
 function Map:_get_event_source()
   return {
