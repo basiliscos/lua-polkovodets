@@ -19,13 +19,17 @@ local tiles_generator = function(terrain, x, y)
   local tile_data = {
     x            = x,
     y            = y,
-    name         = 'dummy',
-    image_idx    = 1,
-    terrain_name = 'dummy-name',
-    terrain_type = terrain:get_type('F'),
+    name         = 'dummy',                -- does not matter
+    image_idx    = 1,                      -- does not matter
+    terrain_name = 'dummy-name',           -- does not matter
+    terrain_type = terrain:get_type('F'),  -- field
   }
   return Tile.create(engine, terrain, tile_data)
 end
 map:generate(10, 10, 'landscape.json', tiles_generator)
+
+ok(map.tiles[1][1])
+ok(map.tiles[10][10])
+ok(map:lookup_tile(map.tiles[1][1].id))
 
 done_testing()
