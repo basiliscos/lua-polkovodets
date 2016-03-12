@@ -143,7 +143,7 @@ function Engine:set_nations(nations)
    -- nations hash
    local nation_for = {}
    for _,nation in pairs(nations) do
-	  local id = nation.data.id
+	  local id = nation.id
 	  nation_for[id] = nation
    end
    self.nation_for = nation_for

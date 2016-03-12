@@ -32,8 +32,9 @@ function Nation.create(engine, nation_data)
   end
 
   local o = {
+    id        = nation_data.id,
+    name      = nation_data.name,
     engine    = engine,
-    data      = nation_data,
     flag      = load_flag(nation_data.icon_path),
     unit_flag = load_flag(nation_data.unit_icon_path),
     drawing   = {

@@ -1,3 +1,6 @@
+local Terrain = require 'polkovodets.Terrain'
+local Tile = require 'polkovodets.Tile'
+
 local SampleData = {}
 SampleData.__index = SampleData
 
@@ -52,6 +55,24 @@ function SampleData.generate_terrain(terrain)
     }
   }
   terrain:generate(hex_geometry, weather_types, terrain_types, icon_for)
+end
+
+function SampleData.generate_map(map)
+  local terrain = Terrain.create(map.engine)
+  SampleData.generate_terrain(terrain)
+  local tiles_generator = function(terrain, x, y)
+    local tile_data = {
+      x            = x,
+      y            = y,
+      name         = 'dummy',                -- does not matter
+      image_idx    = 1,                      -- does not matter
+      terrain_name = 'dummy-name',           -- does not matter
+      terrain_type = terrain:get_type('c'),  -- clear
+    }
+    return Tile.create(engine, terrain, tile_data)
+  end
+  map:generate(10, 10, terrain, tiles_generator)
+  map.engine:set_map(map)
 end
 
 return SampleData

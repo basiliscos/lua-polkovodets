@@ -34,22 +34,59 @@ function Scenario.create(engine)
    return o
 end
 
+function Scenario:generate(scenario_data, weather, map, objectives, unit_lib,  nations, players_data, armies_data)
+  self.name        = assert(scenario_data.name)
+  self.description = assert(scenario_data.description)
+  self.authors     = assert(scenario_data.authors)
+  self.start_date  = assert(scenario_data.date)
+
+  self.weather = assert(weather)
+  self.nations = assert(nations)
+
+  -- validate weathers
+  for idx, weather_id in pairs(self.weather) do
+    assert(map.terrain.weather[weather_id], "wrong weather " .. weather_id)
+  end
+
+  -- should setup nations first for nation by id lookup
+  engine:set_nations(nations)
+
+  -- setup objectives
+  for idx, objective in pairs(objectives) do
+    local nation_id = objective.nation
+	  local nation = assert(engine.nation_for[nation_id], "no nation " .. nation_id .. ' is available')
+
+    local x, y = objective.x, objetive.y
+	  local tile = assert(map.tiles[x][y], " tile " .. x  .. ":" .. y .. " does not exist")
+	  tile.data.nation = nation
+	  tile.data.objective = objective
+  end
+
+  engine:set_map(map)
+  engine:set_objectives(objectives)
+
+end
 
 function Scenario:load(file)
-   local engine = self.engine
-   local scenario_file = 'scenario.json'
-   local scenarios_dir = self.engine.get_scenarios_dir() ..  '/' .. file
+  local engine = self.engine
+  local scenario_file = 'scenario.json'
+  local scenarios_dir = self.engine.get_scenarios_dir() ..  '/' .. file
 
-   local path =  scenarios_dir .. '/' .. scenario_file
-   print('loading scenario at ' .. path)
-   local parser = Parser.create(path)
-   self.name = assert(parser:get_value('name'))
-   self.description = assert(parser:get_value('description'))
-   self.authors = assert(parser:get_value('authors'))
-   self.start_date = assert(parser:get_value('date'))
-   self.weather = assert(parser:get_value('weather'))
+  local path =  scenarios_dir .. '/' .. scenario_file
+  print('loading scenario at ' .. path)
+  local parser = Parser.create(path)
 
-   local files = assert(parser:get_value('files'))
+  local scenario_data = {
+    description = parser:get_value('description'),
+    name        = parser:get_value('name'),
+    authors     = parser:get_value('authors'),
+    date        = parser:get_value('date'),
+  }
+
+  -- weather
+  local weather = assert(parser:get_value('weather'))
+
+  local files = assert(parser:get_value('files'))
 
    -- load nations
    local nations_file = assert(files.nations)
@@ -62,9 +99,8 @@ function Scenario:load(file)
       local id = nation_data.id
 	  nation_data.id = id
 	  local nation = Nation.create(engine, nation_data)
-	  nations[ #nations +1 ] = nation
+    table.insert(nations, nation)
    end
-   engine:set_nations(nations)
 
    -- load map
    local map_file = assert(files.map, "scenario files has map")
@@ -72,31 +108,18 @@ function Scenario:load(file)
    map:load(scenarios_dir .. '/' .. map_file)
    engine:set_map(map)
 
-   -- validate weathers
-   for idx, weather_id in pairs(self.weather) do
-      assert(map.terrain.weather[weather_id], "wrong weather " .. weather_id)
-   end
-
-   -- load & setup objectives
+   -- load setup objectives
    local objectives_file = assert(files.objectives)
    local objectives_parser = Parser.create(scenarios_dir .. '/' .. objectives_file)
-   local objectives = {}
-   for k, obj_data in pairs(objectives_parser:get_raw_data()) do
-      local nation_id = obj_data.nation
-	  local nation = assert(engine.nation_for[nation_id], "no nation " .. nation_id .. ' is available')
-	  local x = tonumber(obj_data.x) + 1
-	  local y = tonumber(obj_data.y) + 1
-      table.insert(objectives, obj_data)
-	  local tile = assert(map.tiles[x][y], " tile " .. x  .. ":" .. y .. " does not exist")
-	  tile.data.nation = nation
-	  tile.data.objective = objective
-   end
-   engine:set_objectives(objectives)
+   local objectives = objectives_parser:get_raw_data()
 
    -- load armed forces (unit lib) db
    local armed_forces_file = assert(files.armed_forces)
    local unit_lib = UnitLib.create(engine)
    unit_lib:load(armed_forces_file)
+
+   self:generate(scenario_data, weather, map,  objectives, nations)
+
 
    -- load players
    local players_file = assert(files.players, "scenario should have players file")

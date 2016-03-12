@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,20 +19,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Player = {}
 Player.__index = Player
 
-function Player.create(engine, data)
+function Player.create(engine, nation_for, data)
    assert(data.id)
    assert(data.nations)
    assert(data.order)
 
    for k,nation_id in pairs(data.nations) do
-      assert(engine.nation_for[nation_id], "no nation '" .. nation_id .. "' present in scenario")
+      assert(engine.nation_for[nation_id], "no nation '" .. nation_id .. "' presents in scenario")
    end
-   
+
    local o = {
-      id = data.id,
+      id     = data.id,
+      order  = data.order,
       engine = engine,
-      data   = data,
-      units = {},
+      units  = {},
    }
    setmetatable(o, Player)
    return o

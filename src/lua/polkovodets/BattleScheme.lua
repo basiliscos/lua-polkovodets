@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -497,8 +497,6 @@ function BattleScheme.create(engine)
 
       o.selection_grammar = selection_grammar
    end
-   -- make battle scheme available via Engine
-   engine.battle_scheme = o
    return o
 end
 
@@ -530,9 +528,8 @@ function BattleScheme:_lookup_block(id)
    return self.block_for[id]
 end
 
-function BattleScheme:load(path)
-   local parser = Parser.create(path)
-   for idx, data in pairs(parser:get_raw_data()) do
+function BattleScheme:generate(blocks_data)
+   for idx, data in pairs(blocks_data) do
       local id = assert(data.block_id)
       local fire_type = data.fire_type
       local action = data.action
@@ -565,8 +562,14 @@ function BattleScheme:load(path)
          action
       )
    end
-   print("Battle scheme has been loaded, " .. #self.root_blocks .. " root blocks")
+   print("Battle scheme initialized, " .. #self.root_blocks .. " root blocks")
    -- print(inspect(self.root_blocks))
+end
+
+
+function BattleScheme:load(path)
+   local parser = Parser.create(path)
+   self:generate(parser:get_raw_data())
 end
 
 function BattleScheme:_find_block(initiator_unit, passive_unit, fire_type)
