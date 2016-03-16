@@ -21,53 +21,63 @@ local inspect = require('inspect')
 local UnitDefinition = {}
 UnitDefinition.__index = UnitDefinition
 
-function UnitDefinition.create(engine, data)
-   local unit_lib = engine.unit_lib
+function UnitDefinition.create()
+  return setmetatable({}, UnitDefinition)
+end
 
-   assert(data.id)
-   assert(data.unit_class)
-   assert(data.staff)
-   assert(data.size)
-   assert(data.spotting)
-   assert(data.nation)
-   assert(data.flags)
-   assert(string.find(data.size, '[LMS]'))
+function UnitDefinition:initialize(renderer, definition_data, unit_classes_for, unit_types_for, nation_for, weapon_types_for, data_dirs)
+   assert(definition_data.id)
+   assert(definition_data.unit_class)
+   assert(definition_data.staff)
+   assert(definition_data.size)
+   assert(definition_data.spotting)
+   assert(definition_data.nation)
+   assert(definition_data.flags)
+   assert(string.find(definition_data.size, '[LMS]'))
 
-   local unit_class = assert(unit_lib.units.classes.hash[data.unit_class])
+   local unit_class_id = definition_data.unit_class
+   local unit_class = assert(unit_classes_for[unit_class_id], "no class '" .. unit_class_id .. "' found for unit definition " .. definition_data.id)
    local unit_type_id = unit_class['type']
-   local unit_type = assert(unit_lib.units.types.hash[unit_type_id], "type " .. unit_type_id .. " not found")
+   local unit_type = assert(unit_types_for[unit_type_id], "type " .. unit_type_id .. " not found")
 
-   assert(data.icons)
+   assert(definition_data.icons)
    local state_icons = {}
-   for state, path in pairs(data.icons) do
-      local full_path = engine:get_gfx_dir() .. '/' .. path
-      local texture = engine.renderer:load_texture(full_path)
+   for state, path in pairs(definition_data.icons) do
+      local full_path = data_dirs.gfx .. '/' .. path
+      local texture = renderer:load_texture(full_path)
       state_icons[state] = texture
    end
    if (unit_type_id == 'ut_land') then
-      assert(state_icons.attacking, 'land unit definition ' .. data.id  .. ' must have "attacking" icon')
-      assert(state_icons.defending, 'land unit definition ' .. data.id  .. 'must have "defending" icon')
-      assert(state_icons.marching, 'land unit  definition ' .. data.id  .. 'must have "marching" icon')
+      assert(state_icons.attacking, 'land unit definition ' .. definition_data.id  .. ' must have "attacking" icon')
+      assert(state_icons.defending, 'land unit definition ' .. definition_data.id  .. 'must have "defending" icon')
+      assert(state_icons.marching, 'land unit  definition ' .. definition_data.id  .. 'must have "marching" icon')
    elseif (unit_type_id == 'ut_air') then
-      assert(state_icons.flying, 'air unit definition ' .. data.id  .. ' must have "flying" icon')
-      assert(state_icons.landed, 'air unit definition ' .. data.id  .. ' must have "landed" icon')
+      assert(state_icons.flying, 'air unit definition ' .. definition_data.id  .. ' must have "flying" icon')
+      assert(state_icons.landed, 'air unit definition ' .. definition_data.id  .. ' must have "landed" icon')
    end
 
-   local nation = assert(engine.nation_for[data.nation])
+   local nation_id = definition_data.nation
+   local nation = assert(nation_for[nation_id], "nation '" .. nation_id .. "' not availble for unit definition " .. definition_data.id)
    local staff_size = 0
-   for k, v in pairs(data.staff) do staff_size = staff_size + 1 end
-   assert(staff_size > 0, "unit definition " .. data.id .. " cannot be without weapons")
+   for k, v in pairs(definition_data.staff) do staff_size = staff_size + 1 end
+   assert(staff_size > 0, "unit definition " .. definition_data.id .. " cannot be without weapons")
 
-   local o = {
-      engine      = engine,
-      data        = data,
-      state_icons = state_icons,
-      unit_type   = unit_type,
-      unit_class  = unit_class,
-      nation      = nation,
-   }
-   setmetatable(o, UnitDefinition)
-   return o
+   -- validate staff
+   for weapon_type, quantity in ipairs(definition_data.staff) do
+    assert(quantity)
+    assert(quantity >= 0)
+    assert(weapon_types_for[weapon_type])
+    quantity = tonumber(quantity)
+    definition_data.staff[weapon_type] = quantity
+   end
+
+
+   self.id          = definition_data.id
+   self.unit_class  = unit_class
+   self.state_icons = state_icons
+   self.unit_type   = unit_type
+   self.nation      = nation
+   self.data        = definition_data
 end
 
 function UnitDefinition:get_icon(state)

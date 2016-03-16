@@ -28,7 +28,6 @@ local ttf = require "SDL.ttf"
 local Image = require 'polkovodets.utils.Image'
 local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 local Interface = require 'polkovodets.Interface'
-local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
 
 local EVENT_DELAY = 50
@@ -54,32 +53,6 @@ function Renderer.create(engine, window, sdl_renderer)
   -- hide system mouse pointer
   assert(SDL.showCursor(false))
   setmetatable(o, Renderer)
-  engine:set_renderer(o)
-  local theme = Theme.create(engine,{
-    name          = 'default',
-    active_hex    = {
-      outline_color = 0x0,
-      outline_width = 2,
-      color         = 0xFFFFFF,
-      font_size     = 15,
-      font          = 'DroidSansMono.ttf'
-    },
-    cursors = {
-      path = 'cursors.bmp',
-      size = 22,
-      actions = {
-        ['default'       ] = 1,
-        ['move'          ] = 2,
-        ['merge'         ] = 3,
-        ['battle'        ] = 6,
-        ['fire/artillery'] = 4,
-        ['fire/anti-air' ] = 7,
-        ['fire/bombing'  ] = 5,
-        ['land'          ] = 8,
-      }
-    },
-  })
-  o.theme = theme
   return o
 end
 
@@ -187,7 +160,6 @@ function Renderer:prepare_drawers()
   local engine = self.engine
 
   local context = {
-    theme         = self.theme,
     renderer      = self,
     state         = engine.state,
     events_source = {
@@ -198,7 +170,7 @@ function Renderer:prepare_drawers()
   local interface = Interface.create(engine)
 
   local drawers = {
-    engine.map,
+    engine.gear:get("map"),
     interface,
   }
 
@@ -243,7 +215,6 @@ function Renderer:main_loop()
       if (e.event == kind.Resized or e.event == kind.SizeChanged
       or e.event == kind.Minimized or e.event ==  kind.Maximized) then
       self.size = table.pack(self.window:getSize())
-      engine:update_shown_map()
       engine.reactor:publish("full.refresh")
       end
     elseif (t == SDL.event.KeyUp) then

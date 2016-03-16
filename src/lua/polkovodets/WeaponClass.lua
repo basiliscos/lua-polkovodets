@@ -21,26 +21,23 @@ local inspect = require('inspect')
 local WeaponClass = {}
 WeaponClass.__index = WeaponClass
 
-function WeaponClass.create(engine, data)
-  local id = assert(data.id)
-  local order = assert(data.order)
-  local icon_path = assert(data.icon)
-  local flags = assert(data.flags)
+function WeaponClass.create()
+  return setmetatable({}, WeaponClass)
+end
 
-  local gfx_dir = engine:get_gfx_dir()
-  local icon_path = gfx_dir .. '/' .. icon_path
+function WeaponClass:initialize(renderer, weapon_class_data, dirs_data)
+  self.id    = assert(weapon_class_data.id)
+  self.flags = assert(weapon_class_data.flags)
+
+  local icon_path = assert(weapon_class_data.icon)
+
+  local icon_path = dirs_data.gfx .. '/' .. icon_path
   local icon_for_style = {}
   for idx, style in pairs({"active", "available", "hilight"}) do
     local full_path = icon_path .. "-" .. style .. ".png"
-    icon_for_style[style] = engine.renderer:load_texture(full_path)
+    icon_for_style[style] = renderer:load_texture(full_path)
   end
-  local o = {
-    id    = id,
-    order = order,
-    icons = icon_for_style,
-    flags = flags,
-  }
-  return setmetatable(o, WeaponClass)
+  self.icons = icon_for_style
 end
 
 function WeaponClass:get_icon(style)

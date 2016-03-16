@@ -33,10 +33,10 @@ function Cursor.create(engine)
 end
 
 function Cursor:bind_ctx(context)
-  local theme = assert(context.theme)
   local engine = self.engine
-  local state = assert(context.state)
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  local theme = engine.gear:get("theme")
+  local state = engine.state
+  local sdl_renderer = engine.gear:get("renderer").sdl_renderer
 
   local listener = function()
     local kind = state:get_action()

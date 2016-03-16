@@ -32,6 +32,8 @@ local HILIGHT_COLOR = 0xFFFFFF
 
 function Popup.create(engine, close_fn, definitions, initial_position)
   assert(initial_position)
+  local theme = engine.gear:get("theme")
+
   local o = {
     -- mimic window properties
     properties  = {
@@ -41,7 +43,7 @@ function Popup.create(engine, close_fn, definitions, initial_position)
     close_fn    = close_fn,
     definitions = definitions,
     position    = initial_position,
-    font        = engine.renderer.theme:get_font('default', FONT_SIZE),
+    font        = theme:get_font('default', FONT_SIZE),
     drawing     = {
       fn          = nil,
       mouse_click = nil,
@@ -61,10 +63,11 @@ function Popup:_construct_gui()
   local definitions = self.definitions
   local engine = self.engine
   local font = self.font
+  local renderer = engine.gear:get("renderer")
 
   local create_image = function(text, color)
     local surface = font:renderUtf8(text, "solid", color)
-    return Image.create(engine.renderer.sdl_renderer, surface)
+    return Image.create(renderer.sdl_renderer, surface)
   end
 
   local margin_x = 5
@@ -105,7 +108,8 @@ function Popup:_on_ui_update(show)
 
   if (show) then
     local gui = self.drawing.gui
-    local theme = assert(context.renderer.theme)
+    local theme = engine.gear:get("theme")
+    local renderer = engine.gear:get("renderer")
     local x, y = self.position.x, self.position.y
 
     _.each(gui.labels, function(idx, label)
@@ -128,7 +132,7 @@ function Popup:_on_ui_update(show)
     local mouse = engine.state:get_mouse()
     update_line_styles(mouse.x, mouse.y)
 
-    local sdl_renderer = assert(context.renderer.sdl_renderer)
+    local sdl_renderer = assert(renderer.sdl_renderer)
     local bg_box = { x = x, y = y, w = gui.w, h = gui.h}
     self.drawing.fn = function()
       -- background

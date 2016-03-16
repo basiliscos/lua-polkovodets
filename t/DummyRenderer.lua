@@ -10,7 +10,7 @@ function _DummyTexture:query() return 'a', 'b', 10, 20 end
 local _DummyImage = {}
 _DummyImage.__index = _DummyImage
 
-function DummyRenderer.create(engine, width, height)
+function DummyRenderer.create(width, height)
   local image = {
     w = 0,
     h = 0,
@@ -24,8 +24,6 @@ function DummyRenderer.create(engine, width, height)
     state    = {},
   }
   setmetatable(o, DummyRenderer)
-  engine:set_renderer(o)
-
   return o
 end
 

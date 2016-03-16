@@ -5,11 +5,17 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 local t = require 'Test.More'
 
 local inspect = require('inspect')
+local Gear = require "gear"
+
 local Engine = require 'polkovodets.Engine'
+local BattleFormula = require 'polkovodets.BattleFormula'
 local BattleScheme = require 'polkovodets.BattleScheme'
 
-local engine = Engine.create()
-local bs = BattleScheme.create(engine)
+local gear = Gear.create()
+local engine = Engine.create(gear, "en")
+
+local bs = BattleScheme.create()
+
 
 subtest("parse condition", function()
   subtest("orientation eq", function()
@@ -78,6 +84,24 @@ subtest("blocks", function()
   )
   ok(b_child)
   b_child:validate()
+end)
+
+subtest("initialization", function()
+  gear:declare("battle_formula", {"engine"},
+    function() return BattleFormula.create() end,
+    function(gear, instance, engine) instance:initialize(engine) end
+  )
+  gear:set("data/battle_blocks", {
+    { block_id = "1", fire_type = "battle", condition = '(I.state == "attacking") && (P.state == "defending")'},
+    { block_id = "1.1", active_weapon = 'I.category("wc_infant")', passive_weapon = 'P.target("any")', action = "battle" },
+  })
+
+  gear:declare("battle_scheme", {"data/battle_blocks", "battle_formula"},
+    function() return BattleScheme.create() end,
+    function(gear, instance, battle_blocks, battle_formula) instance:initialize(battle_formula, battle_blocks) end
+  )
+  local bs2 = gear:get("battle_scheme")
+  ok(bs2)
 end)
 
 done_testing()

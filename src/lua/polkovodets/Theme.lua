@@ -21,23 +21,27 @@ local ttf = require "SDL.ttf"
 local Theme = {}
 Theme.__index = Theme
 
-function Theme.create(engine, data)
-   assert(data.name)
-   assert(data.active_hex)
-   assert(data.cursors.path)
-   assert(data.cursors.size)
+function Theme.create()
+  return setmetatable({}, Theme)
+end
 
-   local cursors_file = data.cursors.path
-   local theme_dir = engine:get_themes_dir() .. '/' .. data.name
+
+function Theme:initialize(theme_data, renderer, data_dirs)
+   assert(theme_data.name)
+   assert(theme_data.active_hex)
+   assert(theme_data.cursors.path)
+   assert(theme_data.cursors.size)
+
+   local cursors_file = theme_data.cursors.path
+   local theme_dir = data_dirs.themes .. '/' .. theme_data.name
    local cursors_path =  theme_dir .. '/' .. cursors_file
-   local renderer = engine.renderer
-   local cursor_size = data.cursors.size
+   local cursor_size = theme_data.cursors.size
 
    local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, cursor_size, 0) end
    renderer:load_joint_texture(cursors_path, iterator_factory)
 
-   local active_hex_font = theme_dir .. '/' .. data.active_hex.font
-   local active_hex_size = assert(data.active_hex.font_size)
+   local active_hex_font = theme_dir .. '/' .. theme_data.active_hex.font
+   local active_hex_size = assert(theme_data.active_hex.font_size)
    local active_hex_ttf = assert(ttf.open(active_hex_font, active_hex_size))
 
    local unit_states = {}
@@ -52,22 +56,21 @@ function Theme.create(engine, data)
       end
    end
 
-   local o = {
-      engine   = engine,
-      renderer = renderer,
-      data     = data,
-      cursors  = cursors_path,
-      history  = {
+   self.engine   = engine
+   self.renderer = renderer
+   self.data     = theme_data
+   self.cursors  = cursors_path
+   self.history  = {
         move           = renderer:load_texture(theme_dir .. '/arrow-movement.png'),
         battle         = renderer:load_texture(theme_dir .. '/battle-icon.png'),
         battle_hilight = renderer:load_texture(theme_dir .. '/battle-icon-hilighted.png'),
-      },
-      unit_flag_hilight =  renderer:load_texture(theme_dir .. '/unit-flag-hilight.png'),
-      change_attack_type = {
+   }
+   self.unit_flag_hilight =  renderer:load_texture(theme_dir .. '/unit-flag-hilight.png')
+   self.change_attack_type = {
         available = renderer:load_texture(theme_dir .. '/change-attack-type.png'),
         hilight   = renderer:load_texture(theme_dir .. '/change-attack-type-hilighted.png'),
-      },
-      panel    = {
+      }
+   self.panel    = {
         corner = {
           bl = renderer:load_texture(theme_dir .. '/panel/corner-bl.png'),
           br = renderer:load_texture(theme_dir .. '/panel/corner-br.png'),
@@ -80,8 +83,9 @@ function Theme.create(engine, data)
           l = renderer:load_texture(theme_dir .. '/panel/mid-l.png'),
           r = renderer:load_texture(theme_dir .. '/panel/mid-r.png'),
         },
-      },
-      buttons = {
+      }
+
+   self.buttons = {
         end_turn = {
           normal   = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
         },
@@ -113,8 +117,8 @@ function Theme.create(engine, data)
             renderer:load_texture(theme_dir .. '/buttons/detach-2.png'),
           },
         },
-      },
-      tabs = {
+      }
+  self.tabs = {
         info = {
           available = renderer:load_texture(theme_dir .. '/tabs/info.png'),
           hilight   = renderer:load_texture(theme_dir .. '/tabs/info-hilight.png'),
@@ -130,21 +134,18 @@ function Theme.create(engine, data)
           hilight   = renderer:load_texture(theme_dir .. '/tabs/management-hilight.png'),
           active    = renderer:load_texture(theme_dir .. '/tabs/management-active.png'),
         },
-      },
-      window = {
+      }
+   self.window = {
         background = renderer:load_texture(theme_dir .. '/window/background.png'),
-      },
-      font = {
+      }
+   self.font = {
         default = active_hex_font,
-      },
-      fonts    = {
+    }
+   self.fonts    = {
          active_hex = active_hex_ttf,
-      },
-      font_cache = {},
-      unit_states = unit_states,
-   }
-   setmetatable(o,Theme)
-   return o
+    }
+   self.font_cache = {}
+   self.unit_states = unit_states
 end
 
 function Theme:get_font(name, size)

@@ -21,31 +21,35 @@ local inspect = require('inspect')
 local WeaponInstance = {}
 WeaponInstance.__index = WeaponInstance
 
-function WeaponInstance.create(engine, weapon_id, unit_id, quantity)
-   assert(weapon_id)
-   assert(unit_id)
-   local id = "u:" .. unit_id .. "/w:" .. weapon_id
-   local unit_lib = engine.unit_lib
-   local weapon = assert(unit_lib.weapons.definitions[weapon_id], " weapon " .. weapon_id .. " is not available")
-   local movement = weapon.data.movement
-   local o = {
-      id      = id,
-      weapon  = weapon,
-      unit_id = unit_id,
-      data = {
-         can_attack = true,
-         movement   = movement,
-         quantity   = quantity,
-      }
-   }
-   setmetatable(o, WeaponInstance)
-   return o
+function WeaponInstance.create()
+  return setmetatable({}, WeaponInstance)
+end
+
+function WeaponInstance:initialize(instance_data, definitions_for)
+  local definition_id = assert(instance_data.definition_id)
+  local unit_id       = assert(instance_data.unit_id)
+  local quantity      = assert(instance_data.quantity)
+  local order         = assert(instance_data.order)
+
+  local weapon = assert(definitions_for[definition_id], " weapon " .. definition_id .. " is not available for unit " .. unit_id)
+
+  local id = "u:" .. unit_id .. "/w:" .. definition_id
+
+  self.id = id
+  self.weapon = weapon
+  self.unit_id = unit_id
+  self.data = {
+    can_attack = true,
+    movement   = weapon.movement,
+    quantity   = quantity,
+    order      = order,
+  }
 end
 
 function WeaponInstance:quantity() return self.data.quantity end
 
 function WeaponInstance:refresh()
-   self.data.movement = self.weapon.data.movement
+   self.data.movement = self.weapon.movement
    self.data.can_attack = true
 end
 

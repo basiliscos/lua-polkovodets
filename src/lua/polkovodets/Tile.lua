@@ -100,8 +100,7 @@ function Tile:bind_ctx(context)
   -- print("drawing " .. self.id .. " at (" .. x .. ":" .. y .. ")")
 
   local engine = self.engine
-  local map = engine:get_map()
-  local terrain = map.terrain
+  local terrain = engine.gear:get("terrain")
   local weather = engine:current_weather()
   -- print(inspect(weather))
   -- print(inspect(self.data.terrain_type.image))

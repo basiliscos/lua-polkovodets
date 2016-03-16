@@ -19,23 +19,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Player = {}
 Player.__index = Player
 
-function Player.create(engine, nation_for, data)
-   assert(data.id)
-   assert(data.nations)
-   assert(data.order)
+function Player.create()
+  local o = { units = { } }
+  return setmetatable(o, Player)
+end
 
-   for k,nation_id in pairs(data.nations) do
-      assert(engine.nation_for[nation_id], "no nation '" .. nation_id .. "' presents in scenario")
-   end
 
-   local o = {
-      id     = data.id,
-      order  = data.order,
-      engine = engine,
-      units  = {},
-   }
-   setmetatable(o, Player)
-   return o
+function Player:initialize(nation_for, data)
+  assert(data.id)
+  assert(data.nations)
+  assert(data.order)
+
+  local nations = {}
+  for k, nation_id in pairs(data.nations) do
+    local nation = assert(nation_for[nation_id], "no nation '" .. nation_id .. "' presents in scenario")
+    table.insert(nations, nation)
+  end
+
+  self.id      = data.id
+  self.order   = data.order
+  self.nations = nations
 end
 
 return Player

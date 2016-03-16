@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,28 +22,23 @@ Nation.__index = Nation
 local Parser = require 'polkovodets.Parser'
 
 function Nation.create(engine, nation_data)
+  return setmetatable({ drawing = { } }, Nation)
+end
+
+function Nation:initialize(renderer, nation_data, data_dirs)
   assert(nation_data.id)
   assert(nation_data.name)
   assert(nation_data.icon_path)
 
   local load_flag = function(short_path)
-    local image_path = engine:get_gfx_dir() .. '/' .. short_path
-    return engine.renderer:load_texture(image_path)
+    local image_path = data_dirs.gfx .. '/' .. short_path
+    return renderer:load_texture(image_path)
   end
 
-  local o = {
-    id        = nation_data.id,
-    name      = nation_data.name,
-    engine    = engine,
-    flag      = load_flag(nation_data.icon_path),
-    unit_flag = load_flag(nation_data.unit_icon_path),
-    drawing   = {
-      fn = nil
-    }
-  }
-
-  setmetatable(o, Nation)
-  return o
+  self.id        = nation_data.id
+  self.name      = nation_data.name
+  self.flag      = load_flag(nation_data.icon_path)
+  self.unit_flag = load_flag(nation_data.unit_icon_path)
 end
 
 function Nation:bind_ctx(context)

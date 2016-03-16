@@ -70,9 +70,11 @@ function Interface.create(engine)
 end
 
 function Interface:bind_ctx(context)
-  local font = context.theme.fonts.active_hex
-  local outline_color = context.theme.data.active_hex.outline_color
-  local color = context.theme.data.active_hex.color
+  local theme = self.engine.gear:get("theme")
+
+  local font = theme.fonts.active_hex
+  local outline_color = theme.data.active_hex.outline_color
+  local color = theme.data.active_hex.color
 
   local w, h = context.renderer.window:getSize()
   local sdl_renderer = context.renderer.sdl_renderer
@@ -87,7 +89,7 @@ function Interface:bind_ctx(context)
       local str = string.format('%s (%d:%d)', tile.data.name, tile.data.x, tile.data.y)
       local my_label = Image.create(sdl_renderer, font:renderUtf8(str, "solid", color))
       local w, h = context.renderer.window:getSize()
-      local bg_texture = context.theme.window.background.texture
+      local bg_texture = theme.window.background.texture
 
       local padding = 10
       local margin = 10
@@ -122,7 +124,7 @@ function Interface:bind_ctx(context)
       -- print("hint: " .. hint)
       local my_label = Image.create(sdl_renderer, font:renderUtf8(hint, "solid", color))
       local w, h = context.renderer.window:getSize()
-      local bg_texture = context.theme.window.background.texture
+      local bg_texture = theme.window.background.texture
 
       local padding = 10
       local margin = 10

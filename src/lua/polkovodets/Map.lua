@@ -29,10 +29,20 @@ local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 
 local SCROLL_TOLERANCE = 5
 
-function Map.create(engine)
+function Map.create()
    local m = {
-    engine = engine,
+    engine = nil,
     active_tile    = {1, 1},
+    gui = {
+      map_x = 0,
+      map_y = 0,
+      -- number of tiles drawn to screen
+      map_sw = 0,
+      map_sh = 0,
+      -- position where to draw first tile
+      map_sx = 0,
+      map_sy = 0,
+    },
     drawing = {
       fn          = nil,
       mouse_move  = nil,
@@ -52,61 +62,152 @@ function Map.create(engine)
   return m
 end
 
-
-function Map:load(map_file)
-  local path = map_file
-  print('loading map at ' .. path)
-  local parser = Parser.create(path)
-  self.width = tonumber(parser:get_value('width'))
-  self.height = tonumber(parser:get_value('height'))
-  print("map size: " .. self.width .. "x" .. self.height)
-  assert(self.width > 3, "map width must me > 3")
-  assert(self.height > 3, "map height must me > 3")
-
-  local terrain_file = parser:get_value('terrain_db')
-  assert(terrain_file)
-
-  local engine = self.engine
-  local terrain = Terrain.create(engine)
-  terrain:load(terrain_file)
-  self:_set_terrain(terrain)
-
-  local tiles_data = parser:get_list_value('tiles')
-  local tile_names = parser:get_list_value('names')
-
-  local tiles_generator = function(terrain, x, y)
-      local idx = (y-1) * self.width + x
-      local datum = tiles_data[idx]
-      local terrain_name = string.sub(datum,1,1)
-      local image_idx = tonumber(string.sub(datum,2, -1))
-      local terrain_type = terrain:get_type(terrain_name)
-      local name = tile_names[idx] or terrain_name
-      local tile_data = {
-        x            = x,
-        y            = y,
-        name         = name,
-        terrain_name = terrain_name,
-        image_idx    = image_idx,
-        terrain_type = terrain_type,
-      }
-      local tile = Tile.create(engine, terrain, tile_data)
-      return tile
-  end
-  self:_fill_tiles(tiles_generator)
-
-  engine.state:set_active_tile(self.tiles[1][1])
-end
-
-function Map:_set_terrain(terrain)
-  self.terrain = terrain
-
+function Map:initialize(engine, renderer, terrain, tiles_generator, map_data)
+  self.engine   = engine
+  self.renderer = renderer
+  self.terrain  = terrain
   self.tile_geometry = {
     w        = terrain.hex_width,
     h        = terrain.hex_height,
     x_offset = terrain.hex_x_offset,
     y_offset = terrain.hex_y_offset,
   }
+  self.width  = assert(map_data.width)
+  self.height = assert(map_data.height)
+  self:_fill_tiles(tiles_generator)
+  engine.state:set_active_tile(self.tiles[1][1])
+
+  self.engine.reactor:subscribe("full.refresh", function() self:_update_shown_map() end)
+  self:_update_shown_map()
 end
+
+function Map:_update_shown_map()
+  local gui = self.gui
+  gui.map_sx = -self.terrain.hex_x_offset
+  gui.map_sy = -self.terrain.hex_height
+
+  -- calculate drawn number of tiles
+  local w, h = self.renderer:get_size()
+  local step = 0
+  local ptr = gui.map_sx
+  while(ptr < w) do
+    step = step + 1
+    ptr = ptr + self.terrain.hex_x_offset
+  end
+  gui.map_sw = step
+
+  step = 0
+  ptr = gui.map_sy
+  while(ptr < h) do
+    step = step + 1
+    ptr = ptr + self.terrain.hex_height
+  end
+  gui.map_sh = step
+  print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
+  self.engine.reactor:publish("map.update")
+end
+
+function Map:get_adjastent_tiles(tile, skip_tiles)
+   local visited_tiles = skip_tiles or {}
+   local x, y = tile.data.x, tile.data.y
+   local corrections = (x % 2) == 0
+      and {
+         {-1, 0},
+         {0, -1},
+         {1, 0},
+         {1, 1},
+         {0, 1},
+         {-1, 1}, }
+      or {
+         {-1, -1},
+         {0, -1},
+         {1, -1},
+         {1, 0},
+         {0, 1},
+         {-1, 0}, }
+
+   local near_tile = 0
+   -- print("starting from " .. tile.id)
+   local iterator = function(state, value) -- ignored
+      local found = false
+      local nx, ny
+      while (not found and near_tile < 6) do
+         near_tile = near_tile + 1
+         local dx, dy = table.unpack(corrections[near_tile])
+         nx = x + dx
+         ny = y + dy
+         -- boundaries check
+         found = (near_tile <= 6)
+            and (nx > 1 and nx < self.width)
+            and (ny > 1 and ny < self.height)
+            and not visited_tiles[Tile.uniq_id(nx, ny)]
+      end
+      if (found) then
+         local tile = self.tiles[nx][ny]
+         -- print("found: " .. tile.id .. " ( " .. near_tile .. " ) ")
+         found = false -- allow further iterations
+         return tile
+      end
+   end
+   return iterator, nil, true
+end
+
+function Map:pointer_to_tile(x,y)
+   local geometry = self.tile_geometry
+   local hex_h = geometry.h
+   local hex_w = geometry.w
+   local hex_x_offset = geometry.x_offset
+   local hex_y_offset = geometry.y_offset
+
+   local hex_x_delta = hex_w - hex_x_offset
+   local tile_x_delta = self.gui.map_x
+
+   local left_col = (math.modf((x - hex_x_delta) / hex_x_offset) + 1) + (tile_x_delta % 2)
+   local right_col = left_col + 1
+   local top_row = math.modf(y / hex_h) + 1
+   local bot_row = top_row + 1
+   -- print(string.format("mouse [%d:%d] ", x, y))
+   -- print(string.format("[l:r] [t:b] = [%d:%d] [%d:%d] ", left_col, right_col, top_row, bot_row))
+   local adj_tiles = {
+      {left_col, top_row},
+      {left_col, bot_row},
+      {right_col, top_row},
+      {right_col, bot_row},
+   }
+   -- print("adj-tiles = " .. inspect(adj_tiles))
+   local tile_center_off = {(tile_x_delta % 2 == 0) and math.modf(hex_w/2) or math.modf(hex_w/2 - hex_x_offset), math.modf(hex_h/2)}
+   local get_tile_center = function(tx, ty)
+      local top_x = (tx - 1) * hex_x_offset
+      local top_y = ((ty - 1) * hex_h) - ((tx % 2 == 1) and hex_y_offset or 0)
+      return {top_x + tile_center_off[1], top_y + tile_center_off[2]}
+   end
+   local tile_centers = {}
+   for idx, t_coord in pairs(adj_tiles) do
+      local center = get_tile_center(t_coord[1], t_coord[2])
+      table.insert(tile_centers, center)
+   end
+   -- print(inspect(tile_centers))
+   local nearest_idx, nearest_distance = -1, math.maxinteger
+   for idx, t_center in pairs(tile_centers) do
+      local dx = x - t_center[1]
+      local dy = y - t_center[2]
+      local d = math.sqrt(dx*dx + dy*dy)
+      if (d < nearest_distance) then
+         nearest_idx = idx
+         nearest_distance = d
+      end
+   end
+   local active_tile = adj_tiles[nearest_idx]
+   -- print("active_tile = " .. inspect(active_tile))
+   local tx = active_tile[1] + ((tile_x_delta % 2 == 0) and 1 or 0 ) + tile_x_delta
+   local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + self.gui.map_y
+
+   if (tx > 0 and tx <= self.width and ty > 0 and ty <= self.height) then
+      return {tx, ty}
+      -- print(string.format("active tile = %d:%d", tx, ty))
+   end
+end
+
 
 function Map:_fill_tiles(tile_generator)
   local engine = self.engine
@@ -127,17 +228,6 @@ function Map:_fill_tiles(tile_generator)
   self.tiles = tiles
   self.tile_for = tile_for
 end
-
-function Map:generate(w, h, terrain, tile_generator)
-  local engine = self.engine
-  self:_set_terrain(terrain)
-
-  self.width = w
-  self.height = h
-  self:_fill_tiles(tile_generator)
-  engine.state:set_active_tile(self.tiles[1][1])
-end
-
 
 function Map:_get_event_source()
   return {
@@ -168,11 +258,11 @@ function Map:_on_map_update()
   local terrain = self.terrain
   local context = self.drawing.context
 
-  local start_map_x = engine.gui.map_x
-  local start_map_y = engine.gui.map_y
+  local start_map_x = self.gui.map_x
+  local start_map_y = self.gui.map_y
 
-  local map_sw = (engine.gui.map_sw > self.width) and self.width or engine.gui.map_sw
-  local map_sh = (engine.gui.map_sh > self.height) and self.height or engine.gui.map_sh
+  local map_sw = (self.gui.map_sw > self.width) and self.width or self.gui.map_sw
+  local map_sh = (self.gui.map_sh > self.height) and self.height or self.gui.map_sh
 
   local visible_area_iterator = function(callback)
     for i = 1,map_sw do
@@ -201,8 +291,8 @@ function Map:_on_map_update()
   map_context.tile_geometry = self.tile_geometry
   map_context.screen = {
     offset = {
-      engine.gui.map_sx - (engine.gui.map_x * terrain.hex_x_offset),
-      engine.gui.map_sy - (engine.gui.map_y * terrain.hex_height),
+      self.gui.map_sx - (self.gui.map_x * terrain.hex_x_offset),
+      self.gui.map_sy - (self.gui.map_y * terrain.hex_height),
     }
   }
   local active_layer = engine.state:get_active_layer()
@@ -307,7 +397,7 @@ function Map:bind_ctx(context)
   local terrain = self.terrain
 
   local mouse_move = function(event)
-    local new_tile = self.engine:pointer_to_tile(event.x, event.y)
+    local new_tile = self:pointer_to_tile(event.x, event.y)
     if (not new_tile) then return end
     local tile_new = self.tiles[new_tile[1]][new_tile[2]]
     event.tile_id = tile_new.id
@@ -343,7 +433,7 @@ function Map:bind_ctx(context)
   end
 
   local mouse_click = function(event)
-    local tile_coord = self.engine:pointer_to_tile(event.x, event.y)
+    local tile_coord = self:pointer_to_tile(event.x, event.y)
     -- tile coord might be nil, if the shown area is greater than map
     -- i.e. the click has been performed outside of the map
     if (tile_coord) then
@@ -357,31 +447,31 @@ function Map:bind_ctx(context)
   end
 
 
-  local map_w, map_h = engine.map.width, engine.map.height
-  local map_sw, map_sh = engine.gui.map_sw, engine.gui.map_sh
+  local map_w, map_h = self.width, self.height
+  local map_sw, map_sh = self.gui.map_sw, self.gui.map_sh
   local window_w, window_h = context.renderer.window:getSize()
 
   local idle = function(event)
     local scroll_dy, scroll_dx = 0, 0
     local direction
     local x, y = event.x, event.y
-    local map_x, map_y = engine.gui.map_x, engine.gui.map_y
+    local map_x, map_y = self.gui.map_x, self.gui.map_y
     if ((y < SCROLL_TOLERANCE or scroll_dy > 0) and map_y > 0) then
-      engine.gui.map_y = engine.gui.map_y - 1
+      self.gui.map_y = self.gui.map_y - 1
       direction = "up"
     elseif (((y > window_h - SCROLL_TOLERANCE) or scroll_dy < 0) and map_y < map_h - map_sh) then
-      engine.gui.map_y = engine.gui.map_y + 1
+      self.gui.map_y = self.gui.map_y + 1
       direction = "down"
     elseif ((x < SCROLL_TOLERANCE or scroll_dx < 0)  and map_x > 0) then
-      engine.gui.map_x = engine.gui.map_x - 1
+      self.gui.map_x = self.gui.map_x - 1
       direction = "left"
     elseif (((x > window_w - SCROLL_TOLERANCE) or scroll_dx > 0) and map_x < map_w - map_sw) then
-      engine.gui.map_x = engine.gui.map_x + 1
+      self.gui.map_x = self.gui.map_x + 1
       direction = "right"
     end
 
     if (direction) then
-      engine:update_shown_map()
+      self:_update_shown_map()
     end
     return true
   end

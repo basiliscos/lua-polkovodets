@@ -61,7 +61,7 @@ function Button:_update()
   local image = assert(self.data.image)
   local state = self.engine.state
 
-  local sdl_renderer = assert(self.engine.renderer.sdl_renderer)
+  local sdl_renderer = assert(self.engine.gear:get("renderer").sdl_renderer)
   local dst = { x = x, y = y,  w = image.w, h = image.h }
   local region = Region.create(x, y, x + image.h, y + image.h)
 

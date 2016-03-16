@@ -44,9 +44,11 @@ end
 
 function UnitInfoWindow:_render_string(label, color)
   local engine = self.engine
-  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local theme = engine.gear:get("theme")
+  local renderer = engine.gear:get("renderer")
+  local font = theme:get_font('default', DEFAULT_FONT_SIZE)
   local image = Image.create(
-    engine.renderer.sdl_renderer,
+    renderer.sdl_renderer,
     font:renderUtf8(label, "solid", color)
   )
   return image
@@ -55,7 +57,9 @@ end
 function UnitInfoWindow:_construct_info_tab()
   local engine = self.engine
   local unit = self.unit
-  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local theme = engine.gear:get("theme")
+  local renderer = engine.gear:get("renderer")
+  local font = theme:get_font('default', DEFAULT_FONT_SIZE)
   local all = {}
   local tab_data = {
     all       = all,
@@ -64,7 +68,7 @@ function UnitInfoWindow:_construct_info_tab()
     icon      = {
       hint    = engine:translate('ui.unit-info.tab.info.hint'),
       current = 'available',
-      states  = engine.renderer.theme.tabs.info,
+      states  = theme.tabs.info,
     },
     mouse_click = function(event) end,
     mouse_move = function(event) end,
@@ -74,7 +78,7 @@ function UnitInfoWindow:_construct_info_tab()
 
   -- definition name
   local definition_name = Image.create(
-    engine.renderer.sdl_renderer,
+    renderer.sdl_renderer,
     font:renderUtf8(unit.definition.data.name, "solid", DEFAULT_COLOR)
   )
   table.insert(tab_data.all, {
@@ -86,7 +90,7 @@ function UnitInfoWindow:_construct_info_tab()
   local max_label_x = 0
   local add_row = function(key, value)
     local label = Image.create(
-      engine.renderer.sdl_renderer,
+      renderer.sdl_renderer,
       font:renderUtf8(engine:translate(key), "solid", DEFAULT_COLOR)
     )
     table.insert(tab_data.all, {
@@ -127,7 +131,8 @@ end
 
 function UnitInfoWindow:_construct_units_tab(tab_hint, tab_icon_states, iterator)
   local engine = self.engine
-  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local theme = engine.gear:get("theme")
+  local font = theme:get_font('default', DEFAULT_FONT_SIZE)
   local tab_data = {
     all       = {},
     active    = {},
@@ -214,6 +219,7 @@ end
 
 function UnitInfoWindow:_construct_management_tab()
   local engine = self.engine
+  local theme = engine.gear:get("theme")
   local unit = self.unit
   local k, manage_level = unit:is_capable('MANAGE_LEVEL')
   if (not manage_level) then
@@ -238,20 +244,21 @@ function UnitInfoWindow:_construct_management_tab()
       return iterator, nil, true
     end
     local hint = 'ui.unit-info.tab.management.hint'
-    local icon_states = engine.renderer.theme.tabs.attachments
+    local icon_states = theme.tabs.attachments
     return self:_construct_units_tab(hint, icon_states, iterator_factory)
   end
 end
 
 function UnitInfoWindow:_construct_weapon_tabs()
   local engine = self.engine
-  local font = engine.renderer.theme:get_font('default', DEFAULT_FONT_SIZE)
+  local theme = engine.gear:get("theme")
+  local font = theme:get_font('default', DEFAULT_FONT_SIZE)
   local class_presents = {} -- k: class_id, value: boolean
   local unit = self.unit
 
   local wi_for_class = {} -- k: class_id, v: array of weapon instances
   -- fetch available classes & related weapon instances
-  _.each(unit.data.staff, function(idx, wi)
+  _.each(unit.staff, function(idx, wi)
     local class = wi:get_class()
     class_presents[class.id] = true
     local wi_list = wi_for_class[class.id] or {}
@@ -260,7 +267,7 @@ function UnitInfoWindow:_construct_weapon_tabs()
   end)
 
   -- get classes in the correct order
-  local classes = _.select(engine.unit_lib.weapons.classes.list, function(idx, class)
+  local classes = _.select(engine.gear:get("weapons/classes"), function(idx, class)
     return class_presents[class.id]
   end)
 
@@ -312,6 +319,8 @@ end
 
 function UnitInfoWindow:_construct_gui()
   local engine = self.engine
+  local renderer = engine.gear:get("renderer")
+  local theme = engine.gear:get("theme")
   local unit = self.unit
 
   local elements = {}
@@ -326,9 +335,9 @@ function UnitInfoWindow:_construct_gui()
   })
 
   -- title (unit name)
-  local title_font = engine.renderer.theme:get_font('default', TTILE_FONT_SIZE)
+  local title_font = theme:get_font('default', TTILE_FONT_SIZE)
   local title = Image.create(
-    engine.renderer.sdl_renderer,
+    renderer.sdl_renderer,
     title_font:renderUtf8(unit.name, "solid", DEFAULT_COLOR)
   )
   table.insert(elements, {
@@ -425,7 +434,8 @@ function UnitInfoWindow:_on_ui_update(show)
   local handlers_bound = self.handlers_bound
 
   if (show) then
-    local theme = assert(context.renderer.theme)
+    local renderer = engine.gear:get("renderer")
+    local theme = engine.gear:get("theme")
 
     engine.state:set_mouse_hint('')
     local gui = self.drawing.gui
@@ -459,7 +469,7 @@ function UnitInfoWindow:_on_ui_update(show)
     Widget.update_drawer(self, x, y, content_w, content_h)
 
 
-    local sdl_renderer = assert(context.renderer.sdl_renderer)
+    local sdl_renderer = assert(renderer.sdl_renderer)
     self.drawing.content_fn = function()
       -- background
       assert(sdl_renderer:copy(theme.window.background.texture, nil,

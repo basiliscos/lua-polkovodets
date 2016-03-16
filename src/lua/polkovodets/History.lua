@@ -27,8 +27,9 @@ local Region = require 'polkovodets.utils.Region'
 local _Record = {}
 _Record.__index = _Record
 
-function _Record.create(player, turn_no, action, context, success, results)
+function _Record.create(engine, player, turn_no, action, context, success, results)
   local o = {
+    engine  = engine,
     player  = player,
     turn_no = turn_no,
     action  = action,
@@ -46,6 +47,7 @@ function _Record.create(player, turn_no, action, context, success, results)
 end
 
 function _Record:bind_ctx(context)
+  local theme = self.engine.gear:get("theme")
   local hex_w = context.tile_geometry.w
   local hex_h = context.tile_geometry.h
   local hex_x_offset = context.tile_geometry.x_offset
@@ -73,7 +75,7 @@ function _Record:bind_ctx(context)
       if (dx < 0) then angle = -1 * angle end
       angle = math.deg(angle)
       -- print("angle " .. angle)
-      local arrow = context.theme.history.move
+      local arrow = theme.history.move
       local delta_x, delta_y = 0, 0
       if ((angle ~= 0) and (angle ~= 180)) then
         delta_x = (dx > 0) and hex_x_offset or 0
@@ -104,13 +106,13 @@ function _Record:bind_ctx(context)
     tile_id = self.context.tile
     local tile = context.map:lookup_tile(tile_id)
 
-    local battle_icon = context.theme.history.battle
+    local battle_icon = theme.history.battle
     local icon_x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - battle_icon.w
     local icon_y = tile.virtual.y + context.screen.offset[2]
     local icon_region = Region.create(icon_x, icon_y, icon_x + battle_icon.w, icon_y + battle_icon.h)
     local over_icon = false
 
-    local actual_records = context.renderer.engine.history:get_actual_records()
+    local actual_records = self.engine.history:get_actual_records()
     local battles_count = _.countf(actual_records, function(k, v)
       return (v.action == 'battle') and (v.context.tile == tile_id)
     end)
@@ -159,7 +161,7 @@ function _Record:bind_ctx(context)
     local active_tile = context.state:get_active_tile()
     update_participants(mouse.x, mouse.y, active_tile.id)
 
-    local icon = over_icon and context.theme.history.battle_hilight or context.theme.history.battle
+    local icon = over_icon and theme.history.battle_hilight or theme.history.battle
 
     draw_fn = function(event)
       assert(sdl_renderer:copy(
@@ -253,7 +255,7 @@ function History:record_player_action(action, context, success, results)
   assert(type(results) == 'table')
   local player = self.engine:get_current_player()
   local turn_no = self.engine:current_turn()
-  local record = _Record.create(player.id, turn_no, action, context, success, results)
+  local record = _Record.create(self.engine, player.id, turn_no, action, context, success, results)
 
   local turn_records = self.records_at[turn_no] or {}
   table.insert(turn_records, record)
@@ -267,8 +269,9 @@ function History:get_actual_records()
   local turn_no = self.engine:current_turn()
   local current_player = engine.current_player
 
-  for i, p in pairs(engine.player_for) do
-    local turn = (p.data.order <= current_player.data.order)
+  local players = engine.gear:get("players")
+  for _, p in pairs(players) do
+    local turn = (p.order <= current_player.order)
       and turn_no
        or turn_no -1
     actual_turns[p.id] = turn

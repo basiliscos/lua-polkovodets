@@ -33,11 +33,12 @@ local HILIGHT_COLOR = 0xFFFFFF
 
 function WeaponCasualitiesDetailsWindow.create(engine, data)
   local o = Widget.create(engine, true) -- floating window
+  local theme = engine.gear:get("theme")
   setmetatable(o, WeaponCasualitiesDetailsWindow)
   o.drawing.content_fn = nil
   o.content = {}
 
-  o.font = engine.renderer.theme:get_font('default', FONT_SIZE)
+  o.font = theme:get_font('default', FONT_SIZE)
 
   o.participants = assert(data.participants)
   o.casualities = assert(data.casualities)
@@ -48,7 +49,9 @@ end
 
 function WeaponCasualitiesDetailsWindow:_construct_gui()
   local engine = self.engine
-  local theme = engine.renderer.theme
+  local theme = engine.gear:get("theme")
+  local renderer = engine.gear:get("renderer")
+  local weapon_instance_for = engine.gear:get("weapon_instaces::map")
   local context = self.context
 
   local font = self.font
@@ -57,7 +60,7 @@ function WeaponCasualitiesDetailsWindow:_construct_gui()
 
   local create_image = function(str, color)
     local surface = font:renderUtf8(tostring(str), "solid", color)
-    return Image.create(engine.renderer.sdl_renderer, surface)
+    return Image.create(renderer.sdl_renderer, surface)
   end
 
   local content_x, content_y = self.contentless_size.dx, self.contentless_size.dy
@@ -66,7 +69,7 @@ function WeaponCasualitiesDetailsWindow:_construct_gui()
   -- 1st pass: draw weapon names
   local dx = content_x + 5
   local lines = _.map(wi_ids, function(idx, wi_id)
-    local wi = assert(engine.weapon_instance_for[wi_id])
+    local wi = assert(weapon_instance_for[wi_id])
     local name = wi.weapon.name
     local label = create_image(name, AVAILABLE_COLOR)
     -- just 1st element of line, i.e. weapon name
@@ -146,8 +149,9 @@ function WeaponCasualitiesDetailsWindow:_on_ui_update(show)
   local handlers_bound = self.handlers_bound
 
   if (show) then
-    local sdl_renderer = assert(context.renderer.sdl_renderer)
-    local theme = engine.renderer.theme
+    local theme = engine.gear:get("theme")
+    local renderer = engine.gear:get("renderer")
+    local sdl_renderer = assert(renderer.sdl_renderer)
     local gui = self.drawing.gui
     local x, y = self.initial_position.x, self.initial_position.y
     local content_x, content_y = self.contentless_size.dx, self.contentless_size.dy

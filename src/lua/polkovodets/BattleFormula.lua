@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015,2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,9 +23,14 @@ local BattleFormula = {}
 BattleFormula.__index = BattleFormula
 
 function BattleFormula.create(engine)
-  local o = { engine = engine}
+  local o = { }
   return setmetatable(o, BattleFormula)
 end
+
+function BattleFormula:initialize(engine)
+  self.engine = engine
+end
+
 
 local HIT_PROBABILITY_MAX = 0.98
 local HIT_PROBABILITY_MIN = 0.02

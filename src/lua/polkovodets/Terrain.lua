@@ -24,18 +24,21 @@ Terrain.__index = Terrain
 local Parser = require 'polkovodets.Parser'
 
 
-function Terrain.create(engine)
+function Terrain.create()
    local o = {
-      engine = engine,
-      icons = {
-      }
+      engine = nil,
+      icons = { }
    }
    setmetatable(o, Terrain)
    return o
 end
 
-function Terrain:generate(hex_geometry, weather_types_data, terrain_types_data, icon_for)
-   local engine = self.engine
+function Terrain:initialize(renderer, terrain_data, dirs_data)
+  self.renderer = renderer
+  local hex_geometry       = assert(terrain_data.hex_geometry)
+  local weather_types_data = assert(terrain_data.weather_types)
+  local terrain_types_data = assert(terrain_data.terrain_types)
+  local icon_for           = assert(terrain_data.icons)
 
    -- hex tile geometry
   self.hex_width    = tonumber(hex_geometry['width'])
@@ -44,13 +47,12 @@ function Terrain:generate(hex_geometry, weather_types_data, terrain_types_data, 
   self.hex_y_offset = tonumber(hex_geometry['y_offset'])
 
   -- load generic landscape icons
-  local gfx_dir = engine:get_gfx_dir()
   local load_icon = function(key)
     local icon_file = icon_for[key]
     assert(icon_file, "cannot find icon for '" .. key .. "'")
-    local path = gfx_dir .. '/' .. icon_file
+    local path = dirs_data.gfx .. '/' .. icon_file
     self.icons[key] = path
-    engine.renderer:load_texture(path)
+    renderer:load_texture(path)
   end
   load_icon('grid')
   load_icon('frame')
@@ -71,7 +73,6 @@ function Terrain:generate(hex_geometry, weather_types_data, terrain_types_data, 
 
    -- terrain types
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
-   local renderer = engine.renderer
    local hex_width = self.hex_width
    local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, hex_width, 0) end
 
@@ -79,13 +80,24 @@ function Terrain:generate(hex_geometry, weather_types_data, terrain_types_data, 
    for k, data in pairs(terrain_types_data) do
       local id = assert(data.id)
       terrain_types[id] = data
-      local image_for = assert(data.image)
-      for weather_id, image_path in pairs(image_for) do
+      assert(data.image)
+      local image_for = {}
+      for weather_id, image_path in pairs(data.image) do
          assert(weather[weather_id], "weather type " .. weather_id .. " must exist")
-         local full_path = gfx_dir .. '/' .. image_path
+         local full_path = dirs_data.gfx .. '/' .. image_path
          renderer:load_joint_texture(full_path, iterator_factory)
          image_for[weather_id] = full_path
       end
+
+      -- validate, that all weather images exist
+      for k, weather in pairs(weather) do
+        local weather_id = weather.id
+        local image_path = assert(data.image[weather_id], "no image for terrain '" .. id .. "' on wheather '" .. weather_id .. "'")
+        local full_path = dirs_data.gfx .. '/' .. image_path
+        renderer:load_joint_texture(full_path, iterator_factory)
+        image_for[weather_id] = full_path
+      end
+
       local numerize_weather = function(data)
          for weather_id, value in pairs(data) do
             assert(weather[weather_id])
@@ -107,6 +119,7 @@ function Terrain:generate(hex_geometry, weather_types_data, terrain_types_data, 
    self.terrain_types = terrain_types
 end
 
+--[[
 function Terrain:load(terrain_file)
    local engine = self.engine
    local path = engine.get_definitions_dir() .. '/' .. terrain_file
@@ -127,6 +140,7 @@ function Terrain:load(terrain_file)
 
    self:generate(hex_geometry, weather_types, terrain_types_data, icon_for)
 end
+]]
 
 function Terrain:get_type(name)
    -- name 1-symbol
@@ -140,16 +154,16 @@ end
 
 
 function Terrain:get_hex_image(terrain_key, weather, index)
-   local weather_images = assert(self.terrain_images[terrain_key], "no terrain for " .. terrain_key)
-   local texture_path = assert(weather_images[weather],
-                               string.format("no image #%d for terrain/weater %s/%s", index, terrain_key, weater))
-   return self.engine.renderer:get_joint_texture(texture_path, index + 1)
+  local weather_images = assert(self.terrain_images[terrain_key], "no terrain for " .. terrain_key)
+  local texture_path = assert(weather_images[weather],
+                             string.format("no image #%d for terrain/weater %s/%s", index, terrain_key, weather))
+  return self.renderer:get_joint_texture(texture_path, index + 1)
 end
 
 
 function Terrain:get_icon(name)
    local icon_path = assert(self.icons[name], "no terrain icon for " .. name)
-   return self.engine.renderer:load_texture(icon_path)
+   return self.renderer:load_texture(icon_path)
 end
 
 return Terrain

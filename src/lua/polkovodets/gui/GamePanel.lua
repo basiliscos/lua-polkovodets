@@ -28,12 +28,12 @@ setmetatable(GamePanel, Widget)
 
 function GamePanel.create(engine)
   local o = Widget.create(engine)
-  local theme = engine.renderer.theme
+  local theme = engine.gear:get("theme")
 
   setmetatable(o, GamePanel)
   o.button_geometry = {
-    w = engine.renderer.theme.buttons.end_turn.normal.w,
-    h = engine.renderer.theme.buttons.end_turn.normal.h
+    w = theme.buttons.end_turn.normal.w,
+    h = theme.buttons.end_turn.normal.h
   }
 
   o.buttons = {
@@ -96,7 +96,8 @@ function GamePanel.create(engine)
 end
 
 function GamePanel:bind_ctx(context)
-  local theme = assert(context.renderer.theme)
+  local theme = self.engine.gear:get("theme")
+
   local gamepanel_ctx = _.clone(context, true)
   local content_w = self.button_geometry.w * #self.drawing.objects
   local content_h = self.button_geometry.h

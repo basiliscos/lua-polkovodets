@@ -22,7 +22,7 @@ local Widget = {}
 Widget.__index = Widget
 
 function Widget.create(engine, floating)
-  local theme = assert(engine.renderer.theme)
+  local theme = assert(engine.gear:get("theme"))
   local o = {
     engine           = engine,
     properties       = {
@@ -43,8 +43,8 @@ function Widget.create(engine, floating)
 end
 
 function Widget:update_drawer(x, y, content_w, content_h)
-  local renderer = self.engine.renderer
-  local theme = renderer.theme
+  local theme = self.engine.gear:get("theme")
+  local renderer = self.engine.gear:get("renderer")
   local parts = theme.panel
 
   local sdl_renderer = renderer.sdl_renderer

@@ -397,7 +397,7 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
     local pair = block:select_pair(ctx)
     if (pair) then
       print("matching pair = " .. inspect(pair))
-      self.battle_scheme.engine.battle_formula:perform_battle(pair)
+      self.battle_scheme.battle_formula:perform_battle(pair)
       print("casualities for I = " .. inspect(ctx.i.casualities))
       print("casualities for P = " .. inspect(ctx.p.casualities))
     end
@@ -406,10 +406,8 @@ function _Block:perform_battle(i_unit, p_unit, fire_type)
   return ctx.i.casualities, ctx.p.casualities, i_participants, p_participants
 end
 
-
-function BattleScheme.create(engine)
+function BattleScheme.create()
    local o = {
-      engine      = engine,
       block_for   = {}, -- all blocks, k: block_id, value _Block object
       root_blocks = {}, -- blocks with parent = nil
    }
@@ -500,6 +498,46 @@ function BattleScheme.create(engine)
    return o
 end
 
+function BattleScheme:initialize(battle_formula, battle_blocks)
+  self.battle_formula = battle_formula
+
+  for idx, data in pairs(battle_blocks) do
+    local id = assert(data.block_id)
+    local fire_type = data.fire_type
+    local action = data.action
+    local condition_str = data.condition
+    local active_weapon_selector = data.active_weapon
+    local passive_weapon_selector = data.passive_weapon
+
+    local condition, active_weapon, passive_weapon
+    if (condition_str) then
+      condition = self:_parse_condition(condition_str)
+      assert(condition, "the condtion " .. condition_str .. " isn't valid")
+    end
+
+    if (active_weapon_selector) then
+      active_weapon = self:_parse_selection(active_weapon_selector)
+      assert(active_weapon, "active weapon " .. active_weapon_selector .. " isn't valid")
+    end
+
+    if (passive_weapon_selector) then
+      passive_weapon = self:_parse_selection(passive_weapon_selector)
+      assert(passive_weapon, "passive weapon " .. passive_weapon_selector .. " isn't valid")
+    end
+
+    local block = self:_create_block(
+      id,
+      fire_type,
+      condition,
+      active_weapon,
+      passive_weapon,
+      action
+    )
+  end
+  print("Battle scheme initialized, " .. #self.root_blocks .. " root blocks")
+   -- print(inspect(self.root_blocks))
+end
+
 function BattleScheme:_parse_condition(c)
    local condition = self.condition_grammar:match(c)
    return condition
@@ -526,50 +564,6 @@ end
 
 function BattleScheme:_lookup_block(id)
    return self.block_for[id]
-end
-
-function BattleScheme:generate(blocks_data)
-   for idx, data in pairs(blocks_data) do
-      local id = assert(data.block_id)
-      local fire_type = data.fire_type
-      local action = data.action
-      local condition_str = data.condition
-      local active_weapon_selector = data.active_weapon
-      local passive_weapon_selector = data.passive_weapon
-
-      local condition, active_weapon, passive_weapon
-      if (condition_str) then
-         condition = self:_parse_condition(condition_str)
-         assert(condition, "the condtion " .. condition_str .. " isn't valid")
-      end
-
-      if (active_weapon_selector) then
-         active_weapon = self:_parse_selection(active_weapon_selector)
-         assert(active_weapon, "active weapon " .. active_weapon_selector .. " isn't valid")
-      end
-
-      if (passive_weapon_selector) then
-         passive_weapon = self:_parse_selection(passive_weapon_selector)
-         assert(passive_weapon, "passive weapon " .. passive_weapon_selector .. " isn't valid")
-      end
-
-      local block = self:_create_block(
-         id,
-         fire_type,
-         condition,
-         active_weapon,
-         passive_weapon,
-         action
-      )
-   end
-   print("Battle scheme initialized, " .. #self.root_blocks .. " root blocks")
-   -- print(inspect(self.root_blocks))
-end
-
-
-function BattleScheme:load(path)
-   local parser = Parser.create(path)
-   self:generate(parser:get_raw_data())
 end
 
 function BattleScheme:_find_block(initiator_unit, passive_unit, fire_type)

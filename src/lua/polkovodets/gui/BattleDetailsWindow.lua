@@ -39,9 +39,10 @@ function BattleDetailsWindow.create(engine, data)
   o.drawing.content_fn = nil
   o.content = {}
   o.record = data
+  local theme = engine.gear:get("theme")
 
   o.text = {
-    font  = engine.renderer.theme:get_font('default', FONT_SIZE),
+    font  = theme:get_font('default', FONT_SIZE),
   }
   o.drawing.position = {0, 0}
 
@@ -50,6 +51,8 @@ end
 
 function BattleDetailsWindow:_classy_battle_weapons(record)
   local engine = self.engine
+  local weapon_instance_for = engine.gear:get("weapon_instaces::map")
+  local renderer = engine.gear:get("renderer")
 
   local sources = {
     {"i", "participants"},
@@ -63,7 +66,7 @@ function BattleDetailsWindow:_classy_battle_weapons(record)
     local side, property = source[1], source [2]
     local property_data = record.results[side][property]
     for wi_id, quantity in pairs(property_data) do
-      local wi = assert(engine.weapon_instance_for[wi_id])
+      local wi = assert(weapon_instance_for[wi_id])
       local class = assert(wi:get_class())
       local data_key = class.id .. "_" .. side .. "_" .. property
       data[data_key] = (data[data_key] or 0) + quantity
@@ -74,7 +77,7 @@ function BattleDetailsWindow:_classy_battle_weapons(record)
   local font = self.text.font
   local create_image = function(str, color)
     local surface = font:renderUtf8(tostring(str), "solid", color)
-    return Image.create(engine.renderer.sdl_renderer, surface)
+    return Image.create(renderer.sdl_renderer, surface)
   end
 
   -- print("data = " .. inspect(data))
@@ -95,14 +98,15 @@ end
 
 function BattleDetailsWindow:_construct_gui(available_classes, record)
   local engine = self.engine
-  local weapon_classes = engine.unit_lib.weapons.classes.list
+  local weapon_classes = engine.gear:get("weapons/classes")
+  local renderer = engine.gear:get("renderer")
 
   assert (#weapon_classes > 0)
   -- print(inspect(weapon_classes))
   local class_icon = weapon_classes[1]:get_icon('available')
 
   local create_image = function(surface)
-    return Image.create(engine.renderer.sdl_renderer, surface)
+    return Image.create(renderer.sdl_renderer, surface)
   end
 
   local font = self.text.font
@@ -286,8 +290,10 @@ function BattleDetailsWindow:_on_ui_update(show)
   local handlers_bound = self.handlers_bound
 
   if (show) then
+    local theme = engine.gear:get("theme")
+    local weapon_classes = engine.gear:get("weapons/classes")
+    local weapon_instance_for = engine.gear:get("weapon_instaces::map")
 
-    local theme = assert(context.renderer.theme)
     local details_ctx = _.clone(context, true)
     local content_w = gui.content_size.w
     local content_h = gui.content_size.h
@@ -297,7 +303,6 @@ function BattleDetailsWindow:_on_ui_update(show)
     details_ctx.x = x
     details_ctx.y = y
 
-    local weapon_classes = engine.unit_lib.weapons.classes.list
     local weapon_class_icon = weapon_classes[1]:get_icon('available')
 
     local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
@@ -464,7 +469,7 @@ function BattleDetailsWindow:_on_ui_update(show)
             local filter = function(source)
               local result = {}
               for wi_id, quantity in pairs(source) do
-                local wi = assert(engine.weapon_instance_for[wi_id])
+                local wi = assert(weapon_instance_for[wi_id])
                 if (wi:get_class().id  == class_id) then
                   result[wi_id] = quantity
                   has_at_least_one_instance = true

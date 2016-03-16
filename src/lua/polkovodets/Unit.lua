@@ -26,66 +26,74 @@ local Region = require 'polkovodets.utils.Region'
 local Vector = require 'polkovodets.utils.Vector'
 
 
-function Unit.create(engine, data, player)
-   assert(player, "unit should have player assigned")
-   assert(data.id)
-   assert(data.unit_definition_id)
-   assert(data.x)
-   assert(data.y)
-   assert(data.staff)
-   assert(data.state)
-   assert(data.name)
-   assert(data.entr)
-   assert(data.exp)
-   local orientation = assert(data.orientation)
-   assert(string.find(orientation,'right') or string.find(orientation, 'left'))
+function Unit.create()
+  return setmetatable({}, Unit)
+end
+
+function Unit:initialize(engine, renderer, map, unit_data, staff, unit_definitions_for, nation_to_player)
+
+  local id = assert(unit_data.id)
+  local unit_definition_id = assert(unit_data.unit_definition_id)
+  local orientation = assert(unit_data.orientation)
+  assert(string.find(orientation,'right') or string.find(orientation, 'left'))
+
+  local unit_definition = assert(unit_definitions_for[unit_definition_id], "unit definiton " .. unit_definition_id .. " not found for unit " .. id)
+
+  assert(unit_data.x, "x-coordinate isn't defined for unit " .. id)
+  assert(unit_data.y, "y-coordinate isn't defined for unit " .. id)
+  local x = tonumber(unit_data.x)
+  local y = tonumber(unit_data.y)
+  local tile = assert(map.tiles[x + 1][y + 1])
+
+  local possible_efficiencies = {'high', 'avg', 'low'}
+
+  local staff_size = 0
+  for k, v in pairs(staff) do staff_size = staff_size + 1 end
+  assert(staff_size > 0, "unit " .. id .. " cannot be without weapons instances")
+
+  local nation_id = unit_definition.nation.id
+  local player = assert(nation_to_player[nation_id], "no player for nation " .. nation_id)
 
 
-   local unit_lib = engine.unit_lib
-   local definition = assert(unit_lib.units.definitions[data.unit_definition_id])
-   local x,y = tonumber(data.x), tonumber(data.y)
-   local tile = assert(engine.map.tiles[x + 1][y + 1])
+  local state = assert(unit_data.state)
+  assert(unit_definition:get_icon(state), "state '" .. "' is not available via unit definition")
+  assert(unit_data.entr)
+  assert(unit_data.exp)
 
-   local possible_efficiencies = {'high', 'avg', 'low'}
 
-   local staff_size = 0
-   for k, v in pairs(data.staff) do staff_size = staff_size + 1 end
-   assert(staff_size > 0, "unit " .. data.id .. " cannot be without weapons instances")
+  self.id         = id
+  self.name       = assert(unit_data.name)
+  self.engine     = engine
+  self.renderer   = renderer
+  self.player     = player
+  self.tile       = tile
+  self.definition = unit_definition
+  self.staff      = staff
+  self.data = {
+    entr         = tonumber(unit_data.entr),
+    experience   = tonumber(unit_data.exp),
+    state        = "to-be-defined-later",
+    layer        = "to-be-defined-later",
+    allow_move   = true,
+    efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
+    orientation  = orientation,
+    attached     = {},
+    attached_to  = nil,
+    subordinated = {},
+  }
+  self.drawing = {
+    fn          = nil,
+    mouse_click = nil,
+    mouse_move  = nil,
+    bind_tile   = nil,
+  }
 
-   local o = {
-      id         = data.id,
-      name       = data.name,
-      engine     = engine,
-      player     = player,
-      tile       = tile,
-      definition = definition,
-      data = {
-         entr         = data.entr,
-         experience   = data.exp,
-         staff        = data.staff,
-         state        = data.state,
-         allow_move   = true,
-         efficiency   = possible_efficiencies[math.random(1, #possible_efficiencies)],
-         orientation  = orientation,
-         attached     = {},
-         attached_to  = nil,
-         subordinated = {},
-         managed_by   = data.managed_by,
-      },
-      drawing = {
-        fn          = nil,
-        mouse_click = nil,
-        mouse_move  = nil,
-        bind_tile   = nil,
-      },
-   }
-   setmetatable(o, Unit)
-   o:_update_state(data.state)
-   o:_update_layer()
-   tile:set_unit(o, o.data.layer)
-   o:refresh()
-   table.insert(player.units, o)
-   return o
+  -- affects on weapon instances
+  self:_update_state(state)
+  self:_update_layer()
+  tile:set_unit(self, self.data.layer)
+  self:refresh()
+  table.insert(player.units, o)
 end
 
 function Unit:_update_layer()
@@ -112,7 +120,11 @@ function Unit:get_layer() return self.data.layer end
 function Unit:bind_ctx(context)
   local x = context.tile.virtual.x + context.screen.offset[1]
   local y = context.tile.virtual.y + context.screen.offset[2]
-  local terrain = self.engine.map.terrain
+  local engine = self.engine
+  local terrain = engine.gear:get("terrain")
+  local renderer = engine.gear:get("renderer")
+  local theme = engine.gear:get("theme")
+  local map = engine.gear:get("map")
 
   local hex_w = context.tile_geometry.w
   local hex_h = context.tile_geometry.h
@@ -153,7 +165,7 @@ function Unit:bind_ctx(context)
     w = unit_flag.w,
     h = unit_flag.h,
   }
-  local unit_flag_hilight_image = self.engine.renderer.theme.unit_flag_hilight
+  local unit_flag_hilight_image = theme.unit_flag_hilight
   local do_hilight_unit_flag = false
   local update_unit_flag = function(x, y)
     do_hilight_unit_flag =  unit_flag_region:is_over(x, y)
@@ -165,7 +177,7 @@ function Unit:bind_ctx(context)
   -- unit state
   local size = self.definition.data.size
   local efficiency = self.data.efficiency
-  local unit_state = self.engine.renderer.theme:get_unit_state_icon(size, efficiency)
+  local unit_state = theme:get_unit_state_icon(size, efficiency)
 
   -- change attack possibility
   local change_attack
@@ -315,7 +327,7 @@ function Unit:bind_ctx(context)
       if (actions_map and actions_map.merge[tile_id]) then
         action = 'merge'
       elseif (actions_map and actions_map.attack[tile_id]) then
-        local tile = self.engine.map.tile_for[tile_id]
+        local tile = map.tile_for[tile_id]
         change_attack = nil
         update_attack_kinds_at(tile)
         action = attack_kinds[attack_kind_idx]
@@ -385,7 +397,7 @@ function Unit:_united_staff()
 
    local united_staff = {}
    for idx, unit in pairs(unit_list) do
-      for idx2, weapon_instance in pairs(unit.data.staff) do
+      for idx2, weapon_instance in pairs(unit.staff) do
          table.insert(united_staff, weapon_instance)
       end
    end
@@ -467,10 +479,11 @@ function Unit:move_cost(tile)
    local cost_for = tile.data.terrain_type.move_cost
    local costs = {} -- k: weapon id, v: movement cost
    for idx, weapon_instance in pairs(self:_marched_weapons()) do
-      local movement_type = weapon_instance.weapon.movement_type
+      local movement_type = weapon_instance.weapon.movement_type.id
       -- print("cost for " .. movement_type)
+      local weather_costs = assert(cost_for[movement_type], "no costs for movement type "  .. movement_type)
       local value = cost_for[movement_type][weather]
-      if (value == 'A') then value = weapon_instance.weapon.data.movement -- all movement points
+      if (value == 'A') then value = weapon_instance.weapon.movement      -- all movement points
       elseif (value == 'X') then value = math.maxinteger end              -- impassable
 
       if (value == 0) then value = math.maxinteger end
@@ -493,7 +506,7 @@ end
 
 function Unit:_check_death()
   local alive_weapons = 0
-  for k, weapon_instance in pairs(self.data.staff) do
+  for k, weapon_instance in pairs(self.staff) do
     alive_weapons = alive_weapons + weapon_instance.data.quantity
   end
   if (alive_weapons == 0) then
@@ -531,6 +544,7 @@ end
 function Unit:move_to(dst_tile)
   -- print("moving " .. self.id .. " to " .. dst_tile.id)
   -- print("move map = " .. inspect(self.data.actions_map.move))
+  local map = self.engine.gear:get("map")
   local costs = assert(self.data.actions_map.move[dst_tile.id],
     "unit " .. self.id  .. " cannot move to ".. dst_tile.id)
   local being_attached = self:_detach()
@@ -551,7 +565,7 @@ function Unit:move_to(dst_tile)
       if (current_tile ~= src_tile) then
         local min_tile = nil
         local min_cost = math.huge
-        for adj_tile in self.engine:get_adjastent_tiles(current_tile) do
+        for adj_tile in map:get_adjastent_tiles(current_tile) do
           local costs = move_costs[adj_tile.id]
           -- print("costs = " .. inspect(costs))
           if (costs and costs:min() < min_cost) then
@@ -660,10 +674,11 @@ end
 function Unit:attack_on(tile, fire_type)
   self:_check_death()
   local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
+  local battle_scheme = self.engine.gear:get("battle_scheme")
   assert(enemy_unit)
   self:_update_orientation(enemy_unit.tile, self.tile)
   local i_casualities, p_casualities, i_participants, p_participants
-    = self.engine.battle_scheme:perform_battle(self, enemy_unit, fire_type)
+    = battle_scheme:perform_battle(self, enemy_unit, fire_type)
 
   local unit_serializer = function(key, unit)
     return {
@@ -695,7 +710,8 @@ end
 
 function Unit:_enemy_near(tile)
    local layer = self:get_movement_layer()
-   for adj_tile in self.engine:get_adjastent_tiles(tile) do
+   local map = self.engine.gear:get("map")
+   for adj_tile in map:get_adjastent_tiles(tile) do
       local enemy = adj_tile:get_unit(layer)
       local has_enemy = enemy and enemy.player ~= self.player
       if (has_enemy) then return true end
@@ -706,7 +722,7 @@ end
 
 function Unit:update_actions_map()
    local engine = self.engine
-   local map = engine.map
+   local map = engine.gear:get("map")
    -- determine, what the current user can do at the visible area
    local actions_map = {}
    local start_tile = self.tile or self.data.attached_to.tile
@@ -774,7 +790,7 @@ function Unit:update_actions_map()
             -- print(string.format("%s -> %s : %d", src_tile.id, dst_tile.id, cost))
             fuel_at[dst_tile.id] = costs
             local has_enemy_near = self:_enemy_near(dst_tile)
-            for adj_tile in engine:get_adjastent_tiles(dst_tile, fuel_at) do
+            for adj_tile in map:get_adjastent_tiles(dst_tile, fuel_at) do
                local adj_cost = self:move_cost(adj_tile)
                local total_costs = costs + adj_cost
                -- ignore near enemy, if we are moving from the start tile
@@ -799,7 +815,7 @@ function Unit:update_actions_map()
       local united_staff = self:_united_staff()
       for idx, weapon_instance in pairs(united_staff) do
          if (weapon_instance.data.can_attack) then
-            for layer, range in pairs(weapon_instance.weapon.data.range) do
+            for layer, range in pairs(weapon_instance.weapon.range) do
                --print(weapon_instance.id .. " " .. range)
                -- we use range +1 to avoid zero-based indices
                for r = 0, range do
@@ -880,7 +896,7 @@ function Unit:update_actions_map()
                attack_map[tile.id] = attack_details
             end
          end
-         for adj_tile in engine:get_adjastent_tiles(tile, visited_tiles) do
+         for adj_tile in map:get_adjastent_tiles(tile, visited_tiles) do
             local distance = start_tile:distance_to(adj_tile)
             if (distance <= max_range) then
                add_to_queue(adj_tile)

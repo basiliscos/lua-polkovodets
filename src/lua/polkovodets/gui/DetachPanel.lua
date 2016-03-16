@@ -28,15 +28,17 @@ setmetatable(DetachPanel, Widget)
 
 function DetachPanel.create(engine, button_anchor_id)
   local o = Widget.create(engine)
+
+  local theme = engine.gear:get("theme")
+
   setmetatable(o, DetachPanel)
   o.button_geometry = {
-    w = engine.renderer.theme.buttons.end_turn.normal.w,
-    h = engine.renderer.theme.buttons.end_turn.normal.h
+    w = theme.buttons.end_turn.normal.w,
+    h = theme.buttons.end_turn.normal.h
   }
   o.button_anchor_id = button_anchor_id
   o.button_list = {}
 
-  local theme = engine.renderer.theme
   local state = engine.state
 
   local add_button = function()

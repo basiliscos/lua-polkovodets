@@ -17,85 +17,84 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]--
 
 local inspect = require('inspect')
+local _ = require ("moses")
 
 local Weapon = {}
 Weapon.__index = Weapon
 
-function Weapon.create(engine, data)
-   local unit_lib = engine.unit_lib
+function Weapon.create()
+  return setmetatable({}, Weapon)
+end
 
-   local id = assert(data.id)
-   local name = assert(data.name)
-   local w_class = assert(data.weap_class)
-   local w_type = assert(data.weap_type)
-   local w_category = assert(data.weap_category)
-   local movement_type = assert(data.move_type)
-   local target_type = assert(data.target_type)
-   assert(data.movement >= 0)
-   local nation = assert(data.nation)
+function Weapon:initialize(renderer, weapon_data, classes_for, types_for, category_for, movement_type_for, target_type_for, nation_for)
+  local id              = assert(weapon_data.id)
+  local name            = assert(weapon_data.name)
+  local w_class         = assert(weapon_data.weap_class)
+  local w_type          = assert(weapon_data.weap_type)
+  local w_category      = assert(weapon_data.weap_category)
+  local w_movement_type = assert(weapon_data.move_type)
+  local w_target_type   = assert(weapon_data.target_type)
+  assert(weapon_data.movement >= 0)
 
-   assert(data.attack)
-   local attacks = {}
-   for k, v in pairs(data.attack) do
+  local nation = assert(weapon_data.nation)
+  assert(weapon_data.attack)
+  local attacks = {}
+  for k, v in pairs(weapon_data.attack) do
     attacks[k] = tonumber(v)
-   end
+  end
 
-   assert(data.defence)
-   local defends = {}
-   for k, v in pairs(data.defence) do
+  assert(weapon_data.defence)
+  local defends = {}
+  for k, v in pairs(weapon_data.defence) do
     defends[k] = tonumber(v)
-   end
+  end
 
-   assert(data.range)
-   local range = {}
-   for k, v in pairs(data.range) do
-      v = tonumber(v)
-      assert(v >= 0, k .. " range should be non-negative")
-      range[k] = v
-   end
+  assert(weapon_data.range)
+  local range = {}
+  for k, v in pairs(weapon_data.range) do
+    v = tonumber(v)
+    assert(v >= 0, k .. " range should be non-negative")
+    range[k] = v
+  end
 
-   local class = assert(unit_lib.weapons.classes.hash[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
-   assert(unit_lib.weapons.types.hash[w_type], 'no weapon type "' .. w_type .. '" for weapon ' .. id)
-   local category = assert(unit_lib.weapons.categories.hash[w_category], "category '" .. w_category .. "' is not available for weapon " .. id)
-   assert(unit_lib.weapons.movement_types.hash[movement_type], "movement type '" .. movement_type .. "' is not available for weapon " .. id)
-   assert(unit_lib.weapons.target_types.hash[target_type], "target type '" .. target_type .. "' is not available for weapon " .. id)
-   assert(engine.nation_for[nation], "nation " .. nation .. " not availble")
+  local class = assert(classes_for[w_class], 'no weapon class "' .. w_class .. '" for weapon ' .. id)
+  local weapon_type = assert(types_for[w_type], 'no weapon type "' .. w_type .. '" for weapon ' .. id)
+  local category = assert(category_for[w_category], "category '" .. w_category .. "' is not available for weapon " .. id)
+  local movement_type = assert(movement_type_for[w_movement_type], "movement type '" .. w_movement_type .. "' is not available for weapon " .. id)
+  local target_type = assert(target_type_for[w_target_type], "target type '" .. w_target_type .. "' is not available for weapon " .. id)
 
-   for attack_type, v in pairs(unit_lib.weapons.target_types.hash) do
-      local exists = attacks[attack_type] or attacks[attack_type] == 0
-      assert(exists, "attack " .. attack_type .. " isn't present in unit " .. id)
-   end
+  nation = assert(nation_for[nation], "nation " .. nation .. " not availble for weapon " .. id)
 
-   -- gather all flags
-   local flags = {}
-   for flag, value in pairs(category.flags) do flags[flag] = value end
-   for flag, value in pairs(class.flags) do flags[flag] = value end
-   for flag, value in pairs(data.flags) do flags[flag] = value end
+  -- validate attack types
+  for attack_type, v in pairs(target_type_for) do
+    local exists = attacks[attack_type] or attacks[attack_type] == 0
+    assert(exists, "attack " .. attack_type .. " isn't present in unit " .. id)
+  end
 
-   local o = {
-      id            = id,
-      name          = name,
-      class         = class,
-      weapon_type   = w_type,
-      category      = w_category,
-      movement_type = movement_type,
-      target_type   = target_type,
-      attacks       = attacks,
-      defends       = defends,
-      flags         = flags,
-      data          = {
-         range    = range,
-         movement = data.movement,
-      },
-   }
-   setmetatable(o, Weapon)
-   return o
+  -- gather all flags
+  local flags = {}
+  for flag, value in pairs(category.flags) do flags[flag] = value end
+  for flag, value in pairs(class.flags) do flags[flag] = value end
+  for flag, value in pairs(weapon_data.flags) do flags[flag] = value end
+
+  self.id            = id
+  self.name          = name
+  self.class         = class
+  self.weapon_type   = weapon_type
+  self.category      = category
+  self.movement_type = movement_type
+  self.movement      = weapon_data.movement
+  self.target_type   = target_type
+  self.attacks       = attacks
+  self.defends       = defends
+  self.flags         = flags
+  self.range         = range
 end
 
 function Weapon:is_capable(flag_mask)
-   for flag, value in pairs(self.flags) do
-      if (string.find(flag, flag_mask)) then return flag, value end
-   end
+  for flag, value in pairs(self.flags) do
+    if (string.find(flag, flag_mask)) then return flag, value end
+  end
 end
 
 return Weapon

@@ -7,16 +7,16 @@ local t = require 'Test.More'
 local inspect = require('inspect')
 local Terrain = require 'polkovodets.Terrain'
 local Engine = require 'polkovodets.Engine'
-local DummyRenderer = require 't.DummyRenderer'
+local Gear = require "gear"
 
-local engine = Engine.create('en')
+local SampleData = require 't.SampleData'
+
+local gear = Gear.create()
+local engine = Engine.create(gear, 'en')
 local msg = engine:translate('map.battle-on-tile', {count = 5, tile = "1:2"})
 is(msg, "5 battles have occured on the tile 1:2")
 
-DummyRenderer.create(engine, 640, 480)
-
-local terrain = Terrain.create(engine)
-ok(terrain)
+SampleData.generate_test_data(gear)
 
 local hex_geometry = {
   width    = 60,
@@ -68,7 +68,23 @@ local terrain_types = {
   }
 }
 
-terrain:generate(hex_geometry, weather_types, terrain_types, icon_for)
+gear:declare("terrain", {"data/terrain", "data/dirs", "renderer"},
+  function() return Terrain.create() end,
+  function(gear, instance, terrain_data, dirs_data, renderer)
+    instance:initialize(renderer, terrain_data, dirs_data)
+  end
+)
+
+gear:set("data/terrain", {
+  hex_geometry  = hex_geometry,
+  weather_types = weather_types,
+  terrain_types = terrain_types,
+  icons         = icon_for
+})
+
+
+local terrain = gear:get("terrain")
+ok(terrain)
 
 local clear = terrain:get_type('c')
 ok(clear)
