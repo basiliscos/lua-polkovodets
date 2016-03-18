@@ -531,37 +531,6 @@ function SampleData.generate_scenario(gear)
     function() return {} end,
     function(gear, instance, list) to_map(instance, list) end
   )
-
-  gear:declare("validators/weapons/movement_types", {"data/weapons/movement_types", "data/terrain"},
-    function() return { name = "weapon movement types"} end,
-    function(gear, instance, movement_types, terrain_data)
-      instance.fn = function()
-        for _, movement_type in pairs(movement_types) do
-          for j, terrain_type in pairs(terrain_data.terrain_types) do
-            local mt_id = movement_type.id
-            local tt_id = terrain_type.id
-            assert(terrain_type.move_cost[mt_id],
-              "no '" .. mt_id .. "' movement type costs defined on terrain type '" .. tt_id .. "'")
-          end
-        end
-        print("weapon movement types are valid")
-      end
-    end
-  )
-
-  gear:declare("validators/units/classes", {"data/units/classes", "data/units/types::map"},
-    function() return { name = "unit classes"} end,
-    function(gear, instance, classes, type_for)
-      instance.fn = function()
-        for _, class in pairs(classes) do
-          local t = class["type"]
-          assert(type_for[t], "unknown unit type " .. t .. " for unit class " .. class.id)
-        end
-        print("unit classes are valid")
-      end
-    end
-  )
-
   --- scenario
 
   gear:set("data/objectives", {
@@ -656,19 +625,6 @@ function SampleData.generate_scenario(gear)
     function() return Scenario.create() end,
     function(gear, instance, ...)
       instance:initialize(...)
-    end
-  )
-end
-
-function SampleData.generate_validators(gear)
-  gear:declare("validator", { "validators/weapons/movement_types", "validators/units/classes" },
-    function() return { } end,
-    function(gear, instance, ...)
-      local validators = { ... }
-      instance.fn = function()
-        _.each(validators, function(_, v) v.fn() end)
-        print("all data seems to be valid")
-      end
     end
   )
 end
