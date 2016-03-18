@@ -70,6 +70,10 @@ function SampleData.generate_terrain(gear)
           fair    = 1,
           snowing = 1,
         },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
         air     = {
           fair    = 1,
           snowing = 1,
@@ -79,7 +83,39 @@ function SampleData.generate_terrain(gear)
         fair    = "terrain/clear.bmp",
         snowing = "terrain/clear_snow.bmp",
       }
-    }
+    },
+    {
+      id         = "r",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "road",
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 1,
+          snowing = 1,
+        },
+        leg     = {
+          fair    = 1,
+          snowing = 1,
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 1,
+          snowing = 1,
+        },
+      },
+      image = {
+        fair    = "terrain/road.bmp",
+        snowing = "terrain/road_snow.bmp",
+      }
+    },
   }
   gear:set("data/terrain", {
     hex_geometry  = hex_geometry,
@@ -112,19 +148,37 @@ end
 
 function SampleData.generate_map(gear)
   gear:set("data/map", {
-    width  = 1000,
-    height = 1000,
+    width  = 100,
+    height = 100,
   })
+
+  local my_map = {
+    ["4_4"]  = { "r", 1 },
+    ["4_5"]  = { "r", 1 },
+    ["4_6"]  = { "r", 1 },
+    ["4_7"]  = { "r", 1 },
+    ["4_8"]  = { "r", 1 },
+    ["4_9"]  = { "r", 1 },
+    ["4_10"] = { "r", 1 },
+  }
 
   local engine = gear:get("engine")
   gear:set("helper/map/tiles_generator", function(terrain, x, y)
+    local key = x .. "_" .. y
+
+    -- clear terrain by default
+    local t_type, image_idx = 'c', 13
+    local alternative_data = my_map[key]
+    if (alternative_data) then
+      t_type, image_idx = table.unpack(alternative_data)
+    end
     local tile_data = {
       x            = x,
       y            = y,
-      name         = 'dummy',                -- does not matter
-      image_idx    = 13,                     -- does not matter
-      terrain_name = 'c',                    -- clear
-      terrain_type = terrain:get_type('c'),  -- clear
+      name         = 'dummy/' .. t_type,
+      image_idx    = image_idx,
+      terrain_name = t_type,
+      terrain_type = terrain:get_type(t_type),
     }
     return Tile.create(engine, terrain, tile_data)
   end)
@@ -217,6 +271,7 @@ function SampleData.generate_scenario(gear)
   gear:set("data/weapons/movement_types", {
     {id = "wheeled"},
     {id = "leg"},
+    {id = "towed"},
     {id = "air"},
   })
 
@@ -230,6 +285,7 @@ function SampleData.generate_scenario(gear)
     {id = "wk_armor", flags = {}, icon = "units/classes/wk_armor" },
     {id = "wk_artil", flags = { RANGED_FIRE = "TRUE" }, icon = "units/classes/wk_artil" },
     {id = "wk_fighter", flags = {}, icon = "units/classes/wk_fighter" },
+    {id = "wk_transp", flags = {}, icon = "units/classes/wk_transp" },
   })
 
   gear:declare("weapons/classes", {"data/weapons/classes", "data/dirs", "renderer"},
@@ -268,6 +324,8 @@ function SampleData.generate_scenario(gear)
     {id = "wt_minComp" },
     {id = "wt_canField"},
     {id = "wt_antiairMG"},
+    {id = "wt_transp"},
+    {id = "wt_artil"},
     {id = "wt_FightLt"},
   })
 
@@ -280,7 +338,6 @@ function SampleData.generate_scenario(gear)
     {
       id = "rus_weapon_1",
       name = "Rus Infatry 1",
-      range = { surface = 1 },
       nation = "rus",
       movement = 3,
       range   = {air = 0, surface = 1},
@@ -292,6 +349,36 @@ function SampleData.generate_scenario(gear)
       target_type = "soft",
       weap_type  = "wt_infant",
       weap_class = "wk_infant",
+    },
+    {
+      id = "rus_trasport_1",
+      name = "GAZ-1",
+      nation = "rus",
+      movement = 6,
+      range   = {air = 0, surface = 1},
+      defence = {air = 1, surface = 1 },
+      attack = { air = 0, soft = 0, hard = 0 },
+      flags  = { TRANSPORTS_LEG = 1 },
+      move_type = "wheeled",
+      weap_category = "wc_rear",
+      target_type = "soft",
+      weap_type  = "wt_transp",
+      weap_class = "wk_transp",
+    },
+    {
+      id = "rus_art_1",
+      name = "vasiliok-1",
+      nation = "rus",
+      movement = 1,
+      range   = {air = 0, surface = 3},
+      defence = {air = 1, surface = 1 },
+      attack = { air = 0, soft = 10, hard = 3 },
+      flags  = { ATTACKS_FIRST = 1 },
+      move_type = "towed",
+      weap_category = "wc_artil",
+      target_type = "soft",
+      weap_type  = "wt_artil",
+      weap_class = "wk_artil",
     },
     {
       id = "ger_weapon_1",
@@ -369,6 +456,43 @@ function SampleData.generate_scenario(gear)
         marching  = "units/rus/rus_inf_M1.png",
         defending = "units/rus/rus_inf_D1.png",
         attacking = "units/rus/rus_inf_A1.png",
+      }
+    },
+    {
+      id = "rus_ud_2",
+      name = "Russian Unit Definition (division / motorized)",
+      size = "L",
+      flags = {},
+      nation = "rus",
+      ammo = 5,
+      unit_class = "inf",
+      spotting = 1,
+      staff = {
+        rus_weapon_1 = 300,
+        rus_trasport_1 = 300,
+      },
+      icons = {
+        marching  = "units/rus/rus_inf_M1.png",
+        defending = "units/rus/rus_inf_D1.png",
+        attacking = "units/rus/rus_inf_A1.png",
+      }
+    },
+    {
+      id = "rus_ud_3",
+      name = "Russian Artillery Unit Definition (brigade)",
+      size = "L",
+      flags = {},
+      nation = "rus",
+      ammo = 5,
+      unit_class = "inf",
+      spotting = 1,
+      staff = {
+        rus_art_1 = 30,
+      },
+      icons = {
+        marching  = "units/rus/rus_art_M1.png",
+        defending = "units/rus/rus_art_D2.png",
+        attacking = "units/rus/rus_art_A1.png",
       }
     },
     {
@@ -486,15 +610,29 @@ function SampleData.generate_scenario(gear)
     },
     {
       id = "rus_unit_2",
-      name = "Russian Unit 1/2",
+      name = "Russian Unit 2/1",
       state = "defending",
-      unit_definition_id = "rus_ud_1",
+      unit_definition_id = "rus_ud_2",
       x = 3, y = 2,
       exp = 0,
       entr = 0,
       orientation = "right",
       staff = {
         rus_weapon_1 = "250",
+        rus_trasport_1 = "300",
+      },
+    },
+    {
+      id = "rus_unit_3",
+      name = "Russian Unit 3/1",
+      state = "defending",
+      unit_definition_id = "rus_ud_3",
+      x = 3, y = 3,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_art_1 = "30",
       },
     },
     {
@@ -526,11 +664,11 @@ function SampleData.generate_validators(gear)
   gear:declare("validator", { "validators/weapons/movement_types", "validators/units/classes" },
     function() return { } end,
     function(gear, instance, ...)
-      local validators = {}
+      local validators = { ... }
       instance.fn = function()
         _.each(validators, function(_, v) v.fn() end)
+        print("all data seems to be valid")
       end
-      print("all data seems to be valid")
     end
   )
 end

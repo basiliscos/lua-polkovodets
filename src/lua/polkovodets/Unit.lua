@@ -424,7 +424,7 @@ function Unit:_marched_weapons()
    -- pass 1: determine transport capabilites
    for idx, weapon_instance in pairs(united_staff) do
       local transport_capability, value = weapon_instance:is_capable('TRANSPORTS_%w+')
-      -- print("id" .. weapon_instance.id .. inspect(weapon_instance.weapon.flags))
+      -- print("id: " .. weapon_instance.id .. " " .. inspect(weapon_instance.weapon.flags))
       -- intepret anything as true, in future it might be possible to define
       -- weight/volume transport capabilities
       if (value) then
@@ -437,12 +437,13 @@ function Unit:_marched_weapons()
 
    -- pass 2: put into transpots related weapons
    for idx, weapon_instance in pairs(united_staff) do
-      local kind = weapon_instance.weapon.movement_type
+      local movement_type = weapon_instance.weapon.movement_type.id
       local transported = false
       local quantity = weapon_instance:quantity()
-      if ((quantity  > 0) and (transport_for[kind] or 0) >= quantity) then
-         transported = true
-         transport_for[kind] = transport_for[kind] - quantity
+      -- print(weapon_instance.id .. " / " .. quantity .. " kind: " .. movement_type)
+      if ((quantity  > 0) and (transport_for[movement_type] or 0) >= quantity) then
+        transported = true
+        transport_for[movement_type] = transport_for[movement_type] - quantity
       end
       if (not transported) then table.insert(list, weapon_instance) end
    end

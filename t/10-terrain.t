@@ -63,7 +63,8 @@ local terrain_types = {
       },
     },
     image = {
-      fair = "path/to/some6.bmp",
+      fair    = "path/to/some6.bmp",
+      snowing = "path/to/some7.bmp",
     }
   }
 }
