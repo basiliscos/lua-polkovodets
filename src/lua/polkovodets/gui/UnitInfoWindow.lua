@@ -200,6 +200,7 @@ end
 
 function UnitInfoWindow:_construct_attachments_tab()
   local engine = self.engine
+  local theme = engine.gear:get("theme")
   local unit = self.unit
   if (#unit.data.attached > 0) then
     local iterator_factory = function()
@@ -213,7 +214,7 @@ function UnitInfoWindow:_construct_attachments_tab()
       end
       return iterator, nil, true
     end
-    return self:_construct_units_tab('ui.unit-info.tab.attachments.hint', engine.renderer.theme.tabs.attachments, iterator_factory)
+    return self:_construct_units_tab('ui.unit-info.tab.attachments.hint', theme.tabs.attachments, iterator_factory)
   end
 end
 

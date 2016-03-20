@@ -56,6 +56,10 @@ function SampleData.generate_terrain(gear)
           fair    = 2,
           snowing = 2,
         },
+        tracked = {
+          fair    = 2,
+          snowing = 2,
+        },
         leg     = {
           fair    = 1,
           snowing = 1,
@@ -87,6 +91,10 @@ function SampleData.generate_terrain(gear)
         wheeled = {
           fair    = 1,
           snowing = 1,
+        },
+        tracked = {
+          fair    = 2,
+          snowing = 2,
         },
         leg     = {
           fair    = 1,
@@ -203,6 +211,7 @@ function SampleData.generate_scenario(gear)
   gear:set("data/weapons/movement_types", {
     {id = "wheeled"},
     {id = "leg"},
+    {id = "tracked"},
     {id = "towed"},
     {id = "air"},
   })
@@ -281,6 +290,21 @@ function SampleData.generate_scenario(gear)
       weap_class = "wk_artil",
     },
     {
+      id = "rus_tank_1",
+      name = "t34",
+      nation = "rus",
+      movement = 10,
+      range   = {air = 0, surface = 1},
+      defence = {air = 5, surface = 6 },
+      attack = { air = 0, soft = 4, hard = 7 },
+      flags  = { },
+      move_type = "tracked",
+      weap_category = "wc_tank",
+      target_type = "hard",
+      weap_type  = "wt_tankInfMid",
+      weap_class = "wk_armor",
+    },
+    {
       id = "ger_weapon_1",
       name = "German Infatry 1",
       range = { surface = 1 },
@@ -308,6 +332,7 @@ function SampleData.generate_scenario(gear)
 
   gear:set("data/units/classes", {
     {id = "inf", ["type"] = "ut_land"},
+    {id = "tank", ["type"] = "ut_land"},
   })
 
   gear:set("data/units/definitions", {
@@ -350,8 +375,8 @@ function SampleData.generate_scenario(gear)
     },
     {
       id = "rus_ud_3",
-      name = "Russian Artillery Unit Definition (brigade)",
-      size = "L",
+      name = "Russian Artillery Unit Definition (batalion)",
+      size = "S",
       flags = {},
       nation = "rus",
       ammo = 5,
@@ -367,8 +392,26 @@ function SampleData.generate_scenario(gear)
       }
     },
     {
+      id = "rus_ud_4",
+      name = "Russian Tank Definition (brigade)",
+      size = "M",
+      flags = {},
+      nation = "rus",
+      ammo = 5,
+      unit_class = "tank",
+      spotting = 1,
+      staff = {
+        rus_tank_1 = 100,
+      },
+      icons = {
+        marching  = "units/rus/rus_tank_M1.png",
+        defending = "units/rus/rus_tank_D1.png",
+        attacking = "units/rus/rus_tank_A1.png",
+      }
+    },
+    {
       id = "ger_ud_1",
-      name = "German Unit Definition (brigade)",
+      name = "German Unit Definition (batalion)",
       size = "S",
       flags = {},
       nation = "ger",
@@ -446,6 +489,32 @@ function SampleData.generate_scenario(gear)
       orientation = "right",
       staff = {
         rus_art_1 = "30",
+      },
+    },
+    {
+      id = "rus_unit_4",
+      name = "Russian Unit 3/2",
+      state = "defending",
+      unit_definition_id = "rus_ud_3",
+      x = 2, y = 4,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_art_1 = "30",
+      },
+    },
+    {
+      id = "rus_unit_5",
+      name = "Russian tank Unit 4/1",
+      state = "defending",
+      unit_definition_id = "rus_ud_4",
+      x = 3, y = 1,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_tank_1 = "100",
       },
     },
     {

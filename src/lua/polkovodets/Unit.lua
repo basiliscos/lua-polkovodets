@@ -197,7 +197,7 @@ function Unit:bind_ctx(context)
       if (actions_map and actions_map.attack[tile.id]) then
         attack_kinds = u:get_attack_kinds(tile)
         if (#attack_kinds > 1) then
-          local icon = context.renderer.theme.change_attack_type.available
+          local icon = theme.change_attack_type.available
           local change_attack_x = x + (hex_w - hex_x_offset)
           change_attack = {
             icon = icon,
@@ -212,7 +212,7 @@ function Unit:bind_ctx(context)
           local mouse = context.state:get_mouse()
           local icon_kind = is_over_change_attack_icon(mouse.x, mouse.y)
             and 'hilight' or 'available'
-          change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
+          change_attack.icon = theme.change_attack_type[icon_kind]
         end
       end
     end
@@ -346,7 +346,7 @@ function Unit:bind_ctx(context)
           action = 'default'
           hint   = self.engine:translate('map.change-attack-kind')
         end
-        change_attack.icon = context.renderer.theme.change_attack_type[icon_kind]
+        change_attack.icon = theme.change_attack_type[icon_kind]
       end
       if (update_unit_flag(x, y)) then
         action = 'default'
