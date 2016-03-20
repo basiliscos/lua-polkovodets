@@ -18,6 +18,7 @@ install:
   - luarocks install i18n
   - luarocks install inspect
   - luarocks install moses
+  - luarocks install dkjson
   - luarocks install lua-testmore
 
 script: ./test.sh
