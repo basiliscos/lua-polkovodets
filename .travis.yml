@@ -17,6 +17,7 @@ install:
   - luarocks install Gear
   - luarocks install i18n
   - luarocks install inspect
+  - luarocks install moses
   - luarocks install lua-testmore
 
 script: ./test.sh
