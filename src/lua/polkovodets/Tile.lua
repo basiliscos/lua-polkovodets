@@ -109,6 +109,7 @@ function Tile:bind_ctx(context)
   local hex_w = terrain.hex_width
 
   local dst = {x = x, y = y, w = hex_w, h = hex_h}
+  local grid_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
   local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
 
 
@@ -183,7 +184,7 @@ function Tile:bind_ctx(context)
     -- draw grid
     if (show_grid) then
       local icon = terrain:get_icon('grid')
-      assert(sdl_renderer:copy(icon.texture, self.grid_rectange, dst))
+      assert(sdl_renderer:copy(icon.texture, grid_rectange, dst))
     end
 
   end

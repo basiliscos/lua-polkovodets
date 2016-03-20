@@ -59,6 +59,7 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
   load_icon('fog')
   load_icon('managed')
   load_icon('participant')
+
   -- hard-coded value
   local fog_image = self:get_icon('fog')
   assert(fog_image.texture:setAlphaMod(40))
@@ -118,29 +119,6 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
    self.terrain_images = terrain_images
    self.terrain_types = terrain_types
 end
-
---[[
-function Terrain:load(terrain_file)
-   local engine = self.engine
-   local path = engine.get_definitions_dir() .. '/' .. terrain_file
-   local parser = Parser.create(path)
-   self.parser = parser
-
-   local hex_geometry       = assert(parser:get_value('hex'), 'no hex in ' .. terrain_file)
-   local icon_for           = assert(parser:get_value('image'))
-   -- weather data
-   local weather_file       = assert(parser:get_value('weather-types'))
-   local weather_parser     = Parser.create(engine.get_definitions_dir() .. '/' .. weather_file)
-   local weather_types      = weather_parser:get_raw_data()
-
-   -- terrain types data
-   local terrain_types_file = assert(parser:get_value('terrain-types'))
-   local tt_parser          = Parser.create(engine.get_definitions_dir() .. '/' .. terrain_types_file)
-   local terrain_types_data = tt_parser:get_raw_data()
-
-   self:generate(hex_geometry, weather_types, terrain_types_data, icon_for)
-end
-]]
 
 function Terrain:get_type(name)
    -- name 1-symbol

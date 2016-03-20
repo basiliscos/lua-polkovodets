@@ -162,9 +162,9 @@ function DataLoader.load(gear, scenario_path)
     icons         = {
       fog         = assert(landscape_icon_for.fog, landscape_path .. " /image don't have fog image"),
       frame       = assert(landscape_icon_for.frame, landscape_path .. " /image don't have frame image"),
-      participant = assert(landscape_icon_for.frame, landscape_path .. " /image don't have participant image"),
-      grid        = assert(landscape_icon_for.frame, landscape_path .. " /image don't have grid image"),
-      managed     = assert(landscape_icon_for.frame, landscape_path .. " /image don't have managed image"),
+      participant = assert(landscape_icon_for.participant, landscape_path .. " /image don't have participant image"),
+      grid        = assert(landscape_icon_for.grid, landscape_path .. " /image don't have grid image"),
+      managed     = assert(landscape_icon_for.managed, landscape_path .. " /image don't have managed image"),
     },
     weather_types = weather_types,
     terrain_types = terrain_types,
