@@ -69,13 +69,6 @@ local terrain_types = {
   }
 }
 
-gear:declare("terrain", {"data/terrain", "data/dirs", "renderer"},
-  function() return Terrain.create() end,
-  function(gear, instance, terrain_data, dirs_data, renderer)
-    instance:initialize(renderer, terrain_data, dirs_data)
-  end
-)
-
 gear:set("data/terrain", {
   hex_geometry  = hex_geometry,
   weather_types = weather_types,

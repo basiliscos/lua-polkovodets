@@ -20,13 +20,6 @@ local engine = Engine.create(gear, "en")
 SampleData.generate_test_data(gear)
 SampleData.generate_terrain(gear)
 
-gear:declare("map", {"data/map", "engine", "renderer", "terrain", "helper/map/tiles_generator" },
-  function() return Map.create() end,
-  function(gear, instance, map_data, engine, renderer, terrain, tiles_generator)
-    instance:initialize(engine, renderer, terrain, tiles_generator, map_data)
-  end
-)
-
 gear:set("data/map", {
   width  = 10,
   height = 10,
