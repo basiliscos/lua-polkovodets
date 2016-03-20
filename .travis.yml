@@ -1,0 +1,18 @@
+language: python
+sudo: false
+
+env:
+  - LUA="lua=5.3"
+
+
+before_install:
+  - pip install hererocks
+  - hererocks lua_install -r^ --$LUA
+  - export PATH=$PATH:$PWD/lua_install/bin # Add directory with all installed binaries to PATH
+
+
+install:
+  - lua -v
+  - luarocks install lua-testmore OrderedSet Gear i18n
+
+script: ./test.sh
