@@ -355,6 +355,21 @@ function SampleData.generate_scenario(gear)
       weap_class = "wk_fighter",
     },
     {
+      id = "rus_hq_1",
+      name = "gen-shtab",
+      nation = "rus",
+      movement = 10,
+      range   = {air = 1, surface = 0},
+      defence = {air = 5, surface = 5 },
+      attack = { air = 0, soft = 1, hard = 1 },
+      flags  = { },
+      move_type = "air",
+      weap_category = "wc_rear",
+      target_type = "air",
+      weap_type  = "wt_FightLt",
+      weap_class = "wk_fighter",
+    },
+    {
       id = "ger_weapon_1",
       name = "German Infatry 1",
       range = { surface = 1 },
@@ -383,6 +398,7 @@ function SampleData.generate_scenario(gear)
   gear:set("data/units/classes", {
     {id = "inf", ["type"] = "ut_land"},
     {id = "tank", ["type"] = "ut_land"},
+    {id = "hq", ["type"] = "ut_land"},
     {id = "air_fighter", ["type"] = "ut_air"},
   })
 
@@ -475,6 +491,30 @@ function SampleData.generate_scenario(gear)
       icons = {
         flying  = "units/rus/rus_avia_F1.png",
         landed  = "units/rus/rus_avia_S1.png",
+      },
+    },
+    {
+      id = "rus_ud_6",
+      name = "Russian HQ (batalion)",
+      size = "S",
+      flags = {
+        MANAGE_LEVEL =               	0,
+        MANAGED_UNITS_LIMIT =         "unlimited",
+        MANAGED_UNIT_SIZES_LIMIT =    "unlimited",
+        MANAGED_MANAGERS_LEVEL_LIMIT = "unlimited",
+      },
+      nation = "rus",
+      ammo = 5,
+      unit_class = "hq",
+      spotting = 3,
+      staff = {
+        rus_weapon_1 = 15,
+        rus_trasport_1 = 15,
+      },
+      icons = {
+        marching  = "units/rus/rus_stab_M1.png",
+        defending = "units/rus/rus_stab_D1.png",
+        attacking = "units/rus/rus_stab_D1.png",
       },
     },
     {
@@ -596,6 +636,20 @@ function SampleData.generate_scenario(gear)
       orientation = "right",
       staff = {
         rus_aircrat_1 = 15,
+      },
+    },
+    {
+      id = "rus_unit_6",
+      name = "Russian HQ/gen hq",
+      state = "defending",
+      unit_definition_id = "rus_ud_6",
+      x = 5, y = 4,
+      exp = 0,
+      entr = 0,
+      orientation = "left",
+      staff = {
+        rus_weapon_1 = 15,
+        rus_trasport_1 = 15,
       },
     },
     {

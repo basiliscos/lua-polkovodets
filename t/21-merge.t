@@ -114,4 +114,21 @@ subtest("non-mergable: land and air units", function()
   ok(not tank1_m.data.actions_map.merge[fighter.tile.id], "the same for tank" )
 end)
 
+subtest("non-mergable: manager and manageable units", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
+  local tank1_m = map.tiles[4][2]:get_unit('surface')
+  local hq = map.tiles[6][5]:get_unit('surface')
+  hq:update_actions_map()
+
+  tank1_m:update_actions_map()
+  tank1_m:move_to(map.tiles[5][6])
+  tank1_m:update_actions_map()
+
+  ok(not hq.data.actions_map.merge[tank1_m.tile.id], "hq isn't mergeable with tank" )
+  ok(not tank1_m.data.actions_map.merge[hq.tile.id], "the same for tank" )
+end)
+
+
 done_testing()
