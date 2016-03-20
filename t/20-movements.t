@@ -97,4 +97,17 @@ subtest("movement/attacks first", function()
   is_deeply(art.data.actions_map.attack, {}, "cannot attack after movement")
 end)
 
+subtest("movement/air", function()
+  local fighter = map.tiles[7][7]:get_unit('air')
+  ok(fighter)
+  fighter:update_actions_map()
+
+  ok(fighter.data.actions_map.move[map.tiles[7][22].id], "max distance for aircraft is correct")
+  ok(not fighter.data.actions_map.move[map.tiles[7][23].id], "max distance for aircraft is correct")
+
+  ok(fighter.data.actions_map.move[map.tiles[4][4].id], "can flight above our units")
+  ok(fighter.data.actions_map.move[map.tiles[5][3].id], "as well as enemy units")
+end)
+
+
 done_testing()

@@ -97,4 +97,21 @@ subtest("merge: l + m + s", function()
 
 end)
 
+subtest("non-mergable: land and air units", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
+  local tank1_m = map.tiles[4][2]:get_unit('surface')
+  local fighter = map.tiles[7][7]:get_unit('air')
+
+  fighter:update_actions_map()
+  ok(not fighter.data.actions_map.merge[tank1_m.tile.id], "s-fighter non-mergeable with m-tank" )
+  fighter:move_to(map.tiles[3][2])
+  fighter:update_actions_map()
+  tank1_m:update_actions_map()
+
+  ok(not fighter.data.actions_map.merge[tank1_m.tile.id], "even if we flight close" )
+  ok(not tank1_m.data.actions_map.merge[fighter.tile.id], "the same for tank" )
+end)
+
 done_testing()

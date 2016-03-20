@@ -114,6 +114,42 @@ function SampleData.generate_terrain(gear)
         snowing = "terrain/road_snow.bmp",
       }
     },
+    {
+      id         = "a",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "airfield",
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 1,
+          snowing = 1,
+        },
+        tracked = {
+          fair    = 2,
+          snowing = 2,
+        },
+        leg     = {
+          fair    = 1,
+          snowing = 1,
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 1,
+          snowing = 1,
+        },
+      },
+      image = {
+        fair    = "terrain/airfield.bmp",
+        snowing = "terrain/airfield_snow.bmp",
+      }
+    },
   }
   gear:set("data/terrain", {
     hex_geometry  = hex_geometry,
@@ -137,13 +173,12 @@ function SampleData.generate_map(gear)
   })
 
   local my_map = {
-    ["4_4"]  = { "r", 1 },
-    ["4_5"]  = { "r", 1 },
-    ["4_6"]  = { "r", 1 },
-    ["4_7"]  = { "r", 1 },
-    ["4_8"]  = { "r", 1 },
-    ["4_9"]  = { "r", 1 },
-    ["4_10"] = { "r", 1 },
+
+    -- vertical road
+    ["4_4"]  = { "r", 1 }, ["4_5"]  = { "r", 1 },  ["4_6"]  = { "r", 1 }, ["4_7"]  = { "r", 1 }, ["4_8"]  = { "r", 1 },  ["4_9"]  = { "r", 1 }, ["4_10"] = { "r", 1 },
+
+    -- airport
+    ["7_4"]  = { "a", 0 }, ["3_8"]  = { "a", 0 },
   }
 
   local engine = gear:get("engine")
@@ -305,6 +340,21 @@ function SampleData.generate_scenario(gear)
       weap_class = "wk_armor",
     },
     {
+      id = "rus_aircrat_1",
+      name = "yak-5",
+      nation = "rus",
+      movement = 15,
+      range   = {air = 1, surface = 0},
+      defence = {air = 10, surface = 7 },
+      attack = { air = 10, soft = 4, hard = 1 },
+      flags  = { },
+      move_type = "air",
+      weap_category = "wc_fighter",
+      target_type = "air",
+      weap_type  = "wt_FightLt",
+      weap_class = "wk_fighter",
+    },
+    {
       id = "ger_weapon_1",
       name = "German Infatry 1",
       range = { surface = 1 },
@@ -333,6 +383,7 @@ function SampleData.generate_scenario(gear)
   gear:set("data/units/classes", {
     {id = "inf", ["type"] = "ut_land"},
     {id = "tank", ["type"] = "ut_land"},
+    {id = "air_fighter", ["type"] = "ut_air"},
   })
 
   gear:set("data/units/definitions", {
@@ -410,6 +461,23 @@ function SampleData.generate_scenario(gear)
       }
     },
     {
+      id = "rus_ud_5",
+      name = "Russian Fighters (batalion)",
+      size = "S",
+      flags = {},
+      nation = "rus",
+      ammo = 5,
+      unit_class = "air_fighter",
+      spotting = 3,
+      staff = {
+        rus_aircrat_1 = 15,
+      },
+      icons = {
+        flying  = "units/rus/rus_avia_F1.png",
+        landed  = "units/rus/rus_avia_S1.png",
+      },
+    },
+    {
       id = "ger_ud_1",
       name = "German Unit Definition (batalion)",
       size = "S",
@@ -434,11 +502,11 @@ function SampleData.generate_scenario(gear)
   gear:set("data/objectives", {
     {
       x = 2, y = 4,
-      nation = 'ger',
+      nation = 'rus',
     },
     {
       x = 7, y = 5,
-      nation = 'rus',
+      nation = 'ger',
     },
   })
 
@@ -515,6 +583,19 @@ function SampleData.generate_scenario(gear)
       orientation = "right",
       staff = {
         rus_tank_1 = "100",
+      },
+    },
+    {
+      id = "rus_unit_5",
+      name = "Russian air-fighters batallion 5/1",
+      state = "flying",
+      unit_definition_id = "rus_ud_5",
+      x = 6, y = 6,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_aircrat_1 = 15,
       },
     },
     {
