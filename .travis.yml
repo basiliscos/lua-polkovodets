@@ -19,6 +19,7 @@ install:
   - luarocks install inspect
   - luarocks install moses
   - luarocks install dkjson
+  - luarocks install LPeg
   - luarocks install lua-testmore
 
 script: ./test.sh
