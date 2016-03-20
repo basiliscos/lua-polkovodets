@@ -95,6 +95,7 @@ function Scenario:initialize(scenario_data, objectives_data, armies_data,
     local managed_by = data.managed_by
     if (managed_by) then
       local manager_unit = assert(unit_for[managed_by], "no manager " .. managed_by .. ", defined for unit " .. id)
+      local unit = unit_for[id]
       manager_unit:subordinate(unit)
     end
   end

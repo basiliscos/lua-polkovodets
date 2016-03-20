@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,14 +16,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
+local _ = require ("moses")
 local SDL = require "SDL"
 local image = require "SDL.image"
+
 local Gear = require "gear"
 
 local Engine = require 'polkovodets.Engine'
-local Map = require 'polkovodets.Map'
 local Renderer = require 'polkovodets.Renderer'
-local DataLoader = require 'polkovodets.DataLoader'
+
+local SampleData = require 't.SampleData'
 
 math.randomseed( os.time() )
 
@@ -60,12 +62,23 @@ gear:declare("renderer",
   function() return Renderer.create(engine, window, renderer) end
 )
 
-DataLoader.load(gear, 'Test3')
+SampleData.generate_battle_scheme(gear)
+SampleData.generate_map(gear)
+SampleData.generate_scenario(gear)
+SampleData.generate_terrain(gear)
 
+local validator = gear:get("validator")
+validator.fn()
 local scenario = gear:get("scenario")
 engine:end_turn()
-
 local gui_renderer = gear:get("renderer")
+
+local component_names = {}
+for k, _ in pairs(gear.components) do table.insert(component_names, k) end
+table.sort(component_names)
+for _, name in pairs(component_names) do
+  print("[component] " .. name)
+end
 
 gui_renderer:prepare_drawers()
 gui_renderer:main_loop()

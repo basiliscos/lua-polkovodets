@@ -72,8 +72,10 @@ function Map:initialize(engine, renderer, terrain, tiles_generator, map_data)
     x_offset = terrain.hex_x_offset,
     y_offset = terrain.hex_y_offset,
   }
-  self.width  = assert(map_data.width)
-  self.height = assert(map_data.height)
+  assert(map_data.width)
+  assert(map_data.height)
+  self.width  = tonumber(map_data.width)
+  self.height = tonumber(map_data.height)
   self:_fill_tiles(tiles_generator)
   engine.state:set_active_tile(self.tiles[1][1])
 
