@@ -21,7 +21,6 @@ Unit.__index = Unit
 
 local _ = require ("moses")
 local inspect = require('inspect')
-local SDL = require "SDL"
 local Region = require 'polkovodets.utils.Region'
 local Vector = require 'polkovodets.utils.Vector'
 
@@ -118,6 +117,7 @@ end
 function Unit:get_layer() return self.data.layer end
 
 function Unit:bind_ctx(context)
+  local SDL = require "SDL"
   local x = context.tile.virtual.x + context.screen.offset[1]
   local y = context.tile.virtual.y + context.screen.offset[2]
   local engine = self.engine
