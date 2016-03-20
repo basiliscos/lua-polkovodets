@@ -12,7 +12,7 @@ local Engine = require 'polkovodets.Engine'
 local Terrain = require 'polkovodets.Terrain'
 local Tile = require 'polkovodets.Tile'
 
-local SampleData = require 't.SampleData'
+local SampleData = require 'polkovodets.SampleData'
 
 local gear = Gear.create()
 local engine = Engine.create(gear, "en")

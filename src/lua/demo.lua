@@ -25,7 +25,7 @@ local Gear = require "gear"
 local Engine = require 'polkovodets.Engine'
 local Renderer = require 'polkovodets.Renderer'
 
-local SampleData = require 't.SampleData'
+local SampleData = require 'polkovodets.SampleData'
 
 math.randomseed( os.time() )
 

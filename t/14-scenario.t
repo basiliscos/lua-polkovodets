@@ -16,7 +16,7 @@ local UnitDefinition = require 'polkovodets.UnitDefinition'
 local Weapon = require 'polkovodets.Weapon'
 local WeaponClass = require 'polkovodets.WeaponClass'
 
-local SampleData = require 't.SampleData'
+local SampleData = require 'polkovodets.SampleData'
 
 local gear = Gear.create()
 local engine = Engine.create(gear, "en")
