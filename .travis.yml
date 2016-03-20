@@ -13,6 +13,9 @@ before_install:
 
 install:
   - lua -v
-  - luarocks install lua-testmore OrderedSet Gear i18n
+  - luarocks install OrderedSet
+  - luarocks install Gear
+  - luarocks install i18n
+  - luarocks install lua-testmore
 
 script: ./test.sh
