@@ -16,8 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ]]--
 
-local ttf = require "SDL.ttf"
-
 local Theme = {}
 Theme.__index = Theme
 
@@ -42,7 +40,7 @@ function Theme:initialize(theme_data, renderer, data_dirs)
 
    local active_hex_font = theme_dir .. '/' .. theme_data.active_hex.font
    local active_hex_size = assert(theme_data.active_hex.font_size)
-   local active_hex_ttf = assert(ttf.open(active_hex_font, active_hex_size))
+   local active_hex_ttf = renderer:ttf(active_hex_font, active_hex_size)
 
    local unit_states = {}
 
@@ -154,7 +152,7 @@ function Theme:get_font(name, size)
   if (font) then return font end
 
   local path = self.font[name]
-  font = assert(ttf.open(path, size))
+  font = self.renderer:ttf(path, size)
   self.font_cache[cache_key] = font
   return font
 end

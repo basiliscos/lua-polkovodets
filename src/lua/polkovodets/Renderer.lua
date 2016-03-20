@@ -199,6 +199,9 @@ function Renderer:prepare_drawers()
   engine.reactor:publish("full.refresh")
 end
 
+function Renderer:ttf(font_path, size)
+  return assert(ttf.open(font_path, size)
+end
 
 function Renderer:main_loop()
   local engine = self.engine
