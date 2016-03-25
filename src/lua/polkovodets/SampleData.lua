@@ -626,7 +626,7 @@ function SampleData.generate_scenario(gear)
       },
     },
     {
-      id = "rus_unit_5",
+      id = "rus_unit_6",
       name = "Russian air-fighters batallion 5/1",
       state = "flying",
       unit_definition_id = "rus_ud_5",
@@ -639,7 +639,7 @@ function SampleData.generate_scenario(gear)
       },
     },
     {
-      id = "rus_unit_6",
+      id = "rus_unit_7",
       name = "Russian HQ/gen hq",
       state = "defending",
       unit_definition_id = "rus_ud_6",
