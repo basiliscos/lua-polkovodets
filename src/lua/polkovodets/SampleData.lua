@@ -413,7 +413,7 @@ function SampleData.generate_scenario(gear)
       unit_class = "inf",
       spotting = 1,
       staff = {
-        rus_weapon_1 = 300,
+        wt_infant = 300,
       },
       icons = {
         marching  = "units/rus/rus_inf_M1.png",
@@ -431,8 +431,8 @@ function SampleData.generate_scenario(gear)
       unit_class = "inf",
       spotting = 1,
       staff = {
-        rus_weapon_1 = 300,
-        rus_trasport_1 = 300,
+        wt_infant = 300,
+        wt_transp = 300,
       },
       icons = {
         marching  = "units/rus/rus_inf_M1.png",
@@ -450,7 +450,7 @@ function SampleData.generate_scenario(gear)
       unit_class = "inf",
       spotting = 1,
       staff = {
-        rus_art_1 = 30,
+        wt_artil = 30,
       },
       icons = {
         marching  = "units/rus/rus_art_M1.png",
@@ -468,7 +468,7 @@ function SampleData.generate_scenario(gear)
       unit_class = "tank",
       spotting = 1,
       staff = {
-        rus_tank_1 = 100,
+        wt_tankInfMid = 100,
       },
       icons = {
         marching  = "units/rus/rus_tank_M1.png",
@@ -486,7 +486,7 @@ function SampleData.generate_scenario(gear)
       unit_class = "air_fighter",
       spotting = 3,
       staff = {
-        rus_aircrat_1 = 15,
+        wt_FightLt = 15,
       },
       icons = {
         flying  = "units/rus/rus_avia_F1.png",
@@ -508,8 +508,8 @@ function SampleData.generate_scenario(gear)
       unit_class = "hq",
       spotting = 3,
       staff = {
-        rus_weapon_1 = 15,
-        rus_trasport_1 = 15,
+        wt_infant = 15,
+        wt_transp = 15,
       },
       icons = {
         marching  = "units/rus/rus_stab_M1.png",
@@ -527,7 +527,7 @@ function SampleData.generate_scenario(gear)
       unit_class = "inf",
       spotting = 1,
       staff = {
-        ger_weapon_1 = 35,
+        wt_infant = 35,
       },
       icons = {
         marching  = "units/ger/GerInf01.png",
@@ -650,6 +650,33 @@ function SampleData.generate_scenario(gear)
       staff = {
         rus_weapon_1 = 15,
         rus_trasport_1 = 15,
+      },
+    },
+    {
+      id = "rus_unit_8",
+      name = "Russian Unit 2/3",
+      state = "defending",
+      unit_definition_id = "rus_ud_2",
+      x = 4, y = 8,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_weapon_1 = "300",
+        rus_trasport_1 = "299",
+      },
+    },
+    {
+      id = "rus_unit_9",
+      name = "Russian Unit 2/4",
+      state = "defending",
+      unit_definition_id = "rus_ud_2",
+      x = 5, y = 8,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_weapon_1 = "300",
       },
     },
     {

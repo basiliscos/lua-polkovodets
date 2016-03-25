@@ -11,21 +11,28 @@ local Gear = require "gear"
 local Engine = require 'polkovodets.Engine'
 local SampleData = require 'polkovodets.SampleData'
 
-local gear = Gear.create()
-local engine = Engine.create(gear, "en")
+local get_fresh_data = function()
+  local gear = Gear.create()
+  local engine = Engine.create(gear, "en")
 
-SampleData.generate_test_data(gear)
-SampleData.generate_battle_scheme(gear)
-SampleData.generate_map(gear)
-SampleData.generate_scenario(gear)
-SampleData.generate_terrain(gear)
+  SampleData.generate_test_data(gear)
+  SampleData.generate_battle_scheme(gear)
+  SampleData.generate_map(gear)
+  SampleData.generate_scenario(gear)
+  SampleData.generate_terrain(gear)
 
-gear:get("validator").fn()
-local scenario = gear:get("scenario")
-local map = gear:get("map")
-engine:end_turn()
+  gear:get("validator").fn()
+  local scenario = gear:get("scenario")
+  local map = gear:get("map")
+  engine:end_turn()
+
+  return engine
+end
 
 subtest("movement/leg 1 weapon", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
   local inf = map.tiles[3][3]:get_unit('surface')
   ok(inf)
   local marched_weapons = inf:_marched_weapons()
@@ -62,6 +69,9 @@ subtest("movement/leg 1 weapon", function()
 end)
 
 subtest("movement/leg motorized", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
   local inf = map.tiles[4][3]:get_unit('surface')
   ok(inf)
   local marched_weapons = inf:_marched_weapons()
@@ -81,6 +91,9 @@ subtest("movement/leg motorized", function()
 end)
 
 subtest("movement/attacks first", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
   local art = map.tiles[4][4]:get_unit('surface')
   ok(art)
   art:update_actions_map()
@@ -98,6 +111,9 @@ subtest("movement/attacks first", function()
 end)
 
 subtest("movement/air", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
   local fighter = map.tiles[7][7]:get_unit('air')
   ok(fighter)
   fighter:update_actions_map()
@@ -108,6 +124,41 @@ subtest("movement/air", function()
   ok(fighter.data.actions_map.move[map.tiles[4][4].id], "can flight above our units")
   ok(fighter.data.actions_map.move[map.tiles[5][3].id], "as well as enemy units")
 end)
+
+subtest("transport problem", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
+  local u = map.tiles[5][9]:get_unit('surface')
+  ok(u)
+  u:update_actions_map()
+  -- print(inspect(art.data.actions_map.attack))
+
+  ok(not u.data.actions_map.move[map.tiles[4][5].id], "cannot march too far (no enought transport)")
+
+  local problems = u:report_problems()
+  -- print(inspect(problems))
+  is(#problems, 1, "unit has 1 problem")
+  is(problems[1].class, "transport", "... and it's transport problem")
+
+  local u2 = map.tiles[4][3]:get_unit('surface')
+  ok(u2)
+  local problems2 = u2:report_problems()
+  is(#problems2, 0, "other unit with transport don't have transport problems")
+
+  local u3 = map.tiles[3][3]:get_unit('surface')
+  ok(u3)
+  local problems3 = u3:report_problems()
+  is(#problems3, 0, "non-transporable unit don't have transport problems")
+
+  local u4 = map.tiles[6][9]:get_unit('surface')
+  ok(u4)
+  local problems4 = u4:report_problems()
+  is(#problems4, 1, "unit with transport in unit definition and w/o transport has problems")
+  is(problems4[1].class, "missing_weapon", "... but that is missing weapon problem")
+
+end)
+
 
 
 done_testing()

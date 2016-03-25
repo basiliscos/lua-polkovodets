@@ -435,12 +435,31 @@ function Unit:_marched_weapons()
    end
    -- print("transport_for " .. inspect(transport_for))
 
+   -- this is actual transport_capabilities
+   local transport_capabilities = _.clone(transport_for)
+   -- get the possible transport capabilities from unit definitons
+
+   local transport_needs = {}
+
    -- pass 2: put into transpots related weapons
    for idx, weapon_instance in pairs(united_staff) do
       local movement_type = weapon_instance.weapon.movement_type.id
       local transported = false
       local quantity = weapon_instance:quantity()
       -- print(weapon_instance.id .. " / " .. quantity .. " kind: " .. movement_type)
+
+      local transported_via = transport_needs[movement_type] or {}
+      --[[
+        need transport if:
+        a. it is not capable to transport
+        b. or it is transport, for which there is a transport itself
+      --]]
+      local needs_transport = (quantity > 0)
+        and ((not weapon_instance:is_capable('TRANSPORTS_%w+'))
+         or (transport_capabilities[movement_type]))
+      if (needs_transport) then table.insert(transported_via, weapon_instance) end
+      transport_needs[movement_type] = transported_via
+
       if ((quantity  > 0) and (transport_for[movement_type] or 0) >= quantity) then
         transported = true
         transport_for[movement_type] = transport_for[movement_type] - quantity
@@ -450,7 +469,65 @@ function Unit:_marched_weapons()
    assert(#list, "ooops! nobody moves?")
    -- print("marched weapons " .. inspect(_.map(list, function(idx, v) return v.id end)))
    -- print("marched weapons " .. #united_staff)
-   return list
+   return list, transport_capabilities, transport_needs
+end
+
+function Unit:report_problems()
+  local problems = {}
+
+  --[[ transport problem ]]
+  local _, transport_capabilities, transport_needs = self:_marched_weapons()
+  -- print(inspect(transport_capabilities))
+  -- print(inspect(transport_needs))
+
+  for movement_type, capability in pairs(transport_capabilities) do
+    local needs_summary = 0
+    local needed_quantities = {}
+    local need_to_transport = transport_needs[movement_type]
+    if (need_to_transport) then
+      for _, wi in pairs(need_to_transport) do
+        local quantity = wi:quantity()
+        table.insert(needed_quantities, quantity)
+        needs_summary = needs_summary + quantity
+      end
+    end
+    if (needs_summary > capability) then
+      local details = table.concat(needed_quantities, " / ")
+      table.insert(problems, {
+        class = "transport",
+        message = self.engine:translate('problem.transport', {
+          capabilities = capability,
+          needed       = needs_summary,
+          details      = details,
+        }),
+      })
+    end
+  end
+
+  --[[ missing weapon ]]
+  local declared_types = {} -- k: weapon_type_id, v: boolean
+  for _, unit in pairs(self:_all_units()) do
+    for weapon_type_id in pairs(unit.definition.staff) do
+      declared_types[weapon_type_id] = false
+    end
+  end
+  for _, wi in pairs(self:_united_staff()) do
+    if (wi:quantity() > 0) then
+      local weapon_type_id = wi.weapon.weapon_type.id
+      declared_types[weapon_type_id] = true
+    end
+  end
+  for weapon_type_id, presents in pairs(declared_types) do
+    if (not presents) then
+      local localized_type = self.engine:translate('db.weapon-class.' .. weapon_type_id)
+      table.insert(problems, {
+        class = "missing_weapon",
+        message = self.engine:translate('problem.missing_weapon', { weapon_type = localized_type }),
+      })
+    end
+  end
+
+  return problems
 end
 
 
@@ -639,8 +716,8 @@ function Unit:merge_at(dst_tile)
       M = 10,
       S = 1,
    }
-   local my_weight    = weight_for[self.definition.data.size]
-   local other_weight = weight_for[other_unit.definition.data.size]
+   local my_weight    = weight_for[self.definition.size]
+   local other_weight = weight_for[other_unit.definition.size]
    local core_unit, aux_unit
    if (my_weight > other_weight) then
       core_unit, aux_unit = self, other_unit
@@ -910,14 +987,14 @@ function Unit:update_actions_map()
 
    local get_merge_map = function()
       local merge_map = {}
-      local my_size = self.definition.data.size
+      local my_size = self.definition.size
       local my_attached = self.data.attached
       local my_unit_type = self.definition.unit_type.id
       for k, tile in pairs(merge_candidates) do
          local other_unit = tile:get_unit(layer)
          if (other_unit.definition.unit_type.id == my_unit_type) then
             local expected_quantity = 1 + 1 + #my_attached + #other_unit.data.attached
-            local other_size = other_unit.definition.data.size
+            local other_size = other_unit.definition.size
             local size_matches = my_size ~= other_size
             local any_manager = self:is_capable('MANAGE_LEVEL') or other_unit:is_capable('MANAGE_LEVEL')
             if (expected_quantity <= 3 and size_matches and not any_manager) then

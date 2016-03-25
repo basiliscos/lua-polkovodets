@@ -41,6 +41,10 @@ t = {
     -- popups
     ['ui.popup.battle_selector.battle'] = '%{i} / %{p}',
 
+    -- problems
+    ['problem.transport']             = "Tранспортная проблема: недостаточно транспорта (%{capabilities}) для траспортировки %{needed} (%{details}) единиц оружия",
+    ['problem.missing_weapon']        = "Полностью отсутствует оружение типа '%{weapon_type}', заявленное в штатном расписании",
+
     -- [[ database names translations ]]--
     -- states
     ['db.unit.state.attacking']       = 'атака',
@@ -78,6 +82,7 @@ t = {
     ['db.weapon-class.wk_aerostat']   = 'Аэростаты и дирижабли',
     ['db.weapon-class.wk_hq']         = 'Штабы и связь',
     ['db.weapon-class.wk_fort']       = 'Фортификации',
+
   },
 }
 

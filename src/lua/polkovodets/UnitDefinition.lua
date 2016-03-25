@@ -28,11 +28,8 @@ end
 function UnitDefinition:initialize(renderer, definition_data, unit_classes_for, unit_types_for, nation_for, weapon_types_for, data_dirs)
    assert(definition_data.id)
    assert(definition_data.unit_class)
-   assert(definition_data.staff)
-   assert(definition_data.size)
    assert(definition_data.spotting)
    assert(definition_data.nation)
-   assert(definition_data.flags)
    assert(string.find(definition_data.size, '[LMS]'))
 
    local unit_class_id = definition_data.unit_class
@@ -63,32 +60,35 @@ function UnitDefinition:initialize(renderer, definition_data, unit_classes_for, 
    assert(staff_size > 0, "unit definition " .. definition_data.id .. " cannot be without weapons")
 
    -- validate staff
-   for weapon_type, quantity in ipairs(definition_data.staff) do
+   local staff = {}
+   --print("staff =" .. inspect(definition_data.staff))
+   for weapon_type, quantity in pairs(definition_data.staff) do
     assert(quantity)
     assert(quantity >= 0)
-    assert(weapon_types_for[weapon_type])
+    assert(weapon_types_for[weapon_type], "no weapon type " .. weapon_type)
     quantity = tonumber(quantity)
-    definition_data.staff[weapon_type] = quantity
+    staff[weapon_type] = quantity
    end
-
 
    self.id          = definition_data.id
    self.unit_class  = unit_class
    self.state_icons = state_icons
    self.unit_type   = unit_type
    self.nation      = nation
-   self.data        = definition_data
+   self.staff       = staff
+   self.size        = assert(definition_data.size)
+   self.flags       = assert(definition_data.flags)
 end
 
 function UnitDefinition:get_icon(state)
    assert(state)
-   local texture = assert(self.state_icons[state], "no icon for " .. state .. " for unit defintion " .. self.data.id)
+   local texture = assert(self.state_icons[state], "no icon for " .. state .. " for unit defintion " .. self.id)
    return texture
 end
 
 
 function UnitDefinition:is_capable(flag_mask)
-   for flag, value in pairs(self.data.flags) do
+   for flag, value in pairs(self.flags) do
       if (string.find(flag, flag_mask)) then return flag, value end
    end
 end
