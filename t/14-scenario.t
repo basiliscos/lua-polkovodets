@@ -157,7 +157,7 @@ gear:set("data/units/definitions", {
     unit_class = "inf",
     spotting = 1,
     staff = {
-      rus_weapon_1 = 300,
+      wt_infant = 300,
     },
     icons = {
       marching = "path/to/some.png",
@@ -175,7 +175,7 @@ gear:set("data/units/definitions", {
     unit_class = "inf",
     spotting = 1,
     staff = {
-      ger_weapon_1 = 35,
+      wt_infant = 35,
     },
     icons = {
       marching = "path/to/some.png",
