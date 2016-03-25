@@ -175,7 +175,7 @@ function Unit:bind_ctx(context)
   update_unit_flag(mouse.x, mouse.y)
 
   -- unit state
-  local size = self.definition.data.size
+  local size = self.definition.size
   local efficiency = self.data.efficiency
   local unit_state = theme:get_unit_state_icon(size, efficiency)
 
