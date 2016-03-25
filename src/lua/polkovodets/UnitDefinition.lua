@@ -64,9 +64,9 @@ function UnitDefinition:initialize(renderer, definition_data, unit_classes_for, 
    --print("staff =" .. inspect(definition_data.staff))
    for weapon_type, quantity in pairs(definition_data.staff) do
     assert(quantity)
+    quantity = tonumber(quantity)
     assert(quantity >= 0)
     assert(weapon_types_for[weapon_type], "no weapon type " .. weapon_type)
-    quantity = tonumber(quantity)
     staff[weapon_type] = quantity
    end
 
