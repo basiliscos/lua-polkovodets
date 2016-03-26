@@ -76,6 +76,8 @@ function UnitDefinition:initialize(renderer, definition_data, unit_classes_for, 
    self.unit_type   = unit_type
    self.nation      = nation
    self.staff       = staff
+   self.name        = assert(definition_data.name)
+   self.spotting    = tonumber(definition_data.spotting)
    self.size        = assert(definition_data.size)
    self.flags       = assert(definition_data.flags)
 end
