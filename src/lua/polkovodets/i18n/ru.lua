@@ -49,7 +49,7 @@ t = {
 
     -- problems
     ['problem.transport']             = "Tранспортная проблема: недостаточно транспорта (%{capabilities}) для траспортировки %{needed} (%{details}) единиц оружия.",
-    ['problem.missing_weapon']        = "Полностью отсутствует оружение класса '%{weapon_type}', заявленное в штатном расписании.",
+    ['problem.missing_weapon']        = "Полностью отсутствует оружие класса '%{weapon_type}', заявленное в штатном расписании.",
 
     -- [[ database names translations ]]--
     -- states
