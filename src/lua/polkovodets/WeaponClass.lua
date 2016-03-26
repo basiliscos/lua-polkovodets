@@ -26,7 +26,7 @@ function WeaponClass.create()
 end
 
 function WeaponClass:initialize(renderer, weapon_class_data, dirs_data)
-  self.id    = assert(weapon_class_data.id)
+  self.id    = assert(weapon_class_data.id, "weapon class should have id")
   self.flags = assert(weapon_class_data.flags)
 
   local icon_path = assert(weapon_class_data.icon)

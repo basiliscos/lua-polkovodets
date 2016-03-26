@@ -268,14 +268,11 @@ function SampleData.generate_scenario(gear)
   })
 
   gear:set("data/weapons/types", {
-    {id = "wt_infant"},
-    {id = "wt_tankInfMid" },
-    {id = "wt_minComp" },
-    {id = "wt_canField"},
-    {id = "wt_antiairMG"},
-    {id = "wt_transp"},
-    {id = "wt_artil"},
-    {id = "wt_FightLt"},
+    {id = "wt_infant",     class_id = "wk_infant"},
+    {id = "wt_tankInfMid", class_id = "wk_armor" },
+    {id = "wt_transp",     class_id = "wk_transp"},
+    {id = "wt_artil",      class_id = "wk_artil"},
+    {id = "wt_FightLt",    class_id = "wk_fighter"},
   })
 
   gear:set("data/weapons/definitions", {

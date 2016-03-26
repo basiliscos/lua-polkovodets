@@ -39,6 +39,7 @@ local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
 local Weapon = require 'polkovodets.Weapon'
 local WeaponClass = require 'polkovodets.WeaponClass'
+local WeaponType = require 'polkovodets.WeaponType'
 local UnitDefinition = require 'polkovodets.UnitDefinition'
 
 
@@ -159,7 +160,7 @@ function _fill_initial_data(gear)
     function(gear, instance, list) to_map(instance, list) end
   )
 
-  gear:declare("data/weapons/types::map", {"data/weapons/types"},
+  gear:declare("weapons/types::map", {"weapons/types"},
     function() return {} end,
     function(gear, instance, list) to_map(instance, list) end
   )
@@ -232,7 +233,7 @@ function _fill_initial_data(gear)
   )
 
   gear:declare("weapons/definitions", {"data/weapons/definitions",
-    "weapons/classes::map", "data/weapons/types::map", "data/weapons/categories::map",
+    "weapons/classes::map", "weapons/types::map", "data/weapons/categories::map",
     "data/weapons/movement_types::map", "data/weapons/target_types::map", "nations::map",
     "data/dirs", "renderer"},
     function() return {} end,
@@ -256,8 +257,19 @@ function _fill_initial_data(gear)
     end
   )
 
+  gear:declare("weapons/types", {"data/weapons/types", "weapons/classes::map"},
+    function() return {} end,
+    function(gear, instance, list, class_for)
+      _.each(list, function(_, weapon_type_data)
+        local wt = WeaponType.create()
+        wt:initialize(weapon_type_data, class_for)
+        table.insert(instance, wt)
+      end)
+    end
+  )
+
   gear:declare("units/definitions", {"data/units/definitions", "data/units/classes::map", "data/units/types::map",
-    "nations::map", "data/weapons/types::map", "data/dirs", "renderer"},
+    "nations::map", "weapons/types::map", "data/dirs", "renderer"},
     function() return {} end,
     function(gear, instance, list, classes_for, types_for, nations_for, weapon_types_for, data_dirs, renderer)
       for _, definition_data in ipairs(list) do
