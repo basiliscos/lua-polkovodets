@@ -393,7 +393,7 @@ end
 
 -- returns list of weapon instances for the current unit as well as for all it's attached units
 function Unit:_united_staff()
-   local unit_list = self:_all_units()
+   local unit_list = self:all_units()
 
    local united_staff = {}
    for idx, unit in pairs(unit_list) do
@@ -405,7 +405,7 @@ function Unit:_united_staff()
 end
 
 -- returns list of all units, i.e. self + attached
-function Unit:_all_units()
+function Unit:all_units()
   local unit_list = {self}
   for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
   return unit_list
@@ -507,7 +507,7 @@ function Unit:report_problems()
   --[[ missing weapon ]]
   local types_for = self.engine.gear:get("weapons/types::map")
   local declared_types = {} -- k: weapon_type_id, v: boolean
-  for _, unit in pairs(self:_all_units()) do
+  for _, unit in pairs(self:all_units()) do
     for weapon_type_id in pairs(unit.definition.staff) do
       declared_types[weapon_type_id] = false
     end
@@ -768,8 +768,8 @@ function Unit:attack_on(tile, fire_type)
   end
 
   local ctx = {
-    i_units   = _.map(self:_all_units(), unit_serializer),
-    p_units   = _.map(enemy_unit:_all_units(), unit_serializer),
+    i_units   = _.map(self:all_units(), unit_serializer),
+    p_units   = _.map(enemy_unit:all_units(), unit_serializer),
     fire_type = fire_type,
     tile      = tile.id,
   }

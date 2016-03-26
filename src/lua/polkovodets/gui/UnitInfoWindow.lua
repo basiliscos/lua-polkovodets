@@ -311,8 +311,19 @@ function UnitInfoWindow:_construct_weapon_tabs()
   local class_presents = {} -- k: class_id, value: boolean
   local unit = self.unit
 
-  local wi_for_class = {} -- k: class_id, v: array of weapon instances
-  -- fetch available classes & related weapon instances
+   -- k: class_id, v: array of weapon instances
+  local wi_for_class = {}
+  -- step 1: fetch classes from types from unit definitions
+  local types_for = engine.gear:get("weapons/types::map")
+  _.each(unit:all_units(), function(idx, u)
+    _.each(u.definition.staff, function(weapon_type_id, _)
+      local class_id = types_for[weapon_type_id].class.id
+      wi_for_class[class_id] = {}
+      class_presents[class_id] = true
+    end)
+  end)
+
+  -- step 2: fetch available classes & related weapon instances
   _.each(unit.staff, function(idx, wi)
     local class = wi:get_class()
     class_presents[class.id] = true
