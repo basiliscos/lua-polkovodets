@@ -292,7 +292,8 @@ function DataLoader.load(gear, scenario_path)
   local weapons_types = {}
   for idx, data in pairs(weapons_types_parser:get_raw_data()) do
     table.insert(weapons_types, {
-      id    = assert(data.id, weapons_types_path .. " should have id in type " .. idx),
+      id       = assert(data.id, weapons_types_path .. " should have id in type " .. idx),
+      class_id = assert(data.class_id, weapons_types_path .. " should have class_id in type " .. idx),
     })
   end
   gear:set("data/weapons/types", weapons_types)

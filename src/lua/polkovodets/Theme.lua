@@ -122,6 +122,11 @@ function Theme:initialize(theme_data, renderer, data_dirs)
           hilight   = renderer:load_texture(theme_dir .. '/tabs/info-hilight.png'),
           active    = renderer:load_texture(theme_dir .. '/tabs/info-active.png'),
         },
+        problems = {
+          available = renderer:load_texture(theme_dir .. '/tabs/problems.png'),
+          hilight   = renderer:load_texture(theme_dir .. '/tabs/problems-hilight.png'),
+          active    = renderer:load_texture(theme_dir .. '/tabs/problems-active.png'),
+        },
         attachments = {
           available = renderer:load_texture(theme_dir .. '/tabs/attachments.png'),
           hilight   = renderer:load_texture(theme_dir .. '/tabs/attachments-hilight.png'),

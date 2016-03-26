@@ -505,6 +505,7 @@ function Unit:report_problems()
   end
 
   --[[ missing weapon ]]
+  local types_for = self.engine.gear:get("weapons/types::map")
   local declared_types = {} -- k: weapon_type_id, v: boolean
   for _, unit in pairs(self:_all_units()) do
     for weapon_type_id in pairs(unit.definition.staff) do
@@ -519,7 +520,8 @@ function Unit:report_problems()
   end
   for weapon_type_id, presents in pairs(declared_types) do
     if (not presents) then
-      local localized_type = self.engine:translate('db.weapon-class.' .. weapon_type_id)
+      local class_id = types_for[weapon_type_id].class.id
+      local localized_type = self.engine:translate('db.weapon-class.' .. class_id)
       table.insert(problems, {
         class = "missing_weapon",
         message = self.engine:translate('problem.missing_weapon', { weapon_type = localized_type }),

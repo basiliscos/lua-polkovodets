@@ -26,7 +26,6 @@ function WeaponType.create()
 end
 
 function WeaponType:initialize(weapon_type_data, classes_for)
-  print(inspect(weapon_type_data))
   local id       = assert(weapon_type_data.id, "weapon type should have id")
   local class_id = assert(weapon_type_data.class_id, "weapon type " .. id .. " should have class_id")
   local class    = assert(classes_for[class_id], "weapon class " .. class_id .. " is not available for weapon type " .. id)

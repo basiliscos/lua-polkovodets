@@ -13,8 +13,14 @@ t = {
 
     -- unit info window
     ['ui.unit-info.tab.info.hint']        = 'Общая информация',
+    ['ui.unit-info.tab.problems.hint']    = 'Проблемы',
     ['ui.unit-info.tab.attachments.hint'] = 'Прикреплённые соединения',
     ['ui.unit-info.tab.management.hint']  = 'Управление',
+
+
+    ['ui.unit-info.tab.problems.absent']  = 'Проблем не обнаружено',
+    ['ui.unit-info.tab.problems.present'] = 'Обнаружены следующие проблемы',
+
 
     ['ui.unit-info.size']            = 'Тип',
     ['ui.unit-info.class']           = 'Класс',
@@ -42,8 +48,8 @@ t = {
     ['ui.popup.battle_selector.battle'] = '%{i} / %{p}',
 
     -- problems
-    ['problem.transport']             = "Tранспортная проблема: недостаточно транспорта (%{capabilities}) для траспортировки %{needed} (%{details}) единиц оружия",
-    ['problem.missing_weapon']        = "Полностью отсутствует оружение типа '%{weapon_type}', заявленное в штатном расписании",
+    ['problem.transport']             = "Tранспортная проблема: недостаточно транспорта (%{capabilities}) для траспортировки %{needed} (%{details}) единиц оружия.",
+    ['problem.missing_weapon']        = "Полностью отсутствует оружение класса '%{weapon_type}', заявленное в штатном расписании.",
 
     -- [[ database names translations ]]--
     -- states

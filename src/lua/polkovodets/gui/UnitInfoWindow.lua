@@ -79,7 +79,7 @@ function UnitInfoWindow:_construct_info_tab()
   -- definition name
   local definition_name = Image.create(
     renderer.sdl_renderer,
-    font:renderUtf8(unit.definition.data.name, "solid", DEFAULT_COLOR)
+    font:renderUtf8(unit.definition.name, "solid", DEFAULT_COLOR)
   )
   table.insert(tab_data.all, {
     dx = dx,
@@ -110,9 +110,9 @@ function UnitInfoWindow:_construct_info_tab()
   end
 
   -- unit definition info
-  add_row('ui.unit-info.size', engine:translate('db.unit.size.' .. unit.definition.data.size))
+  add_row('ui.unit-info.size', engine:translate('db.unit.size.' .. unit.definition.size))
   add_row('ui.unit-info.class', engine:translate('db.unit-class.' .. unit.definition.unit_class.id))
-  add_row('ui.unit-info.spotting', tostring(unit.definition.data.spotting))
+  add_row('ui.unit-info.spotting', tostring(unit.definition.spotting))
   -- unit info
   add_row('ui.unit-info.experience', tostring(unit.data.experience))
   if (unit.definition.unit_class['type'] == 'ut_land') then
@@ -125,6 +125,60 @@ function UnitInfoWindow:_construct_info_tab()
   _.each(tab_data.r_aligned, function(idx, e)
     e.dx = max_label_x
   end)
+
+  return tab_data
+end
+
+function UnitInfoWindow:_construct_problems_tab()
+  local engine = self.engine
+  local unit = self.unit
+  local theme = engine.gear:get("theme")
+  local renderer = engine.gear:get("renderer")
+  local font = theme:get_font('default', DEFAULT_FONT_SIZE)
+  local all = {}
+  local tab_data = {
+    all       = all,
+    active    = all,
+    r_aligned = {},
+    icon      = {
+      hint    = engine:translate('ui.unit-info.tab.problems.hint'),
+      current = 'available',
+      states  = theme.tabs.problems,
+    },
+    mouse_click = function(event) end,
+    mouse_move = function(event) end,
+  }
+
+  local dx, dy = 0, 0
+
+  local problems = unit:report_problems()
+
+  local header = (#problems > 0) and 'ui.unit-info.tab.problems.present' or 'ui.unit-info.tab.problems.absent'
+  table.insert(tab_data.all, {
+    dx = dx,
+    dy = dy,
+    image = Image.create(
+      renderer.sdl_renderer,
+      font:renderUtf8(engine:translate(header), "solid", DEFAULT_COLOR)
+    )
+  })
+
+  local add_row = function(text)
+    local label = Image.create(
+      renderer.sdl_renderer,
+      font:renderUtf8(text, "solid", DEFAULT_COLOR)
+    )
+    print(inspect(tab_data.all))
+    table.insert(tab_data.all, {
+      dx = dx,
+      dy = tab_data.all[#tab_data.all].dy + tab_data.all[#tab_data.all].image.h + 5,
+      image = label,
+    })
+  end
+
+  for _, problem_info in pairs(problems) do
+    add_row(problem_info.message)
+  end
 
   return tab_data
 end
@@ -376,6 +430,7 @@ function UnitInfoWindow:_construct_gui()
   end
 
   add_tab(self:_construct_info_tab())
+  add_tab(self:_construct_problems_tab())
   add_tab(self:_construct_attachments_tab())
   add_tab(self:_construct_management_tab())
   _.each(self:_construct_weapon_tabs(), function(idx, tab)
