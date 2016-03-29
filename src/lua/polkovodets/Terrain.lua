@@ -72,6 +72,7 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
    end
    self.weather = weather
 
+
    -- terrain types
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
    local hex_width = self.hex_width
@@ -82,6 +83,8 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
       local id = assert(data.id)
       terrain_types[id] = data
       assert(data.image)
+      assert(data.spot_cost)
+
       local image_for = {}
       for weather_id, image_path in pairs(data.image) do
          assert(weather[weather_id], "weather type " .. weather_id .. " must exist")
@@ -91,12 +94,18 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
       end
 
       -- validate, that all weather images exist
-      for k, weather in pairs(weather) do
+      for _, weather in pairs(weather) do
         local weather_id = weather.id
         local image_path = assert(data.image[weather_id], "no image for terrain '" .. id .. "' on wheather '" .. weather_id .. "'")
         local full_path = dirs_data.gfx .. '/' .. image_path
         renderer:load_joint_texture(full_path, iterator_factory)
         image_for[weather_id] = full_path
+      end
+
+      -- validate, that all spot cost exists for all weather
+      for _, weather in pairs(weather) do
+        local weather_id = weather.id
+        assert(data.spot_cost[weather_id], "no spot cost for terrain '" .. id .. "' on wheather '" .. weather_id .. "'")
       end
 
       local numerize_weather = function(data)

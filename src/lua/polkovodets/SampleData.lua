@@ -84,8 +84,8 @@ function SampleData.generate_terrain(gear)
       max_entr   = 99,
       name       = "road",
       spot_cost  = {
-        fair    = 2,
-        snowing = 2,
+        fair    = 1,
+        snowing = 1,
       },
       move_cost  = {
         wheeled = {
@@ -112,6 +112,42 @@ function SampleData.generate_terrain(gear)
       image = {
         fair    = "terrain/road.bmp",
         snowing = "terrain/road_snow.bmp",
+      }
+    },
+    {
+      id         = "f",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "road",
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 4,
+          snowing = 4,
+        },
+        tracked = {
+          fair    = 2,
+          snowing = 2,
+        },
+        leg     = {
+          fair    = 1,
+          snowing = 1,
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 1,
+          snowing = 1,
+        },
+      },
+      image = {
+        fair    = "terrain/forest.bmp",
+        snowing = "terrain/forest_snow.bmp",
       }
     },
     {
@@ -175,10 +211,13 @@ function SampleData.generate_map(gear)
   local my_map = {
 
     -- vertical road
-    ["4_4"]  = { "r", 1 }, ["4_5"]  = { "r", 1 },  ["4_6"]  = { "r", 1 }, ["4_7"]  = { "r", 1 }, ["4_8"]  = { "r", 1 },  ["4_9"]  = { "r", 1 }, ["4_10"] = { "r", 1 },
+    ["4_4"] = { "r", 1 }, ["4_5"]  = { "r", 1 },  ["4_6"]  = { "r", 1 }, ["4_7"]  = { "r", 1 }, ["4_8"]  = { "r", 1 },  ["4_9"]  = { "r", 1 }, ["4_10"] = { "r", 1 },
 
     -- airport
-    ["7_4"]  = { "a", 0 }, ["3_8"]  = { "a", 0 },
+    ["7_4"] = { "a", 0 }, ["3_8"]  = { "a", 0 },
+
+    -- some forest
+    ["8_6"] = { "f", 0 }, ["9_6"] = { "f", 0 }, ["10_5"] = { "f", 0 }, ["8_7"] = { "f", 0 }, ["9_7"] = { "f", 0 }, ["10_6"] = { "f", 0 },
   }
 
   local engine = gear:get("engine")
@@ -408,7 +447,7 @@ function SampleData.generate_scenario(gear)
       nation = "rus",
       ammo = 5,
       unit_class = "inf",
-      spotting = 1,
+      spotting = 2,
       staff = {
         wt_infant = 300,
       },
@@ -426,7 +465,7 @@ function SampleData.generate_scenario(gear)
       nation = "rus",
       ammo = 5,
       unit_class = "inf",
-      spotting = 1,
+      spotting = 2,
       staff = {
         wt_infant = 300,
         wt_transp = 300,
@@ -445,7 +484,7 @@ function SampleData.generate_scenario(gear)
       nation = "rus",
       ammo = 5,
       unit_class = "inf",
-      spotting = 1,
+      spotting = 2,
       staff = {
         wt_artil = 30,
       },
@@ -463,7 +502,7 @@ function SampleData.generate_scenario(gear)
       nation = "rus",
       ammo = 5,
       unit_class = "tank",
-      spotting = 1,
+      spotting = 2,
       staff = {
         wt_tankInfMid = 100,
       },
@@ -522,7 +561,7 @@ function SampleData.generate_scenario(gear)
       nation = "ger",
       ammo = 5,
       unit_class = "inf",
-      spotting = 1,
+      spotting = 2,
       staff = {
         wt_infant = 35,
       },
@@ -674,6 +713,19 @@ function SampleData.generate_scenario(gear)
       orientation = "right",
       staff = {
         rus_weapon_1 = "300",
+      },
+    },
+    {
+      id = "rus_unit_10",
+      name = "Russian tank Unit 4/1",
+      state = "defending",
+      unit_definition_id = "rus_ud_4",
+      x = 6, y = 7,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_tank_1 = "100",
       },
     },
     {

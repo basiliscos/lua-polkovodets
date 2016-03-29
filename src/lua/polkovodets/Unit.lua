@@ -799,6 +799,64 @@ function Unit:_enemy_near(tile)
   return false
 end
 
+function Unit:update_spotting_map()
+  local engine = self.engine
+  local map = engine.gear:get("map")
+  local terrain = engine.gear:get("terrain")
+  local weather = self.engine:current_weather()
+
+  local spotting_map = {}
+
+  local unit = _.reduce(self:all_units(), function(u, other)
+    if (not other) then
+      return u
+    else
+      return (u.definition.spotting > other.definition.spotting) and u or other
+    end
+  end)
+  -- it doesn't matter from which unit we get it's type, because units of
+  -- different types cannot merge
+  local unit_type = self.definition.unit_type.id
+  local available_spotting = unit.definition.spotting
+
+  -- print("available_spotting = " .. available_spotting)
+
+  local queue =  { {self.tile, 0} }
+
+  local get_nearest_tile = function()
+    return function()
+      if (#queue > 0) then
+        local min_idx, min_value = 1, queue[1][2]
+        for idx, candidate in pairs(queue) do
+          if (queue[idx][2] < min_value) then
+             min_idx, min_value = idx, queue[idx][2]
+          end
+        end
+        local minimum = table.remove(queue, min_idx)
+        return table.unpack(minimum)
+      end
+    end
+  end
+
+  local add_to_queue = function(tile, cost) table.insert(queue, {tile, cost}) end
+
+  for tile, spot_cost in get_nearest_tile() do
+    if (spot_cost <= available_spotting) then
+      spotting_map[tile.id] = spot_cost
+      for adj_tile in map:get_adjastent_tiles(tile, spotting_map) do
+        -- for air units the terrain type does not matter, but weather does,
+        -- so we pick the "field" (clear) terrain for air unit
+        local terrain_type = (unit_type == 'ut_air') and terrain:get_type('c') or adj_tile.data.terrain_type
+        local adj_tile_cost = assert(terrain_type.spot_cost[weather])
+        add_to_queue(adj_tile, adj_tile_cost + spot_cost)
+      end
+    end
+  end
+  -- print("spotting map " .. inspect(spotting_map))
+
+  self.data.spotting_map = spotting_map
+end
+
 
 function Unit:update_actions_map()
   local engine = self.engine
