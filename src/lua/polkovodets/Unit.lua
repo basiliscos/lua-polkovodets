@@ -789,248 +789,249 @@ end
 
 
 function Unit:_enemy_near(tile)
-   local layer = self:get_movement_layer()
-   local map = self.engine.gear:get("map")
-   for adj_tile in map:get_adjastent_tiles(tile) do
-      local enemy = adj_tile:get_unit(layer)
-      local has_enemy = enemy and enemy.player ~= self.player
-      if (has_enemy) then return true end
-   end
-   return false
+  local layer = self:get_movement_layer()
+  local map = self.engine.gear:get("map")
+  for adj_tile in map:get_adjastent_tiles(tile) do
+    local enemy = adj_tile:get_unit(layer)
+    local has_enemy = enemy and enemy.player ~= self.player
+    if (has_enemy) then return true end
+  end
+  return false
 end
 
 
 function Unit:update_actions_map()
-   local engine = self.engine
-   local map = engine.gear:get("map")
-   -- determine, what the current user can do at the visible area
-   local actions_map = {}
-   local start_tile = self.tile or self.data.attached_to.tile
-   assert(start_tile)
+  local engine = self.engine
+  local map = engine.gear:get("map")
+  -- determine, what the current user can do at the visible area
+  local actions_map = {}
+  local start_tile = self.tile or self.data.attached_to.tile
+  assert(start_tile)
 
 
-   local merge_candidates = {}
-   local landing_candidates = {}
+  local merge_candidates = {}
+  local landing_candidates = {}
 
-   local layer = self:get_movement_layer()
-   local unit_type = self.definition.unit_type.id
+  local layer = self:get_movement_layer()
+  local unit_type = self.definition.unit_type.id
 
-   local get_move_map = function()
-      local inspect_queue = {}
-      local add_reachability_tile = function(src_tile, dst_tile, cost)
-         table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
-      end
-      local marched_weapons = self:_marched_weapons()
+  local get_move_map = function()
+    local inspect_queue = {}
+    local add_reachability_tile = function(src_tile, dst_tile, cost)
+      table.insert(inspect_queue, {to = dst_tile, from = src_tile, cost = cost})
+    end
+    local marched_weapons = self:_marched_weapons()
 
-      local get_nearest_tile = function()
-         local iterator = function(state, value) -- ignored
-            if (#inspect_queue > 0) then
-               -- find route to a hex with smallest cost
-               local min_idx, min_cost = 1, inspect_queue[1].cost:min()
-               for idx = 2, #inspect_queue do
-                  if (inspect_queue[idx].cost:min() < min_cost) then
-                     min_idx, min_cost = idx, inspect_queue[idx].cost:min()
-                  end
-               end
-               local node = inspect_queue[min_idx]
-               local src, dst = node.from, node.to
-               table.remove(inspect_queue, min_idx)
-               -- remove more costly destionations
-               for idx, n in ipairs(inspect_queue) do
-                  if (n.to == dst) then table.remove(inspect_queue, idx) end
-               end
-               return src, dst, node.cost
+    local get_nearest_tile = function()
+      local iterator = function(state, value) -- ignored
+        if (#inspect_queue > 0) then
+          -- find route to a hex with smallest cost
+          local min_idx, min_cost = 1, inspect_queue[1].cost:min()
+          for idx = 2, #inspect_queue do
+            if (inspect_queue[idx].cost:min() < min_cost) then
+              min_idx, min_cost = idx, inspect_queue[idx].cost:min()
             end
-         end
-         return iterator, nil, true
+          end
+          local node = inspect_queue[min_idx]
+          local src, dst = node.from, node.to
+          table.remove(inspect_queue, min_idx)
+          -- remove more costly destionations
+          for idx, n in ipairs(inspect_queue) do
+            if (n.to == dst) then table.remove(inspect_queue, idx) end
+          end
+          return src, dst, node.cost
+        end
+      end
+      return iterator, nil, true
+    end
+
+    -- initialize reachability with tile, on which the unit is already located
+    local initial_costs = {}
+    for idx, wi in pairs(marched_weapons) do initial_costs[wi.id] = 0 end
+    add_reachability_tile(start_tile, start_tile, Vector.create(initial_costs))
+
+
+    local fuel_at = {};  -- k: tile_id, v: movement_costs table
+    local fuel_limit = Vector.create(self:available_movement())
+    for src_tile, dst_tile, costs in get_nearest_tile() do
+      local other_unit = dst_tile:get_unit(layer)
+
+      -- inspect for further merging
+      if (other_unit and other_unit.player == self.player) then
+        table.insert(merge_candidates, dst_tile)
+      end
+      -- inspect for further landing
+      if (unit_type == 'ut_air' and dst_tile.data.terrain_type.id == 'a') then
+        table.insert(landing_candidates, dst_tile)
       end
 
-      -- initialize reachability with tile, on which the unit is already located
-      local initial_costs = {}
-      for idx, wi in pairs(marched_weapons) do initial_costs[wi.id] = 0 end
-      add_reachability_tile(start_tile, start_tile, Vector.create(initial_costs))
+      local can_move = not (other_unit and other_unit.player ~= self.player and other_unit:get_layer() == layer)
+      if (can_move) then
+        -- print(string.format("%s -> %s : %d", src_tile.id, dst_tile.id, cost))
+        fuel_at[dst_tile.id] = costs
+        local has_enemy_near = self:_enemy_near(dst_tile)
+        for adj_tile in map:get_adjastent_tiles(dst_tile, fuel_at) do
+          local adj_cost = self:move_cost(adj_tile)
+          local total_costs = costs + adj_cost
+          -- ignore near enemy, if we are moving from the start tile
+          if (dst_tile == start_tile) then has_enemy_near = false end
+          if (total_costs <= fuel_limit and not has_enemy_near) then
+            add_reachability_tile(dst_tile, adj_tile, total_costs)
+          end
+        end
+      end
+    end
+    -- do not move on the tile, where unit is already located
+    fuel_at[start_tile.id] = nil
+    return fuel_at
+  end
+
+  local get_attack_map = function()
+    local attack_map = {}
+    local visited_tiles = {} -- cache
+
+    local max_range = -1
+    local weapon_capabilites = {} -- k1: layer, value: table with k2:range, and value: list of weapons
+    local united_staff = self:_united_staff()
+    for idx, weapon_instance in pairs(united_staff) do
+      if (weapon_instance.data.can_attack) then
+        for layer, range in pairs(weapon_instance.weapon.range) do
+          --print(weapon_instance.id .. " " .. range)
+          -- we use range +1 to avoid zero-based indices
+          for r = 0, range do
+            local layer_capabilites = weapon_capabilites[layer] or {}
+            local range_capabilites = layer_capabilites[r + 1] or {}
+            table.insert(range_capabilites, weapon_instance)
+            -- print("rc = " .. inspect(range_capabilites))
+            layer_capabilites[r + 1] = range_capabilites
+            weapon_capabilites[layer] = layer_capabilites
+          end
+
+          if (max_range < range) then max_range = range end
+        end
+      end
+    end
+    -- print("wc: " .. inspect(weapon_capabilites))
+    -- print("wc: " .. inspect(_.keys(weapon_capabilites.surface[1])))
+    -- print("wc: " .. inspect(_.map(weapon_capabilites.surface[1], function(idx, v) return v.id end)))
 
 
-      local fuel_at = {};  -- k: tile_id, v: movement_costs table
-      local fuel_limit = Vector.create(self:available_movement())
-      for src_tile, dst_tile, costs in get_nearest_tile() do
-         local other_unit = dst_tile:get_unit(layer)
+    local get_fire_kinds = function(weapon_instance, distance, enemy_unit)
+      local fire_kinds = {}
+      local enemy_layer = enemy_unit:get_layer()
+      local same_layer = (enemy_layer == layer)
+      if (weapon_instance:is_capable('RANGED_FIRE') and same_layer) then
+        table.insert(fire_kinds, 'fire/artillery')
+      end
+      if ((distance == 1) and same_layer) then
+        table.insert(fire_kinds, 'battle')
+      end
+      if (not same_layer) then
+        table.insert(fire_kinds, ((layer == 'surface')
+          and 'fire/anti-air'
+          or  'fire/bombing'
+          )
+        )
+      end
+      if ((distance == 0) and (enemy_layer == layer)) then
+        table.insert(fire_kinds, 'battle')
+      end
+      return fire_kinds
+    end
 
-         -- inspect for further merging
-         if (other_unit and other_unit.player == self.player) then
-            table.insert(merge_candidates, dst_tile)
-         end
-         -- inspect for further landing
-         if (unit_type == 'ut_air' and dst_tile.data.terrain_type.id == 'a') then
-            table.insert(landing_candidates, dst_tile)
-         end
+    local examine_queue = {}
+    local already_added = {}
+    local add_to_queue = function(tile)
+      if (not already_added[tile.id]) then
+        table.insert(examine_queue, tile)
+        already_added[tile.id] = true
+      end
+    end
 
-         local can_move = not (other_unit and other_unit.player ~= self.player and other_unit:get_layer() == layer)
-         if (can_move) then
-            -- print(string.format("%s -> %s : %d", src_tile.id, dst_tile.id, cost))
-            fuel_at[dst_tile.id] = costs
-            local has_enemy_near = self:_enemy_near(dst_tile)
-            for adj_tile in map:get_adjastent_tiles(dst_tile, fuel_at) do
-               local adj_cost = self:move_cost(adj_tile)
-               local total_costs = costs + adj_cost
-               -- ignore near enemy, if we are moving from the start tile
-               if (dst_tile == start_tile) then has_enemy_near = false end
-               if (total_costs <= fuel_limit and not has_enemy_near) then
-                  add_reachability_tile(dst_tile, adj_tile, total_costs)
-               end
+    add_to_queue(start_tile)
+    while (#examine_queue > 0) do
+      local tile = table.remove(examine_queue, 1)
+      local distance = start_tile:distance_to(tile)
+      visited_tiles[tile.id] = true
+
+      local enemy_units = tile:get_all_units(function(unit) return unit.player ~= self.player end)
+      for idx, enemy_unit in pairs(enemy_units) do
+        local enemy_layer = enemy_unit:get_layer()
+        local weapon_instances = (weapon_capabilites[enemy_layer] or {})[distance+1]
+        if (weapon_instances) then
+          local attack_details = attack_map[tile.id] or {}
+          local layer_attack_details = attack_details[enemy_layer] or {}
+          for k, weapon_instance in pairs(weapon_instances) do
+            local fire_kinds = get_fire_kinds(weapon_instance, distance, enemy_unit)
+            -- print(inspect(fire_kinds))
+            for k, fire_kind in pairs(fire_kinds) do
+              -- print(fire_kind .. " by " .. weapon_instance.id)
+              local fired_weapons = layer_attack_details[fire_kind] or {}
+              table.insert(fired_weapons, weapon_instance.id)
+              table.sort(fired_weapons)
+              layer_attack_details[fire_kind] = fired_weapons
             end
-         end
-      end
-      -- do not move on the tile, where unit is already located
-      fuel_at[start_tile.id] = nil
-      return fuel_at
-   end
-
-   local get_attack_map = function()
-      local attack_map = {}
-      local visited_tiles = {} -- cache
-
-      local max_range = -1
-      local weapon_capabilites = {} -- k1: layer, value: table with k2:range, and value: list of weapons
-      local united_staff = self:_united_staff()
-      for idx, weapon_instance in pairs(united_staff) do
-         if (weapon_instance.data.can_attack) then
-            for layer, range in pairs(weapon_instance.weapon.range) do
-               --print(weapon_instance.id .. " " .. range)
-               -- we use range +1 to avoid zero-based indices
-               for r = 0, range do
-                  local layer_capabilites = weapon_capabilites[layer] or {}
-                  local range_capabilites = layer_capabilites[r + 1] or {}
-                  table.insert(range_capabilites, weapon_instance)
-                  -- print("rc = " .. inspect(range_capabilites))
-                  layer_capabilites[r + 1] = range_capabilites
-                  weapon_capabilites[layer] = layer_capabilites
-               end
-
-               if (max_range < range) then max_range = range end
-            end
-         end
-      end
-      -- print("wc: " .. inspect(weapon_capabilites))
-      -- print("wc: " .. inspect(_.keys(weapon_capabilites.surface[1])))
-      -- print("wc: " .. inspect(_.map(weapon_capabilites.surface[1], function(idx, v) return v.id end)))
-
-
-      local get_fire_kinds = function(weapon_instance, distance, enemy_unit)
-         local fire_kinds = {}
-         local enemy_layer = enemy_unit:get_layer()
-         local same_layer = (enemy_layer == layer)
-         if (weapon_instance:is_capable('RANGED_FIRE') and same_layer) then
-            table.insert(fire_kinds, 'fire/artillery')
-         end
-         if ((distance == 1) and same_layer) then
-            table.insert(fire_kinds, 'battle')
-         end
-         if (not same_layer) then
-            table.insert(fire_kinds, ((layer == 'surface')
-                               and 'fire/anti-air'
-                               or  'fire/bombing'
-                                     )
-            )
-         end
-         if ((distance == 0) and (enemy_layer == layer)) then
-            table.insert(fire_kinds, 'battle')
-         end
-         return fire_kinds
+          end
+          attack_details[enemy_layer] = layer_attack_details
+          attack_map[tile.id] = attack_details
+        end
       end
 
-      local examine_queue = {}
-      local already_added = {}
-      local add_to_queue = function(tile)
-         if (not already_added[tile.id]) then
-            table.insert(examine_queue, tile)
-            already_added[tile.id] = true
-         end
+      for adj_tile in map:get_adjastent_tiles(tile, visited_tiles) do
+        local distance = start_tile:distance_to(adj_tile)
+        if (distance <= max_range) then
+          add_to_queue(adj_tile)
+        end
       end
+    end
 
-      add_to_queue(start_tile)
-      while (#examine_queue > 0) do
-         local tile = table.remove(examine_queue, 1)
-         local distance = start_tile:distance_to(tile)
-         visited_tiles[tile.id] = true
+    return attack_map
+  end
 
-         local enemy_units = tile:get_all_units(function(unit) return unit.player ~= self.player end)
-         for idx, enemy_unit in pairs(enemy_units) do
-            local enemy_layer = enemy_unit:get_layer()
-            local weapon_instances = (weapon_capabilites[enemy_layer] or {})[distance+1]
-            if (weapon_instances) then
-               local attack_details = attack_map[tile.id] or {}
-               local layer_attack_details = attack_details[enemy_layer] or {}
-               for k, weapon_instance in pairs(weapon_instances) do
-                  local fire_kinds = get_fire_kinds(weapon_instance, distance, enemy_unit)
-                  -- print(inspect(fire_kinds))
-                  for k, fire_kind in pairs(fire_kinds) do
-                     -- print(fire_kind .. " by " .. weapon_instance.id)
-                     local fired_weapons = layer_attack_details[fire_kind] or {}
-                     table.insert(fired_weapons, weapon_instance.id)
-                     table.sort(fired_weapons)
-                     layer_attack_details[fire_kind] = fired_weapons
-                  end
-               end
-               attack_details[enemy_layer] = layer_attack_details
-               attack_map[tile.id] = attack_details
-            end
-         end
-         for adj_tile in map:get_adjastent_tiles(tile, visited_tiles) do
-            local distance = start_tile:distance_to(adj_tile)
-            if (distance <= max_range) then
-               add_to_queue(adj_tile)
-            end
-         end
+  local get_merge_map = function()
+    local merge_map = {}
+    local my_size = self.definition.size
+    local my_attached = self.data.attached
+    local my_unit_type = self.definition.unit_type.id
+    for k, tile in pairs(merge_candidates) do
+      local other_unit = tile:get_unit(layer)
+      if (other_unit.definition.unit_type.id == my_unit_type) then
+        local expected_quantity = 1 + 1 + #my_attached + #other_unit.data.attached
+        local other_size = other_unit.definition.size
+        local size_matches = my_size ~= other_size
+        local any_manager = self:is_capable('MANAGE_LEVEL') or other_unit:is_capable('MANAGE_LEVEL')
+        if (expected_quantity <= 3 and size_matches and not any_manager) then
+          merge_map[tile.id] = true
+        -- print("m " .. tile.id .. ":" .. my_size .. other_size)
+        end
       end
+    end
+    return merge_map
+  end
 
-      return attack_map
-   end
-
-   local get_merge_map = function()
-      local merge_map = {}
-      local my_size = self.definition.size
-      local my_attached = self.data.attached
-      local my_unit_type = self.definition.unit_type.id
-      for k, tile in pairs(merge_candidates) do
-         local other_unit = tile:get_unit(layer)
-         if (other_unit.definition.unit_type.id == my_unit_type) then
-            local expected_quantity = 1 + 1 + #my_attached + #other_unit.data.attached
-            local other_size = other_unit.definition.size
-            local size_matches = my_size ~= other_size
-            local any_manager = self:is_capable('MANAGE_LEVEL') or other_unit:is_capable('MANAGE_LEVEL')
-            if (expected_quantity <= 3 and size_matches and not any_manager) then
-               merge_map[tile.id] = true
-               -- print("m " .. tile.id .. ":" .. my_size .. other_size)
-            end
-         end
+  local get_landing_map = function()
+    local map = {}
+    for idx, tile in pairs(landing_candidates) do
+      if (tile ~= start_tile) then
+        map[tile.id] = true
       end
-      return merge_map
-   end
+    end
+    return map
+  end
 
-   local get_landing_map = function()
-      local map = {}
-      for idx, tile in pairs(landing_candidates) do
-         if (tile ~= start_tile) then
-            map[tile.id] = true
-         end
-      end
-      return map
-   end
+  actions_map.move    = get_move_map()
+  actions_map.merge   = get_merge_map()
+  actions_map.landing = get_landing_map()
+  actions_map.attack  = get_attack_map()
 
-   actions_map.move    = get_move_map()
-   actions_map.merge   = get_merge_map()
-   actions_map.landing = get_landing_map()
-   actions_map.attack  = get_attack_map()
+  self.data.actions_map = actions_map
+  self.engine.reactor:publish("map.update");
 
-   self.data.actions_map = actions_map
-   self.engine.reactor:publish("map.update");
-
-   -- print(inspect(actions_map.move))
+  -- print(inspect(actions_map.move))
 end
 
 function Unit:is_capable(flag_mask)
-   return self.definition:is_capable(flag_mask)
+  return self.definition:is_capable(flag_mask)
 end
 
 function Unit:get_subordinated(recursively)
