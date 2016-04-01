@@ -35,6 +35,7 @@ function State.create(reactor)
     _landscape_only = nil,
     _recent_history = nil,
     _active_layer   = 'surface',
+    _current_player = nil,
   }
   return setmetatable(o, State)
 end
@@ -102,6 +103,13 @@ function State:set_active_layer(value)
   self.reactor:publish('map.update', value)
 end
 function State:get_active_layer() return self._active_layer end
+
+function State:set_current_player(value)
+  self._current_player = value
+  print(string.format("current player: %s(%d)",  value.id, value.order))
+  self.reactor:publish('current-player.change', value)
+end
+function State:get_current_player() return self._current_player end
 
 return State
 

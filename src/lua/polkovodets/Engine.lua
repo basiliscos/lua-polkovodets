@@ -52,6 +52,8 @@ function Engine.create(gear, language)
 
   local reactor = Reactor.create({
     'unit.selected',
+    'turn.start',
+    'current-player.change',
     'mouse-hint.change', 'map.active_tile.change',
     'action.change', 'mouse-position.change',
     'map.update', 'history.update',
@@ -357,40 +359,28 @@ function Engine:get_unit(id)
   return assert(unit_for[id], "unit with id " .. id .. " not found")
 end
 
-function Engine:_set_current_player(order)
-   local player
-   local players = self.gear:get("players")
-   for _, p in pairs(players) do
-      if (p.order == order) then
-         player = p
-      end
-   end
-   assert(player)
-   self.current_player = player
-   self.current_player_idx = order
-   print(string.format("current player: %s(%d)",  player.id, player.order))
-end
-
-function Engine:get_current_player()
-  return self.current_player
-end
-
 
 function Engine:current_turn() return self.turn end
 function Engine:end_turn()
   self.state:set_selected_unit(nil)
   local players = self.gear:get("players")
-  if ((self.current_player_idx == #players) or self.turn == 0) then
+  local player_idx
+  local current_player = self.state:get_current_player()
+  if (not current_player or current_player.order == #players) then
+    player_idx = 1
+  else
+    player_idx = current_player.order + 1
+  end
+
+  if (player_idx == 1) then
     self.turn = self.turn + 1
     local all_units = self.gear:get("units")
     for k, unit in pairs(all_units) do
       unit:refresh()
     end
-    print("current turm: " .. self.turn)
-    self:_set_current_player(1)
-  else
-    self:_set_current_player(self.current_player_idx + 1)
+    print("current turn: " .. self.turn)
   end
+  self.state:set_current_player(players[player_idx])
   self.state:set_recent_history(true)
   self.reactor:publish("full.refresh");
 end

@@ -340,7 +340,7 @@ function Map:_on_map_update()
     if (v.action == 'unit/move') then
       local unit_id = v.context.unit_id
       local unit = engine:get_unit(unit_id)
-      local show = unit.player ~= engine:get_current_player()
+      local show = unit.player ~= engine.state:get_current_player()
       return show
     end
   end

@@ -293,7 +293,7 @@ function Unit:bind_ctx(context)
           if (attack_kind_idx > #attack_kinds) then attack_kind_idx = 1 end
           self.engine.state:set_action(attack_kinds[attack_kind_idx])
           return true
-        elseif (self.engine.current_player == self.player) then
+        elseif (self.engine.state:get_current_player() == self.player) then
           context.state:set_selected_unit(self)
           print("selected unit " .. self.id)
           self:update_actions_map()

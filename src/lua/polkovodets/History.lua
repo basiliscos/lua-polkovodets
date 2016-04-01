@@ -253,7 +253,7 @@ function History:record_player_action(action, context, success, results)
   assert(type(action) == 'string')
   assert(type(success) == 'boolean')
   assert(type(results) == 'table')
-  local player = self.engine:get_current_player()
+  local player = self.engine.state:get_current_player()
   local turn_no = self.engine:current_turn()
   local record = _Record.create(self.engine, player.id, turn_no, action, context, success, results)
 
@@ -267,7 +267,7 @@ function History:get_actual_records()
   local engine = self.engine
   local actual_turns = {} -- k: player.id, v: last turn
   local turn_no = self.engine:current_turn()
-  local current_player = engine.current_player
+  local current_player = engine.state:get_current_player()
 
   local players = engine.gear:get("players")
   for _, p in pairs(players) do
