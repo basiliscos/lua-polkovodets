@@ -101,6 +101,7 @@ function Tile:bind_ctx(context)
 
   local engine = self.engine
   local terrain = engine.gear:get("terrain")
+  local map     = engine.gear:get("map")
   local weather = engine:current_weather()
   -- print(inspect(weather))
   -- print(inspect(self.data.terrain_type.image))
@@ -130,51 +131,65 @@ function Tile:bind_ctx(context)
 
   if (nation and (units_on_tile == 0)) then table.insert(drawers, nation) end
 
-  if (units_on_tile == 1) then
-    local normal_unit = self.layers.surface or self.layers.air
-    tile_context.unit[normal_unit.id] = { size = 'normal' }
-    table.insert(drawers, normal_unit)
-  elseif (units_on_tile == 2) then -- draw 2 units: small and large
-    local active_layer = context.active_layer
-    local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
+  local spotting = map.united_spotting.map[self.id]
+  -- no sense to show units, if they aren't visible for the current player
+  if (spotting) then
+    if (units_on_tile == 1) then
+      local normal_unit = self.layers.surface or self.layers.air
+      tile_context.unit[normal_unit.id] = { size = 'normal' }
+      table.insert(drawers, normal_unit)
+    elseif (units_on_tile == 2) then -- draw 2 units: small and large
+      local active_layer = context.active_layer
+      local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
 
-    -- small unit have to added first, as it has lower priority in event,
-    -- and should be drawn first, and then, possibly over-drawn by normal
-    -- unit. In the same tilme normal-unit events (i.e. click), should be
-    -- cauched first. This is more important
-    local small_unit = self.layers[inactive_layer]
-    local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
-    tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
-    table.insert(drawers, small_unit)
+      -- small unit have to added first, as it has lower priority in event,
+      -- and should be drawn first, and then, possibly over-drawn by normal
+      -- unit. In the same tilme normal-unit events (i.e. click), should be
+      -- cauched first. This is more important
+      local small_unit = self.layers[inactive_layer]
+      local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
+      tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
+      table.insert(drawers, small_unit)
 
-    local normal_unit = self.layers[active_layer]
-    tile_context.unit[normal_unit.id] = { size = 'normal' }
-    table.insert(drawers, normal_unit)
+      local normal_unit = self.layers[active_layer]
+      tile_context.unit[normal_unit.id] = { size = 'normal' }
+      table.insert(drawers, normal_unit)
+    end
   end
+
+  local hex_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   local draw_fn = function()
     -- draw terrain
-    assert(sdl_renderer:copy(image.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+    assert(sdl_renderer:copy(image.texture, hex_rectange, dst))
 
     if (not landscape_only) then
       -- hilight managed units, participants, fog of war
       local u = context.state:get_selected_unit()
+      local disable_fog = false
       if (u) then
         local movement_area = u.data.actions_map.move
+        -- print(inspect(_.keys(movement_area)))
         local u_tile = u.tile or u.data.attached_to.tile
-        if ((not movement_area[self.id]) and (u_tile.id ~= self.id)) then
+        disable_fog = movement_area[self.id]
+        if (not disable_fog and (u_tile.id ~= self.id)) then
           local fog = terrain:get_icon('fog')
-          assert(sdl_renderer:copy(fog.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+          assert(sdl_renderer:copy(fog.texture, hex_rectange, dst))
         end
       end
       if (context.subordinated[self.id]) then
         local managed = terrain:get_icon('managed')
-        assert(sdl_renderer:copy(managed.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+        assert(sdl_renderer:copy(managed.texture, hex_rectange, dst))
       end
       if (context.state.participant_locations and context.state.participant_locations[self.id]) then
         local participant = terrain:get_icon('participant')
-        assert(sdl_renderer:copy(participant.texture, {x = 0, y = 0, w = hex_w, h = hex_h} , dst))
+        assert(sdl_renderer:copy(participant.texture, hex_rectange, dst))
+      end
+      -- fog of war
+      if (not spotting and not disable_fog) then
+        local fog = terrain:get_icon('fog')
+        assert(sdl_renderer:copy(fog.texture, hex_rectange, dst))
       end
     end
 

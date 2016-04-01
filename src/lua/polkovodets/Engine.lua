@@ -51,8 +51,8 @@ function Engine.create(gear, language)
   i18n.setLocale(lang)
 
   local reactor = Reactor.create({
-    'unit.selected',
-    'turn.start',
+    'turn.end',
+    'unit.selected', 'unit.change-spotting',
     'current-player.change',
     'mouse-hint.change', 'map.active_tile.change',
     'action.change', 'mouse-position.change',
@@ -194,6 +194,18 @@ function _fill_initial_data(gear)
         for _, nation in pairs(player.nations) do
           instance[nation.id] = player
         end
+      end
+    end
+  )
+
+  -- k: player_id, v: list of units
+  gear:declare("player/units::map", {"players", "units"},
+    function() return {} end,
+    function(gear, instance, players, units)
+      for _, unit in pairs(units) do
+        local list = instance[unit.player.id] or {}
+        table.insert(list, unit)
+        instance[unit.player.id] = list
       end
     end
   )
@@ -362,6 +374,7 @@ end
 
 function Engine:current_turn() return self.turn end
 function Engine:end_turn()
+  self.reactor:publish("turn.end")
   self.state:set_selected_unit(nil)
   local players = self.gear:get("players")
   local player_idx
@@ -374,13 +387,17 @@ function Engine:end_turn()
 
   if (player_idx == 1) then
     self.turn = self.turn + 1
-    local all_units = self.gear:get("units")
-    for k, unit in pairs(all_units) do
-      unit:refresh()
-    end
     print("current turn: " .. self.turn)
   end
-  self.state:set_current_player(players[player_idx])
+
+  local player = players[player_idx]
+  local units_for_player = self.gear:get("player/units::map")
+  for _, unit in pairs(units_for_player[player.id]) do
+    unit:refresh()
+    if(unit.tile) then unit:update_spotting_map() end
+  end
+
+  self.state:set_current_player(player)
   self.state:set_recent_history(true)
   self.reactor:publish("full.refresh");
 end

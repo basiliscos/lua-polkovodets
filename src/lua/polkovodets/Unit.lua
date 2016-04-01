@@ -705,6 +705,7 @@ function Unit:move_to(dst_tile)
   dst_tile:set_unit(self, self.data.layer)
   self.tile = dst_tile
   self:_update_orientation(dst_tile, src_tile)
+  self:update_spotting_map()
   self:update_actions_map()
 end
 
@@ -783,6 +784,7 @@ function Unit:attack_on(tile, fire_type)
   self:_check_death()
   enemy_unit:_check_death()
   if (self.data.state ~= 'dead') then
+    self:update_spotting_map()
     self:update_actions_map()
   end
 end
@@ -821,7 +823,7 @@ function Unit:update_spotting_map()
 
   -- print("available_spotting = " .. available_spotting)
 
-  local queue =  { {self.tile, available_spotting } }
+  local queue =  {}
 
   local get_nearest_tile = function()
     return function()
@@ -840,9 +842,10 @@ function Unit:update_spotting_map()
   end
 
   local add_to_queue = function(tile, cost) table.insert(queue, {tile, cost}) end
+  add_to_queue( self.tile, available_spotting + 1)
 
   for tile, remained_spot_cost in get_nearest_tile() do
-    if (remained_spot_cost >= 0) then
+    if (remained_spot_cost > 0) then
       spotting_map[tile.id] = remained_spot_cost
       for adj_tile in map:get_adjastent_tiles(tile, spotting_map) do
         -- for air units the terrain type does not matter, but weather does,
@@ -858,6 +861,7 @@ function Unit:update_spotting_map()
   -- print("spotting map " .. inspect(spotting_map))
 
   self.data.spotting_map = spotting_map
+  engine.reactor:publish("unit.change-spotting", self)
 end
 
 

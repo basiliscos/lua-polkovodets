@@ -43,6 +43,11 @@ function Map.create()
       map_sx = 0,
       map_sy = 0,
     },
+    united_spotting = {
+      map = {},          -- k: tile_id, v: max spot (number)
+      addons = {},       -- k: tile_id, v: map of unit_ids, which participate in tile spotting
+      participants = {}, -- k: unit_id, v: spotting map
+    },
     drawing = {
       fn          = nil,
       mouse_move  = nil,
@@ -79,9 +84,69 @@ function Map:initialize(engine, renderer, terrain, tiles_generator, map_data)
   self:_fill_tiles(tiles_generator)
   engine.state:set_active_tile(self.tiles[1][1])
 
-  self.engine.reactor:subscribe("full.refresh", function() self:_update_shown_map() end)
+  local reactor = self.engine.reactor
+  reactor:subscribe("full.refresh", function() self:_update_shown_map() end)
+  reactor:subscribe("turn.end", function() self:_reset_spotting_map() end)
+  reactor:subscribe("unit.change-spotting", function(event, unit) self:_update_spotting_map(unit) end)
+
   self:_update_shown_map()
 end
+
+function Map:_update_spotting_map(unit)
+  local united_spotting = self.united_spotting
+
+  local updated_tiles = {}
+  -- step 1: remove prevous unit spot influence (if any)
+  if (united_spotting.participants[unit.id]) then
+    for tile_id, spot_value  in pairs(united_spotting.participants[unit.id]) do
+      local spot_components = united_spotting.addons[tile_id]
+      if (spot_components[unit.id]) then
+        spot_components[unit.id] = nil
+        updated_tiles[tile_id] = 1
+      end
+    end
+    -- remove unit (may be updated one will be added later)
+    united_spotting.participants[unit.id] = nil
+  end
+
+  -- step 2: add unit spotting map (if any)
+  if (unit.tile) then
+    for tile_id, spot_value in pairs(unit.data.spotting_map) do
+      local spot_components = united_spotting.addons[tile_id] or {}
+      spot_components[unit.id] = 1
+      updated_tiles[tile_id] = 1
+      united_spotting.addons[tile_id] = spot_components
+    end
+    united_spotting.participants[unit.id] = _.clone(unit.data.spotting_map, true)
+  end
+
+  -- step 3: recalculate max visibility (spot) in the updated tiles
+  for tile_id, _ in pairs(updated_tiles) do
+    local max_spot = -1
+    local spot_components = united_spotting.addons[tile_id]
+    if (spot_components) then
+      for unit_id, _ in pairs(spot_components) do
+        local spot_value = united_spotting.participants[unit_id][tile_id]
+        max_spot = math.max(max_spot, spot_value)
+      end
+    end
+    if (max_spot == -1) then max_spot = nil end
+    united_spotting.map[tile_id] = max_spot
+  end
+  -- print(inspect(united_spotting))
+
+  -- print("_update_spotting_map")
+end
+
+function Map:_reset_spotting_map()
+  print("_reset_spotting_map")
+  self.united_spotting = {
+    map          = {},
+    addons       = {},
+    participants = {},
+  }
+end
+
 
 function Map:_update_shown_map()
   local gui = self.gui
