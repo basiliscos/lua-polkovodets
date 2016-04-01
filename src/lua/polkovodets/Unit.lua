@@ -821,34 +821,37 @@ function Unit:update_spotting_map()
 
   -- print("available_spotting = " .. available_spotting)
 
-  local queue =  { {self.tile, 0} }
+  local queue =  { {self.tile, available_spotting } }
 
   local get_nearest_tile = function()
     return function()
       if (#queue > 0) then
-        local min_idx, min_value = 1, queue[1][2]
+        local max_idx, max_value = 1, queue[1][2]
         for idx, candidate in pairs(queue) do
-          if (queue[idx][2] < min_value) then
-             min_idx, min_value = idx, queue[idx][2]
+          if (queue[idx][2] > max_value) then
+             max_idx, max_value = idx, queue[idx][2]
           end
         end
-        local minimum = table.remove(queue, min_idx)
-        return table.unpack(minimum)
+        local maximum = table.remove(queue, max_idx)
+        -- print("q = " .. inspect(queue))
+        return table.unpack(maximum)
       end
     end
   end
 
   local add_to_queue = function(tile, cost) table.insert(queue, {tile, cost}) end
 
-  for tile, spot_cost in get_nearest_tile() do
-    if (spot_cost <= available_spotting) then
-      spotting_map[tile.id] = spot_cost
+  for tile, remained_spot_cost in get_nearest_tile() do
+    if (remained_spot_cost >= 0) then
+      spotting_map[tile.id] = remained_spot_cost
       for adj_tile in map:get_adjastent_tiles(tile, spotting_map) do
         -- for air units the terrain type does not matter, but weather does,
         -- so we pick the "field" (clear) terrain for air unit
         local terrain_type = (unit_type == 'ut_air') and terrain:get_type('c') or adj_tile.data.terrain_type
         local adj_tile_cost = assert(terrain_type.spot_cost[weather])
-        add_to_queue(adj_tile, adj_tile_cost + spot_cost)
+        local spot_left = remained_spot_cost - adj_tile_cost
+        -- print(remained_spot_cost .. " " .. spot_left)
+        add_to_queue(adj_tile, spot_left)
       end
     end
   end
