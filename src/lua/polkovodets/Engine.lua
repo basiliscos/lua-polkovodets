@@ -51,7 +51,7 @@ function Engine.create(gear, language)
   i18n.setLocale(lang)
 
   local reactor = Reactor.create({
-    'turn.end',
+    'turn.end', 'turn.start',
     'unit.selected', 'unit.change-spotting',
     'current-player.change',
     'mouse-hint.change', 'map.active_tile.change',
@@ -391,14 +391,10 @@ function Engine:end_turn()
   end
 
   local player = players[player_idx]
-  local units_for_player = self.gear:get("player/units::map")
-  for _, unit in pairs(units_for_player[player.id]) do
-    unit:refresh()
-    if(unit.tile) then unit:update_spotting_map() end
-  end
 
   self.state:set_current_player(player)
   self.state:set_recent_history(true)
+  self.reactor:publish("turn.start");
   self.reactor:publish("full.refresh");
 end
 

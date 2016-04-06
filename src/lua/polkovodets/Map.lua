@@ -87,12 +87,14 @@ function Map:initialize(engine, renderer, terrain, tiles_generator, map_data)
   local reactor = self.engine.reactor
   reactor:subscribe("full.refresh", function() self:_update_shown_map() end)
   reactor:subscribe("turn.end", function() self:_reset_spotting_map() end)
+  reactor:subscribe("turn.start", function() self:_on_start_of_turn() end)
   reactor:subscribe("unit.change-spotting", function(event, unit) self:_update_spotting_map(unit) end)
 
   self:_update_shown_map()
 end
 
 function Map:_update_spotting_map(unit)
+
   local united_spotting = self.united_spotting
 
   local updated_tiles = {}
@@ -135,7 +137,7 @@ function Map:_update_spotting_map(unit)
   end
   -- print(inspect(united_spotting))
 
-  -- print("_update_spotting_map")
+  self:_update_units_visibility(unit)
 end
 
 function Map:_reset_spotting_map()
@@ -145,6 +147,57 @@ function Map:_reset_spotting_map()
     addons       = {},
     participants = {},
   }
+end
+
+function Map:_on_start_of_turn()
+  print("Map:_on_start_of_turn")
+
+  self.turn_started = false
+  local player = self.engine.state:get_current_player()
+  local units_for_player = self.engine.gear:get("player/units::map")
+  local units = self.engine.gear:get("units")
+
+  for _, unit in pairs(units) do
+    if(unit.tile) then
+      unit.data.visible_to_current_player = false
+    end
+  end
+
+  -- block event, as we'll update whole picture via
+  -- _update_units_visibility() instead of updating it on per-unit basis
+  self.engine.reactor.ignoring["unit.change-spotting"] = true
+  for _, unit in pairs(units_for_player[player.id]) do
+    unit:refresh()
+    if(unit.tile) then
+      unit:update_spotting_map()
+      self:_update_spotting_map(unit)
+    end
+  end
+  self.engine.reactor.ignoring["unit.change-spotting"] = nil
+
+
+  self:_update_units_visibility()
+end
+
+function Map:_update_units_visibility(unit)
+  local united_spotting = self.united_spotting
+
+  -- do update only for unit, or for whole map
+  local tiles_map = unit and (unit.tile and unit.data.spotting_map)
+    or (united_spotting.map)
+
+  -- print(inspect(tiles_map))
+  local units_filter = function(unit) return unit.player ~= player end
+  for tile_id in pairs(tiles_map) do
+    local tile = self.tile_for[tile_id]
+    local non_my_units = tile:get_all_units(units_filter)
+    for _, u in pairs(non_my_units) do
+      local visible = united_spotting.map[tile_id] ~= nil
+      u.data.visible_to_current_player = visible
+      -- print("making unit on" .. tile_id .. " visible : " .. tostring(visible))
+    end
+  end
+  -- print(inspect(united_spotting))
 end
 
 

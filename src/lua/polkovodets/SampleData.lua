@@ -741,6 +741,19 @@ function SampleData.generate_scenario(gear)
         ger_weapon_1 = "30",
       },
     },
+    {
+      id = "ger_unit_2",
+      name = "German Unit Definition 1",
+      state = "defending",
+      unit_definition_id = "ger_ud_1",
+      x = 10, y = 4,
+      exp = 0,
+      entr = 0,
+      orientation = "left",
+      staff = {
+        ger_weapon_1 = "30",
+      },
+    },
   })
 
 end

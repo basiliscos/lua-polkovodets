@@ -71,6 +71,10 @@ subtest("map united spotting", function()
   ok(map.united_spotting.map[map.tiles[10][8].id])
   ok(not map.united_spotting.map[map.tiles[2][7].id])
 
+  local axis_inf = map.tiles[5][3]:get_unit('surface')
+  ok(axis_inf)
+  ok(axis_inf.data.visible_to_current_player)
+
   engine:end_turn()
   is(engine.state:get_current_player().id, "axis")
   ok(map.united_spotting.map[map.tiles[7][2].id])
@@ -78,6 +82,11 @@ subtest("map united spotting", function()
   ok(map.united_spotting.map[map.tiles[3][4].id])
   ok(not map.united_spotting.map[map.tiles[5][6].id])
   ok(not map.united_spotting.map[map.tiles[3][5].id])
+
+  local allied_art = map.tiles[3][5]:get_unit('surface')
+  ok(allied_art)
+  ok(not allied_art.data.visible_to_current_player)
+  ok(map.tiles[4][3]:get_unit('surface').data.visible_to_current_player)
 
   engine:end_turn()
   local aircraft = map.tiles[7][7]:get_unit('air')
@@ -87,5 +96,25 @@ subtest("map united spotting", function()
   ok(map.united_spotting.map[map.tiles[2][7].id], "now tile 2:7 is visible by aircraft")
 end)
 
+subtest("map spotting on unit movement", function()
+  local engine = get_fresh_data()
+  local map = engine.gear:get("map")
+
+  ok(not map.tiles[11][5]:get_unit('surface').data.visible_to_current_player,
+    "nobody sees german infantry beyond the forest")
+
+  local aircraft = map.tiles[7][7]:get_unit('air')
+  ok(aircraft)
+  aircraft:update_actions_map()
+  aircraft:move_to(map.tiles[9][5])
+  ok(map.tiles[11][5]:get_unit('surface').data.visible_to_current_player,
+    "not the german infantry is visible")
+
+  aircraft:update_actions_map()
+  aircraft:move_to(map.tiles[3][7])
+  ok(map.tiles[11][5]:get_unit('surface').data.visible_to_current_player,
+    "the german infantry is still visible, even if it is out of the united spot")
+
+end)
 
 done_testing()

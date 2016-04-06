@@ -35,6 +35,7 @@ function Reactor.create(channels)
     channels    = channels,
     subscribers = subscribers,
     postponed   = postponed,
+    ignoring    = {},
   }
   return setmetatable(o, Reactor)
 end
@@ -51,6 +52,7 @@ end
 
 function Reactor:publish(channel, ...)
   local existing_subscribers = assert(self.subscribers[channel], 'no ' .. channel .. " exists")
+  if (self.ignoring[channel]) then return end
   if (not self.masked) then
     for idx, cb in existing_subscribers:pairs() do
       cb(channel, ...)
@@ -97,7 +99,7 @@ function Reactor:replay_masked_events()
     -- actual replay
     local existing_subscribers = assert(self.subscribers[channel])
     for i, args in pairs(unique_queue) do
-      for idx, cb in existing_subscribers:pairs() do
+      for _, cb in existing_subscribers:pairs() do
         -- print(channel .. " => " .. #args)
         cb(channel, table.unpack(args))
       end

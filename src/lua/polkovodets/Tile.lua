@@ -103,6 +103,7 @@ function Tile:bind_ctx(context)
   local terrain = engine.gear:get("terrain")
   local map     = engine.gear:get("map")
   local weather = engine:current_weather()
+  local player  = engine.state:get_current_player()
   -- print(inspect(weather))
   -- print(inspect(self.data.terrain_type.image))
 
@@ -132,26 +133,36 @@ function Tile:bind_ctx(context)
   if (nation and (units_on_tile == 0)) then table.insert(drawers, nation) end
 
   local spotting = map.united_spotting.map[self.id]
-  -- no sense to show units, if they aren't visible for the current player
-  if (spotting) then
-    if (units_on_tile == 1) then
-      local normal_unit = self.layers.surface or self.layers.air
+
+  local is_unit_shown = function(unit)
+    local result = (unit.player == player) or unit.data.visible_to_current_player
+    -- print("unit on " .. unit.tile.id .. " is visible: " .. tostring(unit.data.visible_to_current_player))
+    return result
+  end
+
+  if (units_on_tile == 1) then
+    local normal_unit = self.layers.surface or self.layers.air
+    if (is_unit_shown(normal_unit)) then
       tile_context.unit[normal_unit.id] = { size = 'normal' }
       table.insert(drawers, normal_unit)
-    elseif (units_on_tile == 2) then -- draw 2 units: small and large
-      local active_layer = context.active_layer
-      local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
+    end
+  elseif (units_on_tile == 2) then -- draw 2 units: small and large
+    local active_layer = context.active_layer
+    local inactive_layer = (active_layer == 'air') and 'surface' or 'air'
 
-      -- small unit have to added first, as it has lower priority in event,
-      -- and should be drawn first, and then, possibly over-drawn by normal
-      -- unit. In the same tilme normal-unit events (i.e. click), should be
-      -- cauched first. This is more important
-      local small_unit = self.layers[inactive_layer]
+    -- small unit have to added first, as it has lower priority in event,
+    -- and should be drawn first, and then, possibly over-drawn by normal
+    -- unit. In the same tilme normal-unit events (i.e. click), should be
+    -- cauched first. This is more important
+    local small_unit = self.layers[inactive_layer]
+    if (is_unit_shown(small_unit)) then
       local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
       tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
       table.insert(drawers, small_unit)
+    end
 
-      local normal_unit = self.layers[active_layer]
+    local normal_unit = self.layers[active_layer]
+    if (is_unit_shown(normal_unit)) then
       tile_context.unit[normal_unit.id] = { size = 'normal' }
       table.insert(drawers, normal_unit)
     end
