@@ -31,6 +31,7 @@ local History = require 'polkovodets.History'
 local Map = require 'polkovodets.Map'
 local Nation = require 'polkovodets.Nation'
 local Reactor = require 'polkovodets.utils.Reactor'
+local Objective = require 'polkovodets.Objective'
 local Player = require 'polkovodets.Player'
 local Scenario = require 'polkovodets.Scenario'
 local State = require 'polkovodets.State'
@@ -235,6 +236,17 @@ function _fill_initial_data(gear)
     end
   )
 
+  gear:declare("objectives", {"data/objectives", "nations::map", "map", "renderer"},
+    function() return {} end,
+    function(gear, instance, list, ... )
+      for _, data in pairs(list) do
+        local o = Objective.create()
+        o:initialize(data, ... )
+        table.insert(instance, o)
+      end
+    end
+  )
+
   gear:declare("players", {"data/players", "nations::map"},
     function() return {} end,
     function(gear, instance, data_players, nation_for)
@@ -306,7 +318,7 @@ function _fill_initial_data(gear)
   )
 
   -- scenario
-  gear:declare("scenario", {"data/scenario", "data/objectives", "data/armies",
+  gear:declare("scenario", {"data/scenario", "objectives", "data/armies",
     "engine", "renderer", "map",
     "nations::map", "weapons/definitions::map", "units/definitions::map", "nation/player::map"},
     function() return Scenario.create() end,

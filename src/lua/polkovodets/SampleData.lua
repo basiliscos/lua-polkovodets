@@ -186,6 +186,78 @@ function SampleData.generate_terrain(gear)
         snowing = "terrain/airfield_snow.bmp",
       }
     },
+    {
+      id         = "t",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "town",
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 1,
+          snowing = 1,
+        },
+        tracked = {
+          fair    = 2,
+          snowing = 2,
+        },
+        leg     = {
+          fair    = 1,
+          snowing = 1,
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 1,
+          snowing = 1,
+        },
+      },
+      image = {
+        fair    = "terrain/town.bmp",
+        snowing = "terrain/town_snow.bmp",
+      }
+    },
+    {
+      id         = "T",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "destroyed-town",
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 1,
+          snowing = 1,
+        },
+        tracked = {
+          fair    = 2,
+          snowing = 2,
+        },
+        leg     = {
+          fair    = 1,
+          snowing = 1,
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 1,
+          snowing = 1,
+        },
+      },
+      image = {
+        fair    = "terrain/town-destroyed.bmp",
+        snowing = "terrain/town-destroyed_snow.bmp",
+      }
+    },
   }
   gear:set("data/terrain", {
     hex_geometry  = hex_geometry,
@@ -218,6 +290,10 @@ function SampleData.generate_map(gear)
 
     -- some forest
     ["8_6"] = { "f", 0 }, ["9_6"] = { "f", 0 }, ["10_5"] = { "f", 0 }, ["8_7"] = { "f", 0 }, ["9_7"] = { "f", 0 }, ["10_6"] = { "f", 0 },
+
+    -- town
+    ["8_9"] = { "t", 0 }, ["9_10"] = { "T", 2 },
+
   }
 
   local engine = gear:get("engine")
@@ -581,7 +657,11 @@ function SampleData.generate_scenario(gear)
       nation = 'rus',
     },
     {
-      x = 7, y = 5,
+      x = 8, y = 9,
+      nation = 'ger',
+    },
+    {
+      x = 9, y = 10,
       nation = 'ger',
     },
   })

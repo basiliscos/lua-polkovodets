@@ -19,8 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Nation = {}
 Nation.__index = Nation
 
-local Parser = require 'polkovodets.Parser'
-
 function Nation.create(engine, nation_data)
   return setmetatable({ drawing = { } }, Nation)
 end
@@ -39,34 +37,6 @@ function Nation:initialize(renderer, nation_data, data_dirs)
   self.name      = nation_data.name
   self.flag      = load_flag(nation_data.icon_path)
   self.unit_flag = load_flag(nation_data.unit_icon_path)
-end
-
-function Nation:bind_ctx(context)
-  -- print("nation drawing context has been bounded")
-  local nation_flag_width = self.flag.w
-  local nation_flag_height = self.flag.h
-  local hex_w = context.tile_geometry.w
-  local hex_h = context.tile_geometry.h
-  local x = context.tile.virtual.x + context.screen.offset[1]
-  local y = context.tile.virtual.y + context.screen.offset[2]
-  local flag_x = x + math.modf((hex_w - nation_flag_width) / 2)
-  local flag_y = y + math.modf((hex_h - nation_flag_height - 2))
-  local dst = {x = flag_x, y = flag_y, w = self.flag.w, h = self.flag.h}
-
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
-  self.drawing.fn = function()
-    assert(sdl_renderer:copy(self.flag.texture, nil, dst))
-  end
-end
-
-
-function Nation:draw()
-  assert(self.drawing.fn)
-  self.drawing.fn()
-end
-
-function Nation:unbind_ctx()
-  self.drawing.fn = nil
 end
 
 

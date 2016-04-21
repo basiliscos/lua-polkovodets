@@ -44,16 +44,7 @@ function Scenario:initialize(scenario_data, objectives_data, armies_data,
   end
   self.weather = assert(scenario_data.weather)
 
-  -- setup/validate objectives
-  for idx, objective in pairs(objectives_data) do
-    local nation_id = objective.nation
-	  local nation = assert(nations_for[nation_id], "no nation " .. nation_id .. ' is available')
-
-    local x, y = objective.x, objective.y
-	  local tile = assert(map.tiles[x][y], " tile " .. x  .. ":" .. y .. " does not exist")
-	  tile.data.nation = nation
-	  tile.data.objective = objective
-  end
+  -- set objectives
   self.objectives = objectives
 
   --[[ create/instantiate army ]]

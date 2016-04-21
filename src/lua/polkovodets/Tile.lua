@@ -118,8 +118,8 @@ function Tile:bind_ctx(context)
   local landscape_only = context.state:get_landscape_only()
   local show_grid = engine.options.show_grid
 
-  -- draw nation flag in city, unless there is unit (then unit flag will be drawn)
-  local nation = self.data.nation
+  -- draw nation/objective flag in city, unless there is unit (then unit flag will be drawn)
+  local objective = self.data.objective
   local units_on_tile = (self.layers.surface and 1 or 0) + (self.layers.air and 1 or 0)
   -- force drawing 0 units
   if (landscape_only) then units_on_tile = 0 end
@@ -130,7 +130,7 @@ function Tile:bind_ctx(context)
 
   local drawers = {}
 
-  if (nation and (units_on_tile == 0)) then table.insert(drawers, nation) end
+  if (objective and (units_on_tile == 0)) then table.insert(drawers, objective) end
 
   local spotting = map.united_spotting.map[self.id]
 
