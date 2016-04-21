@@ -84,6 +84,7 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
       terrain_types[id] = data
       assert(data.image)
       assert(data.spot_cost)
+      assert(data.flags)
 
       local image_for = {}
       for weather_id, image_path in pairs(data.image) do
@@ -151,6 +152,13 @@ end
 function Terrain:get_icon(name)
    local icon_path = assert(self.icons[name], "no terrain icon for " .. name)
    return self.renderer:load_texture(icon_path)
+end
+
+function Terrain:is_capable(terrain_type_id, flag_mask)
+  local terrain_type = assert(self.terrain_types[terrain_type_id])
+  for flag, value in pairs(terrain_type.flags) do
+    if (string.find(flag, flag_mask)) then return flag, value end
+  end
 end
 
 return Terrain

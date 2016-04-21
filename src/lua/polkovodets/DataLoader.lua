@@ -141,11 +141,15 @@ function DataLoader.load(gear, scenario_path)
     assert(data.move_cost, terrain_types_path .. " should have move_cost for terrain " .. idx)
     assert(type(data.move_cost) == 'table', terrain_types_path .. " move_cost must be a table for terrain " .. idx)
 
+    local flags = data.flags or {}
+    assert(type(flags) == 'table', terrain_types_path .. " flags must be a table for terrain " .. idx)
+
     table.insert(terrain_types, {
       id        = assert(data.id, terrain_types_path .. " should have id for terrain " .. idx),
       min_entr  = tonumber(data.min_entr),
       max_entr  = tonumber(data.max_entr),
       image     = data.image,
+      flags     = flags,
       spot_cost = data.spot_cost,
       move_cost = data.move_cost,
     })

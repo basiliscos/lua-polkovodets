@@ -44,6 +44,9 @@ local terrain_types = {
     min_entr   = 0,
     max_entr   = 99,
     name       = "field",
+    flags      = {
+      DUMMY_TERRAIN_PROPERTY = 5,
+    },
     spot_cost  = {
       fair    = 1,
       snowing = 2,
@@ -86,5 +89,7 @@ is(clear.spot_cost.snowing, 2)
 is(clear.move_cost.air.fair, 1)
 is(clear.move_cost.wheeled.fair, 2)
 is(clear.move_cost.leg.snowing, 1)
+
+ok(terrain:is_capable('c', "DUMMY_TERRAIN_PROPERTY"))
 
 done_testing()

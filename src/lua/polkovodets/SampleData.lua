@@ -47,6 +47,7 @@ function SampleData.generate_terrain(gear)
       min_entr   = 0,
       max_entr   = 99,
       name       = "field",
+      flags      = {},
       spot_cost  = {
         fair    = 1,
         snowing = 2,
@@ -83,6 +84,7 @@ function SampleData.generate_terrain(gear)
       min_entr   = 0,
       max_entr   = 99,
       name       = "road",
+      flags      = {},
       spot_cost  = {
         fair    = 1,
         snowing = 1,
@@ -119,6 +121,7 @@ function SampleData.generate_terrain(gear)
       min_entr   = 0,
       max_entr   = 99,
       name       = "road",
+      flags      = {},
       spot_cost  = {
         fair    = 2,
         snowing = 2,
@@ -155,6 +158,7 @@ function SampleData.generate_terrain(gear)
       min_entr   = 0,
       max_entr   = 99,
       name       = "airfield",
+      flags      = {},
       spot_cost  = {
         fair    = 2,
         snowing = 2,
@@ -191,6 +195,10 @@ function SampleData.generate_terrain(gear)
       min_entr   = 0,
       max_entr   = 99,
       name       = "town",
+      flags      = {
+        ATTACK_CHANGES_TO   = "T",
+        PER_TURN_NEG_ATTACK = 100,
+      },
       spot_cost  = {
         fair    = 2,
         snowing = 2,
@@ -227,6 +235,10 @@ function SampleData.generate_terrain(gear)
       min_entr   = 0,
       max_entr   = 99,
       name       = "destroyed-town",
+      flags      = {
+        BUILD_CHANGES_TO  = "t",
+        BUILD_CHANGE_COST = 100,
+      },
       spot_cost  = {
         fair    = 2,
         snowing = 2,
