@@ -31,6 +31,8 @@ function Tile.create(engine, terrain, data)
   assert(data.terrain_type)
   assert(data.terrain_name)
 
+  data.build_efforts = 0
+
   -- use adjusted tiles (hex) coordinates
   local tile_x = data.x
   local tile_y = data.y + math.modf((tile_x - 2) * 0.5)
@@ -299,6 +301,20 @@ function Tile:distance_to(other_tile)
    local value = (math.abs(dx) + math.abs(dy) + math.abs(dy - dx)) / 2
 
    return value;
+end
+
+function Tile:build(efforts)
+  local _, change_costs = self:is_capable("BUILD_CHANGE_COST")
+  assert(change_costs)
+  change_costs = tonumber(change_costs)
+
+  self.data.build_efforts = self.data.build_efforts + efforts
+  if (self.data.build_efforts >= change_costs) then
+    local _, new_terrain_type_id = self:is_capable("BUILD_CHANGES_TO")
+    local terrain = self.engine.gear:get("terrain")
+    local new_type = assert(terrain.terrain_types[new_terrain_type_id])
+    self.data.terrain_type = new_type
+  end
 end
 
 function Tile:is_capable(flag_mask)

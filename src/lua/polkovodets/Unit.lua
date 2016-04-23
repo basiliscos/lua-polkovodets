@@ -789,6 +789,26 @@ function Unit:attack_on(tile, fire_type)
   end
 end
 
+function Unit:special_action(tile, action)
+  assert(self.data.actions_map.special[tile.id])
+  assert(self.data.actions_map.special[tile.id][action])
+
+  if (action == 'build') then
+    local builde_weapon_instances = self.data.actions_map.special[tile.id][action]
+    local efforts = 0
+    for _, wi in pairs(builde_weapon_instances) do
+      local capability, power = wi:is_capable("BUILD_CAPABILITIES")
+      efforts = efforts + power * wi:quantity()
+      wi.data.can_attack = false
+    end
+    tile:build(efforts)
+  else
+    assert("unknown action: " .. action)
+  end
+  self:update_spotting_map()
+  self:update_actions_map()
+end
+
 
 function Unit:_enemy_near(tile)
   local layer = self:get_movement_layer()
@@ -1091,13 +1111,15 @@ function Unit:update_actions_map()
       -- build capability disabled, when unit is attached
       local can_build = weapon_instance:is_capable("BUILD_CAPABILITIES")
         and weapon_instance:quantity() > 0
+        and weapon_instance.data.can_attack
         and self:get_layer() == 'surface'
         and self.tile
         and self.tile:is_capable("BUILD_")
       if (can_build) then
         local specials = map[self.tile.id] or {}
-        local capability, power = weapon_instance:is_capable("BUILD_CAPABILITIES")
-        specials.build = weapon_instance:quantity() * power
+        local builders = specials.build or {}
+        table.insert(builders, weapon_instance)
+        specials.build = builders
         map[self.tile.id] = specials
       end
     end
