@@ -328,6 +328,22 @@ function _fill_initial_data(gear)
   )
 
   -- validators
+  gear:declare("validators/terrain/flags", {"terrain"},
+    function() return { name = "terrain type flags"} end,
+    function(gear, instance, terrain)
+      instance.fn = function()
+        for id, terrain_type in pairs(terrain.terrain_types) do
+          for flag, value in pairs(terrain_type) do
+            if (flag == 'ATTACK_CHANGES_TO' or flag == 'BUILD_CHANGES_TO') then
+              assert(terrain.terrain_types[value], "flag value '" .. value .. "' for flag" ..  flag .. " for terrain type " .. id .. " is invalid")
+            end
+          end
+        end
+        print("terrain type flags are valid")
+      end
+    end
+  )
+
   gear:declare("validators/weapons/movement_types", {"data/weapons/movement_types", "data/terrain"},
     function() return { name = "weapon movement types"} end,
     function(gear, instance, movement_types, terrain_data)
@@ -358,7 +374,8 @@ function _fill_initial_data(gear)
     end
   )
 
-  gear:declare("validator", { "validators/weapons/movement_types", "validators/units/classes" },
+  gear:declare("validator", { "validators/weapons/movement_types", "validators/units/classes",
+    "validators/terrain/flags"},
     function() return { } end,
     function(gear, instance, ...)
       local validators = { ... }
