@@ -396,6 +396,7 @@ function SampleData.generate_scenario(gear)
 
   gear:set("data/weapons/types", {
     {id = "wt_infant",     class_id = "wk_infant"},
+    {id = "wt_engineer",   class_id = "wk_infant"},
     {id = "wt_tankInfMid", class_id = "wk_armor" },
     {id = "wt_transp",     class_id = "wk_transp"},
     {id = "wt_artil",      class_id = "wk_artil"},
@@ -507,6 +508,24 @@ function SampleData.generate_scenario(gear)
       weap_category = "wc_infant",
       target_type = "soft",
       weap_type  = "wt_infant",
+      weap_class = "wk_infant",
+    },
+    {
+      id = "ger_weapon_2",
+      name = "German Builders 1",
+      range = { surface = 1 },
+      nation = "ger",
+      movement = 3,
+      range   = {air = 0, surface = 1},
+      defence = {air = 8, surface = 7 },
+      attack = { air = 0, soft = 1, hard = 1 },
+      flags  = {
+        BUILD_CAPABILITIES = 5,
+      },
+      move_type = "leg",
+      weap_category = "wc_infant",
+      target_type = "soft",
+      weap_type  = "wt_engineer",
       weap_class = "wk_infant",
     },
   })
@@ -652,6 +671,24 @@ function SampleData.generate_scenario(gear)
       spotting = 2,
       staff = {
         wt_infant = 35,
+      },
+      icons = {
+        marching  = "units/ger/GerInf01.png",
+        defending = "units/ger/GerInf01.png",
+        attacking = "units/ger/GerInf01.png",
+      }
+    },
+    {
+      id = "ger_ud_2",
+      name = "German Engineer Unit Definition (batalion)",
+      size = "S",
+      flags = {},
+      nation = "ger",
+      ammo = 5,
+      unit_class = "inf",
+      spotting = 2,
+      staff = {
+        wt_engineer = 20,
       },
       icons = {
         marching  = "units/ger/GerInf01.png",
@@ -844,6 +881,19 @@ function SampleData.generate_scenario(gear)
       orientation = "left",
       staff = {
         ger_weapon_1 = "30",
+      },
+    },
+    {
+      id = "ger_unit_3",
+      name = "German Unit 3",
+      state = "defending",
+      unit_definition_id = "ger_ud_2",
+      x = 8, y = 10,
+      exp = 0,
+      entr = 0,
+      orientation = "left",
+      staff = {
+        ger_weapon_2 = "10",
       },
     },
   })

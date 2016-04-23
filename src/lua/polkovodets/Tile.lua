@@ -301,4 +301,9 @@ function Tile:distance_to(other_tile)
    return value;
 end
 
+function Tile:is_capable(flag_mask)
+  local terrain = self.engine.gear:get("terrain")
+  return terrain:is_capable(self.data.terrain_type.id, flag_mask)
+end
+
 return Tile

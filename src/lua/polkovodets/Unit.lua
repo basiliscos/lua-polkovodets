@@ -1084,10 +1084,31 @@ function Unit:update_actions_map()
     return map
   end
 
+  local get_special_map = function()
+    local map = {}
+    for _, weapon_instance in pairs(self:_united_staff()) do
+
+      -- build capability disabled, when unit is attached
+      local can_build = weapon_instance:is_capable("BUILD_CAPABILITIES")
+        and weapon_instance:quantity() > 0
+        and self:get_layer() == 'surface'
+        and self.tile
+        and self.tile:is_capable("BUILD_")
+      if (can_build) then
+        local specials = map[self.tile.id] or {}
+        local capability, power = weapon_instance:is_capable("BUILD_CAPABILITIES")
+        specials.build = weapon_instance:quantity() * power
+        map[self.tile.id] = specials
+      end
+    end
+    return map
+  end
+
   actions_map.move    = get_move_map()
   actions_map.merge   = get_merge_map()
   actions_map.landing = get_landing_map()
   actions_map.attack  = get_attack_map()
+  actions_map.special = get_special_map()
 
   self.data.actions_map = actions_map
   self.engine.reactor:publish("map.update");
