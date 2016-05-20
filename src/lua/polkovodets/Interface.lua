@@ -27,6 +27,7 @@ local UnitPanel = require ('polkovodets.gui.UnitPanel')
 local Cursor = require ('polkovodets.gui.Cursor')
 require ('polkovodets.gui.BattleDetailsWindow')
 require ('polkovodets.gui.BattleSelectorPopup')
+require ('polkovodets.gui.RadialMenu')
 require ('polkovodets.gui.UnitInfoWindow')
 require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
 

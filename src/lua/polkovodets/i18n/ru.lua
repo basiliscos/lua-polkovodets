@@ -30,11 +30,15 @@ t = {
     ['ui.unit-info.experience']      = 'Опыт',
     ['ui.unit-info.orientation']     = 'Пространственная ориентация',
 
+    -- radial menu
+    ['ui.radial-menu.hex_button']               = 'Меню для гекса',
+    ['ui.radial-menu.general_button']           = 'Общеигровое меню',
+    ['ui.radial-menu.general.end_turn']         = 'Конец хода',
+    ['ui.radial-menu.general.toggle_layer']     = 'Переключить активный уровень (поверхность/воздух)',
+    ['ui.radial-menu.general.toggle_history']   = 'Показать последние действия',
+    ['ui.radial-menu.general.toggle_landscape'] = 'Показать только ландшафт',
+
     -- UI buttons
-    ['ui.button.end_turn']           = 'Конец хода',
-    ['ui.button.toggle_layer']       = 'Переключить активный уровень (поверхность/воздух)',
-    ['ui.button.toggle_history']     = 'Показать последние действия оппонента',
-    ['ui.button.toggle_landscape']   = 'Показать только ландшафт',
     ['ui.button.change_orientation'] = 'Изменить пространсветнную ориентацию соединения',
     ['ui.button.information']        = 'Дополнительная информация',
     ['ui.button.detach']             = 'Открепить соединение',

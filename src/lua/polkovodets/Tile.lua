@@ -245,6 +245,9 @@ function Tile:bind_ctx(context)
         context.state:set_action('default')
         self.engine.reactor:publish("map.update")
         return true
+      else
+        self.engine.interface:add_window('radial_menu', {tile = self, x = x, y = y})
+        return true
       end
     end
   end

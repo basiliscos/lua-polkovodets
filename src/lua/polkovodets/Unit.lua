@@ -165,64 +165,16 @@ function Unit:bind_ctx(context)
     w = unit_flag.w,
     h = unit_flag.h,
   }
-  local unit_flag_hilight_image = theme.unit_flag_hilight
-  local do_hilight_unit_flag = false
-  local update_unit_flag = function(x, y)
-    do_hilight_unit_flag =  unit_flag_region:is_over(x, y)
-    return do_hilight_unit_flag
-  end
+
   local mouse = context.state:get_mouse()
-  update_unit_flag(mouse.x, mouse.y)
 
   -- unit state
   local size = self.definition.size
   local efficiency = self.data.efficiency
   local unit_state = theme:get_unit_state_icon(size, efficiency)
 
-  -- change attack possibility
-  local change_attack
-  local change_attack_region
-  local attack_kinds
-  local attack_kind_idx = 1
-  local is_over_change_attack_icon = function(x, y)
-    return change_attack and change_attack_region:is_over(x, y)
-  end
-
   local u = context.state:get_selected_unit()
   local active_tile = context.state:get_active_tile()
-
-  local update_attack_kinds_at = function(tile)
-    if (u) then
-      local actions_map = u.data.actions_map
-      if (actions_map and actions_map.attack[tile.id]) then
-        attack_kinds = u:get_attack_kinds(tile)
-        if (#attack_kinds > 1) then
-          local icon = theme.change_attack_type.available
-          local change_attack_x = x + (hex_w - hex_x_offset)
-          change_attack = {
-            icon = icon,
-            dst = {
-              x = change_attack_x,
-              y = y,
-              w = icon.w,
-              h = icon.h,
-            },
-          }
-          change_attack_region = Region.create(change_attack_x, y, change_attack_x + icon.w, y + icon.h)
-          local mouse = context.state:get_mouse()
-          local icon_kind = is_over_change_attack_icon(mouse.x, mouse.y)
-            and 'hilight' or 'available'
-          change_attack.icon = theme.change_attack_type[icon_kind]
-        end
-      end
-    end
-  end
-  if (self.tile == active_tile) then
-    update_attack_kinds_at(self.tile)
-  end
-
-  if (u and active_tile.id == self.tile.id) then
-  end
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
 
@@ -250,9 +202,6 @@ function Unit:bind_ctx(context)
 
     -- draw unit nation flag
     assert(sdl_renderer:copy(unit_flag.texture, nil, unit_flag_dst))
-    if (do_hilight_unit_flag) then
-      assert(sdl_renderer:copy(unit_flag_hilight_image.texture, nil, unit_flag_dst))
-    end
 
     -- draw unit state
     assert(sdl_renderer:copy(
@@ -266,34 +215,14 @@ function Unit:bind_ctx(context)
       }
     ))
 
-    -- draw unit change attack icon
-    if (change_attack) then
-      assert(sdl_renderer:copy(
-        change_attack.icon.texture,
-        nil,
-        change_attack.dst
-      ))
-    end
-
   end
 
   local mouse_click = function(event)
     if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
-      -- check if the click has been performed on unit flag, then
-      -- show unit info
-      if (unit_flag_region:is_over(event.x, event.y)) then
-        self.engine.interface:add_window('unit_info_window', self)
-        return true
-      end
       -- may be we click on other unit to select it
       local action = context.state:get_action()
       if (action == 'default') then
-        if (is_over_change_attack_icon(event.x, event.y)) then
-          attack_kind_idx = attack_kind_idx + 1
-          if (attack_kind_idx > #attack_kinds) then attack_kind_idx = 1 end
-          self.engine.state:set_action(attack_kinds[attack_kind_idx])
-          return true
-        elseif (self.engine.state:get_current_player() == self.player) then
+        if (self.engine.state:get_current_player() == self.player) then
           context.state:set_selected_unit(self)
           print("selected unit " .. self.id)
           self:update_actions_map()
@@ -328,9 +257,7 @@ function Unit:bind_ctx(context)
         action = 'merge'
       elseif (actions_map and actions_map.attack[tile_id]) then
         local tile = map.tile_for[tile_id]
-        change_attack = nil
-        update_attack_kinds_at(tile)
-        action = attack_kinds[attack_kind_idx]
+        action = 'battle'
       elseif (actions_map and actions_map.move[tile_id]) then
         -- will be processed by tile
         if (self:get_layer() ~= u:get_movement_layer()) then
@@ -338,28 +265,10 @@ function Unit:bind_ctx(context)
         end
       end
 
-      -- update attack kind possibility
-      if (change_attack) then
-        local is_over = is_over_change_attack_icon(x, y)
-        local icon_kind = is_over and 'hilight' or 'available'
-        if (is_over) then
-          action = 'default'
-          hint   = self.engine:translate('map.change-attack-kind')
-        end
-        change_attack.icon = theme.change_attack_type[icon_kind]
-      end
-      if (update_unit_flag(x, y)) then
-        action = 'default'
-        hint   = self.engine:translate('map.unit_info')
-      end
-
       self.engine.state:set_action(action)
       self.engine.state:set_mouse_hint(hint)
       -- print("move mouse over " .. tile_id .. ", action: "  .. action)
       return true
-    else
-      -- remove unit flag hilight
-      update_unit_flag(x, y)
     end
   end
 

@@ -62,8 +62,56 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         move           = renderer:load_texture(theme_dir .. '/arrow-movement.png'),
         battle         = renderer:load_texture(theme_dir .. '/battle-icon.png'),
         battle_hilight = renderer:load_texture(theme_dir .. '/battle-icon-hilighted.png'),
+
    }
-   self.unit_flag_hilight =  renderer:load_texture(theme_dir .. '/unit-flag-hilight.png')
+   self.radial_menu = {
+    inner_buttons = {
+      up   = {
+        available = renderer:load_texture(theme_dir .. '/radial-menu/hex-available.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/radial-menu/hex-hilight.png'),
+        active    = renderer:load_texture(theme_dir .. '/radial-menu/hex-active.png'),
+      },
+      down = {
+        available = renderer:load_texture(theme_dir .. '/radial-menu/general-available.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/radial-menu/general-hilight.png'),
+        active    = renderer:load_texture(theme_dir .. '/radial-menu/general-active.png'),
+      },
+    },
+    background = renderer:load_texture(theme_dir .. '/radial-menu/background.png'),
+    sectors = {
+      renderer:load_texture(theme_dir .. '/radial-menu/01.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/02.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/03.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/04.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/05.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/06.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/07.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/08.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/09.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/10.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/11.png'),
+      renderer:load_texture(theme_dir .. '/radial-menu/12.png'),
+    },
+   }
+   self.actions = {
+      end_turn = {
+        available = renderer:load_texture(theme_dir .. '/actions/end-turn.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/end-turn-hilight.png'),
+      },
+      switch_layer = {
+        air  = renderer:load_texture(theme_dir .. '/actions/layer-air.png'),
+        land = renderer:load_texture(theme_dir .. '/actions/layer-land.png'),
+      },
+      toggle_history = {
+        on  = renderer:load_texture(theme_dir .. '/actions/history-on.png'),
+        off = renderer:load_texture(theme_dir .. '/actions/history-off.png'),
+      },
+      toggle_landscape = {
+        on  = renderer:load_texture(theme_dir .. '/actions/landscape-on.png'),
+        off = renderer:load_texture(theme_dir .. '/actions/landscape-off.png'),
+      },
+   }
+   self.unit_flag_hilight = renderer:load_texture(theme_dir .. '/unit-flag-hilight.png')
    self.change_attack_type = {
         available = renderer:load_texture(theme_dir .. '/change-attack-type.png'),
         hilight   = renderer:load_texture(theme_dir .. '/change-attack-type-hilighted.png'),
