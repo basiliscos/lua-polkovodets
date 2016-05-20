@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015,2016 Ivan Baidakou
+Copyright (C) 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -77,11 +77,11 @@ function RadialMenu:_generic_actions()
   local layer_switch_button = {
     policy = "toggle",
     hint = 'ui.radial-menu.general.toggle_layer',
-    state = "land",
-    states = {"land", "air"},
+    state = (state:get_active_layer() == 'air') and 'air' or "surface",
+    states = {"surface", "air"},
     images = {
-      land = theme.actions.switch_layer.land,
-      air   = theme.actions.switch_layer.air,
+      surface = theme.actions.switch_layer.land,
+      air     = theme.actions.switch_layer.air,
     },
     callback = function()
       local new_value = (state:get_active_layer() == 'air') and 'surface' or 'air'
@@ -98,7 +98,7 @@ function RadialMenu:_generic_actions()
   local toggle_history_button = {
     policy = "toggle",
     hint = 'ui.radial-menu.general.toggle_history',
-    state = "off",
+    state = state:get_recent_history() and 'on' or 'off',
     states = {"on", "off"},
     images = {
       on  = theme.actions.toggle_history.on,
@@ -120,7 +120,7 @@ function RadialMenu:_generic_actions()
   local toggle_landscape_button = {
     policy = "toggle",
     hint = 'ui.radial-menu.general.toggle_landscape',
-    state = "off",
+    state = state:get_landscape_only() and "on" or "off",
     states = {"on", "off"},
     images = {
       on  = theme.actions.toggle_landscape.on,
