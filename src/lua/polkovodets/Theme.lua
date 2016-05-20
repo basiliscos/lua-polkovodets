@@ -110,8 +110,16 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         on  = renderer:load_texture(theme_dir .. '/actions/landscape-on.png'),
         off = renderer:load_texture(theme_dir .. '/actions/landscape-off.png'),
       },
+      select_unit = {
+        available = renderer:load_texture(theme_dir .. '/actions/select-unit.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/select-unit-hilight.png'),
+      },
+      information = {
+        available = renderer:load_texture(theme_dir .. '/actions/information.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/information-hilight.png'),
+      },
+
    }
-   self.unit_flag_hilight = renderer:load_texture(theme_dir .. '/unit-flag-hilight.png')
    self.change_attack_type = {
         available = renderer:load_texture(theme_dir .. '/change-attack-type.png'),
         hilight   = renderer:load_texture(theme_dir .. '/change-attack-type-hilighted.png'),

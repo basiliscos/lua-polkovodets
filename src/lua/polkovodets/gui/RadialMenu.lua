@@ -47,6 +47,60 @@ function RadialMenu.create(engine, tile_context)
   return setmetatable(o, RadialMenu)
 end
 
+function RadialMenu:_hex_actions()
+  local engine = self.engine
+  local state = engine.state
+  local theme = engine.gear:get("theme")
+  local my_unit = state:get_selected_unit()
+  local tile = self.tile_context.tile
+  local tile_units = tile:get_all_units(function() return true end)
+  local current_layer = state:get_active_layer()
+  local current_player = state:get_current_player()
+
+  local list = {}
+  if (not my_unit) then
+    -- if no unit selected, and there are units on tile
+    -- the only possible action is to select other units on tile
+
+    -- nothing is possible to do
+    if (state:get_landscape_only()) then return list end
+
+    _.each(tile_units, function(idx, unit)
+      local action
+      if (unit.player == current_player) then
+        action = {
+          policy = "click",
+          hint = engine:translate('ui.radial-menu.hex.select_unit', {name = unit.name}),
+          state = "available",
+          images = {
+            available = theme.actions.select_unit.available,
+            hilight   = theme.actions.select_unit.hilight,
+          },
+          callback = function()
+            unit:update_actions_map()
+            state:set_selected_unit(unit)
+          end
+        }
+      else
+        action = {
+          policy = "click",
+          hint = engine:translate('ui.radial-menu.hex.unit_info', {name = unit.name}),
+          state = "available",
+          images = {
+            available = theme.actions.information.available,
+            hilight   = theme.actions.information.hilight,
+          },
+          callback = function()
+            print("info about unit")
+          end
+        }
+      end
+      table.insert(list, action)
+    end)
+
+    return list
+  end
+end
 
 function RadialMenu:_generic_actions()
   local engine = self.engine
@@ -58,7 +112,7 @@ function RadialMenu:_generic_actions()
   -- end button
   local end_button = {
     policy = "click",
-    hint = 'ui.radial-menu.general.end_turn',
+    hint = engine:translate('ui.radial-menu.general.end_turn'),
     state = "available",
     images = {
       available = theme.actions.end_turn.available,
@@ -68,15 +122,12 @@ function RadialMenu:_generic_actions()
       engine:end_turn()
     end
   }
-  end_button.get_texture = function()
-    return end_button.images[end_button.state].texture
-  end
   table.insert(list, end_button)
 
   -- layer switch button
   local layer_switch_button = {
-    policy = "toggle",
-    hint = 'ui.radial-menu.general.toggle_layer',
+    po1licy = "toggle",
+    hint = engine:translate('ui.radial-menu.general.toggle_layer'),
     state = (state:get_active_layer() == 'air') and 'air' or "surface",
     states = {"surface", "air"},
     images = {
@@ -89,15 +140,12 @@ function RadialMenu:_generic_actions()
       -- print("active layer " .. new_value)
     end
   }
-  layer_switch_button.get_texture = function()
-    return layer_switch_button.images[layer_switch_button.state].texture
-  end
   table.insert(list, layer_switch_button)
 
   -- toggle history button
   local toggle_history_button = {
     policy = "toggle",
-    hint = 'ui.radial-menu.general.toggle_history',
+    hint = engine:translate('ui.radial-menu.general.toggle_history'),
     state = state:get_recent_history() and 'on' or 'off',
     states = {"on", "off"},
     images = {
@@ -111,15 +159,12 @@ function RadialMenu:_generic_actions()
       state:set_recent_history(new_value)
     end
   }
-  toggle_history_button.get_texture = function()
-    return toggle_history_button.images[toggle_history_button.state].texture
-  end
   table.insert(list, toggle_history_button)
 
   -- toggle landscape button
   local toggle_landscape_button = {
     policy = "toggle",
-    hint = 'ui.radial-menu.general.toggle_landscape',
+    hint = engine:translate('ui.radial-menu.general.toggle_landscape'),
     state = state:get_landscape_only() and "on" or "off",
     states = {"on", "off"},
     images = {
@@ -132,9 +177,6 @@ function RadialMenu:_generic_actions()
       state:set_landscape_only(new_value)
     end
   }
-  toggle_landscape_button.get_texture = function()
-    return toggle_landscape_button.images[toggle_landscape_button.state].texture
-  end
   table.insert(list, toggle_landscape_button)
 
   return list
@@ -182,7 +224,7 @@ function RadialMenu:_construct_gui()
     inner = {
       up     = {
         state = "available",
-        hint  = 'ui.radial-menu.hex_button',
+        hint  = engine:translate('ui.radial-menu.hex_button'),
         image = {
           available = up.available,
           hilight   = up.hilight,
@@ -199,7 +241,7 @@ function RadialMenu:_construct_gui()
       },
       down   = {
         state = "available",
-        hint  = 'ui.radial-menu.general_button',
+        hint  = engine:translate('ui.radial-menu.general_button'),
         image = down,
         image = {
           available = down.available,
@@ -220,15 +262,18 @@ function RadialMenu:_construct_gui()
     w = w,
     h = h,
   }
-  gui.inner.active = gui.inner.down
-  gui.inner.active.state = 'active'
 
+  local hex_actions = self:_hex_actions()
   local generic_actions = self:_generic_actions()
   local delta_angle = 2 * math.pi / #theme.radial_menu.sectors
   local image_r = bg_r + (bg_R - bg_r)/2 + 3
   local image_sample = theme.actions.end_turn.available
 
-  gui.inner.down.actions = _.map( generic_actions, function(idx, action)
+  gui.inner.active = (#hex_actions > 0) and gui.inner.up or gui.inner.down
+  gui.inner.active.state = 'active'
+
+  -- creates box & is_over callback
+  local prepare_action = function(idx, action)
     local angle = math.pi/2 - idx * delta_angle + delta_angle / 2
     -- print("angle = " .. math.deg(angle) .. ", delta =  " .. math.deg(delta_angle))
     local c_x = image_r * math.cos(angle)
@@ -242,6 +287,8 @@ function RadialMenu:_construct_gui()
     }
     -- print(inspect(action))
     action.box = box
+
+    -- is over function. (x, y) are in radial menu coordinates
     action.is_over = function(x, y)
       local dx, dy = x - center_x, y - center_y
 
@@ -258,10 +305,17 @@ function RadialMenu:_construct_gui()
       -- print(string.format("%s : %f, %f", result, d_angle, delta_angle))
       return result
     end
-    return action
-  end)
 
-  gui.inner.up.actions = {}
+    -- returns current texture
+    action.get_texture = function()
+      return action.images[action.state].texture
+    end
+
+    return action
+  end
+
+  gui.inner.down.actions = _.map(generic_actions, prepare_action)
+  gui.inner.up.actions = _.map(hex_actions, prepare_action)
 
   return gui
 end
@@ -300,7 +354,7 @@ function RadialMenu:_on_ui_update(show)
     local down_box = adjust_box(down.box)
 
     _.each(gui.inner.up.actions, function(idx, action)
-      aciton.box = adjust_box(action.box)
+      action.box = adjust_box(action.box)
     end)
     _.each(gui.inner.down.actions, function(idx, action)
       action.box = adjust_box(action.box)
@@ -351,11 +405,11 @@ function RadialMenu:_on_ui_update(show)
               region.state = new_state
             end
             if (is_over) then
-              hint = engine:translate(region.hint)
+              hint = region.hint
             else
               for _, action in pairs(gui.inner.active.actions) do
                 if (action.is_over(my_x, my_y)) then
-                  hint = engine:translate(action.hint)
+                  hint = action.hint
                   if (action.policy == 'click') then
                     action.state = 'hilight'
                   end
@@ -382,6 +436,7 @@ function RadialMenu:_on_ui_update(show)
           end
           for _, action in pairs(gui.inner.active.actions) do
             if (action.is_over(my_x, my_y)) then
+              -- special handle of toggle policy
               if (action.policy == 'toggle') then
                 local state_index
                 for idx, state in pairs(action.states) do

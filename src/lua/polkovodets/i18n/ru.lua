@@ -38,6 +38,9 @@ t = {
     ['ui.radial-menu.general.toggle_history']   = 'Показать последние действия',
     ['ui.radial-menu.general.toggle_landscape'] = 'Показать только ландшафт',
 
+    ['ui.radial-menu.hex.select_unit'] = 'Выбрать соединиенне (%{name})',
+    ['ui.radial-menu.hex.unit_info']   = 'Информация соединиенне (%{name})',
+
     -- UI buttons
     ['ui.button.change_orientation'] = 'Изменить пространсветнную ориентацию соединения',
     ['ui.button.information']        = 'Дополнительная информация',
