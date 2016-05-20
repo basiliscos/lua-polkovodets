@@ -91,15 +91,33 @@ function RadialMenu:_hex_actions()
             hilight   = theme.actions.information.hilight,
           },
           callback = function()
-            print("info about unit")
+            engine.interface:add_window('unit_info_window', unit)
           end
         }
       end
       table.insert(list, action)
     end)
+  else
+    -- we have some selected unit, which belongs to the curren player
 
-    return list
+    -- allow information clicke on the tile with selected unit
+    if (my_unit.tile == tile) then
+      table.insert(list, {
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_info', {name = my_unit.name}),
+        state = "available",
+        images = {
+          available = theme.actions.information.available,
+          hilight   = theme.actions.information.hilight,
+        },
+        callback = function()
+          engine.interface:add_window('unit_info_window', my_unit)
+        end
+      })
+    end
+
   end
+  return list
 end
 
 function RadialMenu:_generic_actions()
@@ -434,6 +452,7 @@ function RadialMenu:_on_ui_update(show)
               region.state = 'active'
             end
           end
+          local click_aciton = function() end
           for _, action in pairs(gui.inner.active.actions) do
             if (action.is_over(my_x, my_y)) then
               -- special handle of toggle policy
@@ -452,10 +471,17 @@ function RadialMenu:_on_ui_update(show)
                 end
                 action.state = action.states[state_index]
               end
-              action.callback()
-              engine.interface:remove_window(self)
+              click_aciton = function()
+                engine.interface:remove_window(self)
+                action.callback()
+              end
             end
           end
+
+          -- we have to close this popup first, before doing action, as
+          -- additional popups might appear
+          click_aciton()
+
           -- stop further event propagation
           return true
         else

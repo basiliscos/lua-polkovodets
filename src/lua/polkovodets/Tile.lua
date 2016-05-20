@@ -239,16 +239,8 @@ function Tile:bind_ctx(context)
         return true
       end
     elseif (event.button == 'right') then
-      local u = context.state:get_selected_unit()
-      if (u) then
-        context.state:set_selected_unit(nil)
-        context.state:set_action('default')
-        self.engine.reactor:publish("map.update")
-        return true
-      else
-        self.engine.interface:add_window('radial_menu', {tile = self, x = x, y = y})
-        return true
-      end
+      self.engine.interface:add_window('radial_menu', {tile = self, x = x, y = y})
+      return true
     end
   end
 
