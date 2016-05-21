@@ -295,4 +295,157 @@ function Tile:is_capable(flag_mask)
   return terrain:is_capable(self.data.terrain_type.id, flag_mask)
 end
 
+function Tile:get_possible_actions()
+  local engine = self.engine
+  local state = engine.state
+  local theme = engine.gear:get("theme")
+  local my_unit = state:get_selected_unit()
+  local tile_units = self:get_all_units(function() return true end)
+  local current_layer = state:get_active_layer()
+  local current_player = state:get_current_player()
+
+  local list = {}
+  local my_units_selector = function(_, unit) return unit.player == current_player end
+
+  -- we can't much in view-only mode
+  if (state:get_landscape_only()) then return list end
+
+  print("[TODO] battles history view")
+
+  if (not my_unit) then
+    -- if no unit selected, and there are units on tile
+    -- the only possible action is to select other units of the current player
+    -- or view information about units of the other player(s)
+
+    _.each(_.select(tile_units, my_units_selector), function(idx, unit)
+      local action = {
+        policy = "click",
+        priority = 10 * idx,
+        hint = engine:translate('ui.radial-menu.hex.select_unit', {name = unit.name}),
+        state = "available",
+        images = {
+          available = theme.actions.select_unit.available,
+          hilight   = theme.actions.select_unit.hilight,
+        },
+        callback = function()
+          unit:update_actions_map()
+          state:set_selected_unit(unit)
+        end
+      }
+      table.insert(list, action)
+    end)
+
+    _.each(_.reject(tile_units, my_units_selector), function(idx, unit)
+      local action = {
+        policy = "click",
+        priority = 100 * idx,
+        hint = engine:translate('ui.radial-menu.hex.unit_info', {name = unit.name}),
+        state = "available",
+        images = {
+          available = theme.actions.information.available,
+          hilight   = theme.actions.information.hilight,
+        },
+        callback = function()
+          engine.interface:add_window('unit_info_window', unit)
+        end
+      }
+      table.insert(list, action)
+    end)
+
+  else
+    -- we have some selected unit, which belongs to the curren player
+
+    -- allow information click on the tile with selected unit
+    if (my_unit.tile == self) then
+
+      -- unit info
+      table.insert(list, {
+        priority = 10,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_info', {name = my_unit.name}),
+        state = "available",
+        images = {
+          available = theme.actions.information.available,
+          hilight   = theme.actions.information.hilight,
+        },
+        callback = function()
+          engine.interface:add_window('unit_info_window', my_unit)
+        end
+      })
+
+      -- change orientation
+      table.insert(list, {
+        priority = 10,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_rotate'),
+        state = "available",
+        images = {
+          available = theme.actions.change_orientation.available,
+          hilight   = theme.actions.change_orientation.hilight,
+        },
+        callback = function()
+          my_unit:change_orientation()
+        end
+      })
+
+      -- detach attached units
+      _.each(my_unit.data.attached, function(idx, unit)
+        table.insert(list, {
+          priority = 10 + idx,
+          policy = "click",
+          hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
+          state = "available",
+          images = {
+            available = theme.actions.detach.available,
+            hilight   = theme.actions.detach.hilight,
+          },
+          callback = function()
+            unit:update_actions_map()
+            state:set_selected_unit(unit)
+          end
+        })
+      end)
+    end
+
+    -- unit action: move to the tile. We cannot move unit here if we we can merge there.
+    if (my_unit.data.actions_map.move[self.id] and not my_unit.data.actions_map.merge[self.id]) then
+      table.insert(list, {
+        priority = 20,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_move', {x = self.data.x, y = self.data.y}),
+        state = "available",
+        images = {
+          available = theme.actions.move.available,
+          hilight   = theme.actions.move.hilight,
+        },
+        callback = function()
+          my_unit:move_to(self)
+        end
+      })
+    end
+
+    -- unit action: merge
+    if (my_unit.data.actions_map.merge[self.id]) then
+      table.insert(list, {
+        priority = 30,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_merge'),
+        state = "available",
+        images = {
+          available = theme.actions.merge.available,
+          hilight   = theme.actions.merge.hilight,
+        },
+        callback = function()
+          my_unit:merge_at(self)
+        end
+      })
+    end
+
+  end
+
+  table.sort(list, function(a, b) return a.priority < b.priority end)
+
+  return list
+end
+
 return Tile

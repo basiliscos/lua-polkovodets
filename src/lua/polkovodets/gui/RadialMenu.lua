@@ -48,76 +48,7 @@ function RadialMenu.create(engine, tile_context)
 end
 
 function RadialMenu:_hex_actions()
-  local engine = self.engine
-  local state = engine.state
-  local theme = engine.gear:get("theme")
-  local my_unit = state:get_selected_unit()
-  local tile = self.tile_context.tile
-  local tile_units = tile:get_all_units(function() return true end)
-  local current_layer = state:get_active_layer()
-  local current_player = state:get_current_player()
-
-  local list = {}
-  if (not my_unit) then
-    -- if no unit selected, and there are units on tile
-    -- the only possible action is to select other units on tile
-
-    -- nothing is possible to do
-    if (state:get_landscape_only()) then return list end
-
-    _.each(tile_units, function(idx, unit)
-      local action
-      if (unit.player == current_player) then
-        action = {
-          policy = "click",
-          hint = engine:translate('ui.radial-menu.hex.select_unit', {name = unit.name}),
-          state = "available",
-          images = {
-            available = theme.actions.select_unit.available,
-            hilight   = theme.actions.select_unit.hilight,
-          },
-          callback = function()
-            unit:update_actions_map()
-            state:set_selected_unit(unit)
-          end
-        }
-      else
-        action = {
-          policy = "click",
-          hint = engine:translate('ui.radial-menu.hex.unit_info', {name = unit.name}),
-          state = "available",
-          images = {
-            available = theme.actions.information.available,
-            hilight   = theme.actions.information.hilight,
-          },
-          callback = function()
-            engine.interface:add_window('unit_info_window', unit)
-          end
-        }
-      end
-      table.insert(list, action)
-    end)
-  else
-    -- we have some selected unit, which belongs to the curren player
-
-    -- allow information clicke on the tile with selected unit
-    if (my_unit.tile == tile) then
-      table.insert(list, {
-        policy = "click",
-        hint = engine:translate('ui.radial-menu.hex.unit_info', {name = my_unit.name}),
-        state = "available",
-        images = {
-          available = theme.actions.information.available,
-          hilight   = theme.actions.information.hilight,
-        },
-        callback = function()
-          engine.interface:add_window('unit_info_window', my_unit)
-        end
-      })
-    end
-
-  end
-  return list
+  return self.tile_context.tile:get_possible_actions()
 end
 
 function RadialMenu:_generic_actions()

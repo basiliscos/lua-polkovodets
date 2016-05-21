@@ -110,7 +110,22 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         available = renderer:load_texture(theme_dir .. '/actions/information.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/information-hilight.png'),
       },
-
+      move = {
+        available = renderer:load_texture(theme_dir .. '/actions/move.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/move-hilight.png'),
+      },
+      merge = {
+        available = renderer:load_texture(theme_dir .. '/actions/merge.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/merge-hilight.png'),
+      },
+      detach = {
+        available = renderer:load_texture(theme_dir .. '/actions/detach.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/detach-hilight.png'),
+      },
+      change_orientation = {
+        available = renderer:load_texture(theme_dir .. '/actions/change-orientation.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/change-orientation-hilight.png'),
+      },
    }
    self.change_attack_type = {
         available = renderer:load_texture(theme_dir .. '/change-attack-type.png'),

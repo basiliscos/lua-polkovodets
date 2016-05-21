@@ -22,7 +22,6 @@ local _ = require ("moses")
 local Image = require 'polkovodets.utils.Image'
 
 -- preload
-local UnitPanel = require ('polkovodets.gui.UnitPanel')
 local Cursor = require ('polkovodets.gui.Cursor')
 require ('polkovodets.gui.BattleDetailsWindow')
 require ('polkovodets.gui.BattleSelectorPopup')
@@ -55,10 +54,6 @@ function Interface.create(engine)
     }
   }
   setmetatable(o, Interface)
-
-  local unit_panel = UnitPanel.create(engine)
-  table.insert(o.drawing.objects, unit_panel)
-  o.drawing.obj_by_type.unit_panel = unit_panel
 
   engine.interface = o
 
