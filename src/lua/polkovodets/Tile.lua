@@ -441,6 +441,24 @@ function Tile:get_possible_actions()
       })
     end
 
+    -- unit special action: construction
+    local special_actions = my_unit.data.actions_map.special[self.id]
+    if (special_actions and special_actions.build) then
+      table.insert(list, {
+        priority = 35,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_construct'),
+        state = "available",
+        images = {
+          available = theme.actions.construction.available,
+          hilight   = theme.actions.construction.hilight,
+        },
+        callback = function()
+          my_unit:special_action(self, 'build')
+        end
+      })
+    end
+
   end
 
   table.sort(list, function(a, b) return a.priority < b.priority end)

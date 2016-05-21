@@ -126,6 +126,10 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         available = renderer:load_texture(theme_dir .. '/actions/change-orientation.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/change-orientation-hilight.png'),
       },
+      construction = {
+        available = renderer:load_texture(theme_dir .. '/actions/construction.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/construction-hilight.png'),
+      },
    }
    self.change_attack_type = {
         available = renderer:load_texture(theme_dir .. '/change-attack-type.png'),

@@ -38,12 +38,13 @@ t = {
     ['ui.radial-menu.general.toggle_history']   = 'Показать последние действия',
     ['ui.radial-menu.general.toggle_landscape'] = 'Показать только ландшафт',
 
-    ['ui.radial-menu.hex.select_unit'] = 'Выбрать соединиенне (%{name})',
-    ['ui.radial-menu.hex.unit_info']   = 'Информация соединиенне (%{name})',
-    ['ui.radial-menu.hex.unit_move']   = 'Переместить соединение в гекс %{x}:%{y}',
-    ['ui.radial-menu.hex.unit_merge']  = 'Прикрепить соединение',
-    ['ui.radial-menu.hex.unit_detach'] = 'Открепить соединение (%{name})',
-    ['ui.radial-menu.hex.unit_rotate'] = 'Изменить пространсветнную ориентацию',
+    ['ui.radial-menu.hex.select_unit']    = 'Выбрать соединиенне (%{name})',
+    ['ui.radial-menu.hex.unit_info']      = 'Информация соединиенне (%{name})',
+    ['ui.radial-menu.hex.unit_move']      = 'Переместить соединение в гекс %{x}:%{y}',
+    ['ui.radial-menu.hex.unit_merge']     = 'Прикрепить соединение',
+    ['ui.radial-menu.hex.unit_detach']    = 'Открепить соединение (%{name})',
+    ['ui.radial-menu.hex.unit_rotate']    = 'Изменить пространсветнную ориентацию',
+    ['ui.radial-menu.hex.unit_construct'] = 'Строительство инфраструктуры',
 
     -- UI buttons
     ['ui.button.change_orientation'] = 'Изменить пространсветнную ориентацию соединения',
