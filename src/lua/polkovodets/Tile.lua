@@ -114,7 +114,7 @@ function Tile:bind_ctx(context)
 
   local dst = {x = x, y = y, w = hex_w, h = hex_h}
   local grid_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
-  local image = terrain:get_hex_image(self.data.terrain_name, weather, self.data.image_idx)
+  local image = terrain:get_hex_image(self.data.terrain_type.id, weather, self.data.image_idx)
 
 
   local landscape_only = context.state:get_landscape_only()
