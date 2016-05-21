@@ -46,20 +46,11 @@ function State:set_active_tile(tile)
 end
 function State:get_active_tile() return self._active_tile end
 
-
-function State:set_action(value)
-  self._action = value
-  self.reactor:publish('action.change', value)
-end
-function State:get_action() return self._action end
-
-
 function State:set_mouse_hint(str)
   self._mouse_hint = str
   self.reactor:publish("mouse-hint.change", str)
 end
 function State:get_mouse_hint() return self._mouse_hint end
-
 
 function State:set_mouse(x, y)
   self._mouse.x = x

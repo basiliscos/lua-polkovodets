@@ -27,16 +27,8 @@ end
 function Theme:initialize(theme_data, renderer, data_dirs)
    assert(theme_data.name)
    assert(theme_data.active_hex)
-   assert(theme_data.cursors.path)
-   assert(theme_data.cursors.size)
 
-   local cursors_file = theme_data.cursors.path
    local theme_dir = data_dirs.themes .. '/' .. theme_data.name
-   local cursors_path =  theme_dir .. '/' .. cursors_file
-   local cursor_size = theme_data.cursors.size
-
-   local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, cursor_size, 0) end
-   renderer:load_joint_texture(cursors_path, iterator_factory)
 
    local active_hex_font = theme_dir .. '/' .. theme_data.active_hex.font
    local active_hex_size = assert(theme_data.active_hex.font_size)
@@ -57,13 +49,13 @@ function Theme:initialize(theme_data, renderer, data_dirs)
    self.engine   = engine
    self.renderer = renderer
    self.data     = theme_data
-   self.cursors  = cursors_path
    self.history  = {
         move           = renderer:load_texture(theme_dir .. '/arrow-movement.png'),
         battle         = renderer:load_texture(theme_dir .. '/battle-icon.png'),
         battle_hilight = renderer:load_texture(theme_dir .. '/battle-icon-hilighted.png'),
 
    }
+   self.cursor = renderer:load_texture(theme_dir .. '/cursor.png')
    self.radial_menu = {
     inner_buttons = {
       up   = {
@@ -222,11 +214,6 @@ function Theme:get_unit_state_icon(size, efficiency)
    local key = size .. '-' .. efficiency
    local icon = assert(self.unit_states[key], 'unit state ' .. key .. ' is n/a')
    return icon
-end
-
-function Theme:get_cursor(kind)
-   local idx = assert(self.data.cursors.actions[kind], "cursor " .. kind .. " not found")
-   return self.renderer:get_joint_texture(self.cursors, idx)
 end
 
 return Theme

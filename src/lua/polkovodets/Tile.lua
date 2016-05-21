@@ -220,41 +220,19 @@ function Tile:bind_ctx(context)
   local mouse_click = function(event)
     if (event.tile_id == self.id and event.button == 'left') then
       local u = context.state:get_selected_unit()
-      local action = context.state:get_action()
-      if (action == 'default') then
-        if (u and (not u.tile or (u.tile.id ~= self.id))) then
-          print("unselecting unit")
-          context.state:set_selected_unit(nil)
-          self.engine.reactor:publish("map.update")
-          return true
-        end
-      else
-        local actor = assert(context.state:get_selected_unit())
-        local method_for = {
-          move  = 'move_to',
-          land  = 'land_to',
-        }
-        local method = assert(method_for[action])
-        actor[method](actor, self, action)
-        return true
+      if (u and (not u.tile or (u.tile.id ~= self.id))) then
+        context.state:set_selected_unit(nil)
+        self.engine.reactor:publish("map.update")
       end
     elseif (event.button == 'right') then
       self.engine.interface:add_window('radial_menu', {tile = self, x = x, y = y})
-      return true
     end
+    return true
   end
 
   local mouse_move = function(event)
     if (event.tile_id == self.id) then
-      local u = context.state:get_selected_unit()
-      local action = 'default'
-      if (u and u.data.actions_map.landing[self.id]) then
-        action = 'land'
-      elseif (u and u.data.actions_map.move[self.id]) then
-        action = 'move'
-      end
       context.state:set_mouse_hint('')
-      context.state:set_action(action)
       return true
     end
   end

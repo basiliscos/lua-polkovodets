@@ -56,7 +56,7 @@ function Engine.create(gear, language)
     'unit.selected', 'unit.change-spotting',
     'current-player.change',
     'mouse-hint.change', 'map.active_tile.change',
-    'action.change', 'mouse-position.change',
+    'mouse-position.change',
     'map.update', 'history.update',
     'ui.update',
     'full.refresh'
@@ -116,20 +116,6 @@ function _fill_initial_data(gear)
       color         = 0xFFFFFF,
       font_size     = 15,
       font          = 'DroidSansMono.ttf'
-    },
-    cursors = {
-      path = 'cursors.bmp',
-      size = 22,
-      actions = {
-        ['default'       ] = 1,
-        ['move'          ] = 2,
-        ['merge'         ] = 3,
-        ['battle'        ] = 6,
-        ['fire/artillery'] = 4,
-        ['fire/anti-air' ] = 7,
-        ['fire/bombing'  ] = 5,
-        ['land'          ] = 8,
-      }
     },
   })
 

@@ -38,13 +38,13 @@ function Cursor:bind_ctx(context)
   local state = engine.state
   local sdl_renderer = engine.gear:get("renderer").sdl_renderer
 
+  local cursor = theme.cursor
+  local dst = { x = 0, y = 0, w = cursor.w, h = cursor.h }
+
   local listener = function()
-    local kind = state:get_action()
-    assert(kind, "action (cursor) should be defined")
-    local cursor = theme:get_cursor(kind)
-    local cursor_size = theme.data.cursors.size
     local mouse = state:get_mouse()
-    local dst = { w = cursor_size, h = cursor_size, x = mouse.x, y = mouse.y }
+    dst.x = mouse.x
+    dst.y = mouse.y
     self.drawing.fn = function()
       assert(sdl_renderer:copy(cursor.texture, nil, dst))
     end
@@ -52,16 +52,12 @@ function Cursor:bind_ctx(context)
   listener()
 
   self.drawing.listener = listener
-
-  engine.reactor:subscribe('action.change', listener)
   engine.reactor:subscribe('mouse-position.change', listener)
-
   self.listener = listener
 end
 
 function Cursor:unbind_ctx(context)
   self.drawing.fn = nil
-  self.engine.reactor:unsubscribe('action.change', self.listener)
   self.engine.reactor:unsubscribe('mouse-position.change', self.listener)
 end
 

@@ -532,7 +532,6 @@ function UnitInfoWindow:_on_ui_update(show)
         end
       end
     end
-    engine.state:set_action('default')
     Widget.update_drawer(self, x, y, content_w, content_h)
 
 

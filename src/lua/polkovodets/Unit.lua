@@ -220,54 +220,20 @@ function Unit:bind_ctx(context)
   local mouse_click = function(event)
     if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
       -- may be we click on other unit to select it
-      local action = context.state:get_action()
-      if (action == 'default') then
-        if (self.engine.state:get_current_player() == self.player) then
-          context.state:set_selected_unit(self)
-          print("selected unit " .. self.id)
-          self:update_actions_map()
-          return true
-        end
+      if (self.engine.state:get_current_player() == self.player) then
+        context.state:set_selected_unit(self)
+        self:update_actions_map()
       else
-        local actor = assert(context.state:get_selected_unit())
-        local method_for = {
-          merge              = 'merge_at',
-          battle             = 'attack_on',
-          ["fire/artillery"] = 'attack_on'
-        }
-        -- method might be absent in the case, when we move air unit into the
-        -- tile, occupied by other unit. Then unitst do not interact, and
-        -- action will be performed by underlying tile
-        local method = method_for[action]
-        if (method) then
-          actor[method](actor, self.tile, action)
-          return true
-        end
+        context.state:set_selected_unit(nil)
       end
+      return true
     end
   end
 
   local update_action = function(tile_id, x, y)
     if (tile_id == self.tile.id) then
-      local action = 'default'
-      local u = context.state:get_selected_unit()
-      local actions_map = u and u.data.actions_map
       local hint = self.name
-      if (actions_map and actions_map.merge[tile_id]) then
-        action = 'merge'
-      elseif (actions_map and actions_map.attack[tile_id]) then
-        local tile = map.tile_for[tile_id]
-        action = 'battle'
-      elseif (actions_map and actions_map.move[tile_id]) then
-        -- will be processed by tile
-        if (self:get_layer() ~= u:get_movement_layer()) then
-          return false
-        end
-      end
-
-      self.engine.state:set_action(action)
       self.engine.state:set_mouse_hint(hint)
-      -- print("move mouse over " .. tile_id .. ", action: "  .. action)
       return true
     end
   end

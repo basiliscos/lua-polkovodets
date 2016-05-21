@@ -84,9 +84,6 @@ function Button:bind_ctx(context)
     if (self.drawing.region:is_over(event.x, event.y)) then
       local hint = context.state:get_mouse_hint()
       if (hint ~= self.data.hint) then context.state:set_mouse_hint(self.data.hint) end
-      if (context.state:get_action() ~= 'default') then
-        context.state:set_action('default')
-      end
       return true
     end
   end
