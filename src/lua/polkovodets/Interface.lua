@@ -99,7 +99,33 @@ function Interface:bind_ctx(context)
         h = my_label.h,
       }
 
+      local actions = tile:get_possible_actions()
+      local action_hints_region
+      local sample_icon = theme.actions.end_turn.available
+      local actions_x, actions_y = margin + padding, h - (margin + padding + sample_icon.h)
+      if (#actions > 0) then
+        action_hints_region = {
+          x = actions_x,
+          y = actions_y,
+          w = padding + (#actions * (sample_icon.w + padding)),
+          h = sample_icon.h + padding,
+        }
+      end
+
        draw_fn = function()
+        if (action_hints_region) then
+          assert(sdl_renderer:copy(bg_texture, nil, action_hints_region))
+          for idx, action in pairs(actions) do
+            local image = action.images[action.state]
+            local region = {
+              x = actions_x + padding + (sample_icon.w + padding) * (idx - 1),
+              y = math.modf(actions_y + padding/2),
+              w = image.w,
+              h = image.h,
+            }
+            assert(sdl_renderer:copy(image.texture, nil, region))
+          end
+        end
         assert(sdl_renderer:copy(bg_texture, nil, bg_region))
         assert(sdl_renderer:copy(my_label.texture, nil, label_region))
       end

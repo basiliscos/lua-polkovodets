@@ -210,7 +210,8 @@ function Renderer:main_loop()
   local sdl_renderer = self.sdl_renderer
   local kind = SDL.eventWindow
   while (running) do
-    local e = SDL.waitEvent(EVENT_DELAY)
+    local e
+    while(not e) do e = SDL.waitEvent(EVENT_DELAY) end
     local t = e.type
     if t == SDL.event.Quit then
       running = false

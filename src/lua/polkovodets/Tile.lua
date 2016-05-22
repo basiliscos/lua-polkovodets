@@ -219,11 +219,19 @@ function Tile:bind_ctx(context)
 
   local mouse_click = function(event)
     if (event.tile_id == self.id and event.button == 'left') then
-      local u = context.state:get_selected_unit()
-      if (u and (not u.tile or (u.tile.id ~= self.id))) then
-        context.state:set_selected_unit(nil)
-        self.engine.reactor:publish("map.update")
-      end
+      -- if (event.clicks == 1) then
+        local u = context.state:get_selected_unit()
+        if (u and (not u.tile or (u.tile.id ~= self.id))) then
+          context.state:set_selected_unit(nil)
+          self.engine.reactor:publish("map.update")
+        end
+      --[[elseif (event.clicks == 2) then
+        local actions = self:get_possible_actions()
+        if (#actions > 0) then
+          local action = actions[1]
+          action.callback()
+       end
+      end]]
     elseif (event.button == 'right') then
       self.engine.interface:add_window('radial_menu', {tile = self, x = x, y = y})
     end
