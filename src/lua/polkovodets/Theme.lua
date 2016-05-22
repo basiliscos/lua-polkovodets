@@ -154,39 +154,6 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         },
       }
 
-   self.buttons = {
-        end_turn = {
-          normal   = renderer:load_texture(theme_dir .. '/buttons/end-turn.png'),
-        },
-        toggle_layer = {
-          surface = renderer:load_texture(theme_dir .. '/buttons/layer-surface.png'),
-          air     = renderer:load_texture(theme_dir .. '/buttons/layer-air.png'),
-        },
-        toggle_history = {
-          active   = renderer:load_texture(theme_dir .. '/buttons/history-active.png'),
-          inactive = renderer:load_texture(theme_dir .. '/buttons/history-inactive.png'),
-        },
-        toggle_landscape = {
-          active   = renderer:load_texture(theme_dir .. '/buttons/landscape-active.png'),
-          inactive = renderer:load_texture(theme_dir .. '/buttons/landscape-inactive.png'),
-        },
-        change_orientation = {
-          available = renderer:load_texture(theme_dir .. '/buttons/change-orientation-available.png'),
-          disabled  = renderer:load_texture(theme_dir .. '/buttons/change-orientation-disabled.png'),
-        },
-        information = {
-          available = renderer:load_texture(theme_dir .. '/buttons/information-available.png'),
-          disabled  = renderer:load_texture(theme_dir .. '/buttons/information-disabled.png'),
-        },
-        detach = {
-          available = renderer:load_texture(theme_dir .. '/buttons/detach-available.png'),
-          disabled  = renderer:load_texture(theme_dir .. '/buttons/detach-disabled.png'),
-          multiple  = {
-            renderer:load_texture(theme_dir .. '/buttons/detach-1.png'),
-            renderer:load_texture(theme_dir .. '/buttons/detach-2.png'),
-          },
-        },
-      }
   self.tabs = {
         info = {
           available = renderer:load_texture(theme_dir .. '/tabs/info.png'),
