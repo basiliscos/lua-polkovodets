@@ -441,6 +441,23 @@ function Tile:get_possible_actions()
       })
     end
 
+    -- unit action: battle
+    if (my_unit.data.actions_map.attack[self.id]) then
+      table.insert(list, {
+        priority = 40,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_battle'),
+        state = "available",
+        images = {
+          available = theme.actions.battle.available,
+          hilight   = theme.actions.battle.hilight,
+        },
+        callback = function()
+          my_unit:attack_on(self, "battle")
+        end
+      })
+    end
+
     -- unit special action: construction
     local special_actions = my_unit.data.actions_map.special[self.id]
     if (special_actions and special_actions.build) then

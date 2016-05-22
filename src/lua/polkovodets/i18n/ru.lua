@@ -45,6 +45,7 @@ t = {
     ['ui.radial-menu.hex.unit_detach']    = 'Открепить соединение (%{name})',
     ['ui.radial-menu.hex.unit_rotate']    = 'Изменить пространсветнную ориентацию',
     ['ui.radial-menu.hex.unit_construct'] = 'Строительство инфраструктуры',
+    ['ui.radial-menu.hex.unit_battle']    = 'Атаковать',
 
     -- UI buttons
     ['ui.button.change_orientation'] = 'Изменить пространсветнную ориентацию соединения',
