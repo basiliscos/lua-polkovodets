@@ -2,9 +2,6 @@ local _ = require ("moses")
 
 local Tile = require 'polkovodets.Tile'
 
-local DummyRenderer = require 't.DummyRenderer'
-
-
 local SampleData = {}
 SampleData.__index = SampleData
 
@@ -15,9 +12,6 @@ function SampleData.generate_test_data(gear)
     gfx         = 'data/gfx',
     themes      = 'data/gfx/themes/'
   })
-  gear:declare("renderer",
-    function() return DummyRenderer.create(640, 480) end
-  )
 end
 
 function SampleData.generate_terrain(gear)

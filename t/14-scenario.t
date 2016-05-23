@@ -5,6 +5,7 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 local t = require 'Test.More'
 local inspect = require('inspect')
 local _ = require ("moses")
+local DummyRenderer = require 't.DummyRenderer'
 
 local Gear = require "gear"
 
@@ -19,6 +20,7 @@ local WeaponClass = require 'polkovodets.WeaponClass'
 local SampleData = require 'polkovodets.SampleData'
 
 local gear = Gear.create()
+gear:declare("renderer", function() return DummyRenderer.create(640, 480) end)
 local engine = Engine.create(gear, "en")
 
 SampleData.generate_test_data(gear)

@@ -10,8 +10,10 @@ local Engine = require 'polkovodets.Engine'
 local Gear = require "gear"
 
 local SampleData = require 'polkovodets.SampleData'
+local DummyRenderer = require 't.DummyRenderer'
 
 local gear = Gear.create()
+gear:declare("renderer", function() return DummyRenderer.create(640, 480) end)
 local engine = Engine.create(gear, 'en')
 local msg = engine:translate('map.battle-on-tile', {count = 5, tile = "1:2"})
 is(msg, "5 battles have occured on the tile 1:2")
