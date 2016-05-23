@@ -217,19 +217,6 @@ function Unit:bind_ctx(context)
 
   end
 
-  local mouse_click = function(event)
-    if ((event.tile_id == self.tile.id) and (event.button == 'left')) then
-      -- may be we click on other unit to select it
-      if (self.engine.state:get_current_player() == self.player) then
-        context.state:set_selected_unit(self)
-        self:update_actions_map()
-      else
-        context.state:set_selected_unit(nil)
-      end
-      return true
-    end
-  end
-
   local update_action = function(tile_id, x, y)
     if (tile_id == self.tile.id) then
       local hint = self.name
@@ -246,7 +233,6 @@ function Unit:bind_ctx(context)
   update_action(active_tile.id, mouse.x, mouse.y)
 
   self.drawing.bind_tile = self.tile
-  context.events_source.add_handler('mouse_click', self.drawing.bind_tile.id, mouse_click)
   context.events_source.add_handler('mouse_move', self.drawing.bind_tile.id, mouse_move)
 
   self.drawing.mouse_click = mouse_click
@@ -254,7 +240,6 @@ function Unit:bind_ctx(context)
 end
 
 function Unit:unbind_ctx(context)
-  context.events_source.remove_handler('mouse_click', self.drawing.bind_tile.id, self.drawing.mouse_click)
   context.events_source.remove_handler('mouse_move', self.drawing.bind_tile.id, self.drawing.mouse_move)
 
   self.drawing.fn = nil

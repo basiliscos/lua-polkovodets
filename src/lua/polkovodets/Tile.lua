@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local Tile = {}
 Tile.__index = Tile
+local SDL	= require "SDL"
 
 local _ = require ("moses")
 local inspect = require('inspect')
@@ -219,19 +220,29 @@ function Tile:bind_ctx(context)
 
   local mouse_click = function(event)
     if (event.tile_id == self.id and event.button == 'left') then
-      -- if (event.clicks == 1) then
-        local u = context.state:get_selected_unit()
-        if (u and (not u.tile or (u.tile.id ~= self.id))) then
-          context.state:set_selected_unit(nil)
-          self.engine.reactor:publish("map.update")
+      local mod_state = SDL.getModState()
+      local simple = not (mod_state[SDL.keymod.LeftControl] or mod_state[SDL.keymod.RightControl])
+      print(simple)
+      if (simple) then
+
+        -- select unit on hext
+        local unit
+        local u = self:get_any_unit(engine.state:get_active_layer())
+        if (u and u.player == engine.state:get_current_player()) then
+            u:update_actions_map()
+            unit = u
         end
-      --[[elseif (event.clicks == 2) then
+        -- may be deselect current unit, if clicked on empty hex
+        engine.state:set_selected_unit(unit)
+      else
         local actions = self:get_possible_actions()
         if (#actions > 0) then
           local action = actions[1]
           action.callback()
+          -- trigger hints / mouse actions updates
+          engine.state:set_active_tile(self)
        end
-      end]]
+      end
     elseif (event.button == 'right') then
       self.engine.interface:add_window('radial_menu', {tile = self, x = x, y = y})
     end
