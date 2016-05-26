@@ -465,7 +465,7 @@ function Map:_on_map_update()
 
   local actual_records = context.state:get_actual_records()
 
-  -- bttles are always shown
+  -- battles are always shown
   local shown_records = {}
 
   if (not context.state:get_landscape_only()) then

@@ -314,6 +314,33 @@ function Tile:is_capable(flag_mask)
   return terrain:is_capable(self.data.terrain_type.id, flag_mask)
 end
 
+function Tile:_get_possbile_battle_actions()
+  local engine = self.engine
+  local theme = engine.gear:get("theme")
+  local records = engine.state:get_actual_records()
+  local my_tile_battles = _.select(records, function(_, record)
+    return (record.action == 'battle') and (record.context.tile == self.id)
+  end)
+
+  local list = _.map(my_tile_battles, function(idx, record)
+    local action = {
+      policy = "click",
+      priority = 200 + idx,
+      hint = engine:translate('ui.radial-menu.hex.battle_hist', {index = idx}),
+      state = "available",
+      images = {
+        available = theme.actions.battle_history.available,
+        hilight   = theme.actions.battle_history.hilight,
+      },
+      callback = function()
+        print("[todo] show battle details")
+      end
+    }
+    return action
+  end)
+  return list
+end
+
 function Tile:get_possible_actions()
   local engine = self.engine
   local state = engine.state
@@ -329,7 +356,9 @@ function Tile:get_possible_actions()
   -- we can't much in view-only mode
   if (state:get_landscape_only()) then return list end
 
-  print("[TODO] battles history view")
+  _.each(self:_get_possbile_battle_actions(), function(idx, action)
+    table.insert(list, action)
+  end)
 
   if (not my_unit) then
     -- if no unit selected, and there are units on tile
