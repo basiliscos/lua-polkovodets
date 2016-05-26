@@ -210,50 +210,52 @@ function Renderer:main_loop()
   local sdl_renderer = self.sdl_renderer
   local kind = SDL.eventWindow
   while (running) do
-    local e
-    while(not e) do e = SDL.waitEvent(EVENT_DELAY) end
-    local t = e.type
-    if t == SDL.event.Quit then
-      running = false
-    elseif (t == SDL.event.WindowEvent) then
-      if (e.event == kind.Resized or e.event == kind.SizeChanged
-      or e.event == kind.Minimized or e.event ==  kind.Maximized) then
-      self.size = table.pack(self.window:getSize())
-      engine.reactor:publish("full.refresh")
+    local e = SDL.waitEvent(EVENT_DELAY)
+    if (e) then
+      local t = e.type
+      if t == SDL.event.Quit then
+        running = false
+      elseif (t == SDL.event.WindowEvent) then
+        if (e.event == kind.Resized or e.event == kind.SizeChanged
+        or e.event == kind.Minimized or e.event ==  kind.Maximized) then
+        self.size = table.pack(self.window:getSize())
+        engine.reactor:publish("full.refresh")
+        end
+      elseif (t == SDL.event.KeyUp) then
+        if (e.keysym.sym == SDL.key.e) then
+          engine:end_turn()
+        elseif (e.keysym.sym == SDL.key.t) then
+          engine:toggle_layer()
+        elseif (e.keysym.sym == SDL.key.h) then
+          engine:toggle_history()
+        elseif (e.keysym.sym == SDL.key.k) then
+          engine:toggle_attack_priorities()
+        end
+      elseif (t == SDL.event.MouseMotion) then
+        local state, x, y = SDL.getMouseState()
+        local event = {
+          x       = x,
+          y       = y,
+        }
+        engine.state:set_mouse(x, y)
+        -- process handlers in stack (FILO) order
+        self.handlers.mouse_move:apply(function(cb) return cb(event) end)
+      elseif (t == SDL.event.MouseButtonUp) then
+        local state, x, y = SDL.getMouseState()
+        local button = (e.button == SDL.mouseButton.Left)
+                    and 'left'
+                    or  (e.button == SDL.mouseButton.Right)
+                    and 'right'
+                    or  nil
+        local event = {
+          x       = x,
+          y       = y,
+          button  = button,
+        }
+        -- process handlerss in stack (FILO) order
+        self.handlers.mouse_click:apply(function(cb) return cb(event) end)
       end
-    elseif (t == SDL.event.KeyUp) then
-      if (e.keysym.sym == SDL.key.e) then
-        engine:end_turn()
-      elseif (e.keysym.sym == SDL.key.t) then
-        engine:toggle_layer()
-      elseif (e.keysym.sym == SDL.key.h) then
-        engine:toggle_history()
-      elseif (e.keysym.sym == SDL.key.k) then
-        engine:toggle_attack_priorities()
-      end
-    elseif (t == SDL.event.MouseMotion) then
-      local state, x, y = SDL.getMouseState()
-      local event = {
-        x       = x,
-        y       = y,
-      }
-      engine.state:set_mouse(x, y)
-      -- process handlers in stack (FILO) order
-      self.handlers.mouse_move:apply(function(cb) return cb(event) end)
-    elseif (t == SDL.event.MouseButtonUp) then
-      local state, x, y = SDL.getMouseState()
-      local button = (e.button == SDL.mouseButton.Left)
-                  and 'left'
-                  or  (e.button == SDL.mouseButton.Right)
-                  and 'right'
-                  or  nil
-      local event = {
-        x       = x,
-        y       = y,
-        button  = button,
-      }
-      -- process handlerss in stack (FILO) order
-      self.handlers.mouse_click:apply(function(cb) return cb(event) end)
+    -- idle
     else
       local state, x, y = SDL.getMouseState()
       local event = {
