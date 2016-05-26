@@ -571,29 +571,33 @@ function Map:bind_ctx(context)
   local map_sw, map_sh = self.gui.map_sw, self.gui.map_sh
   local window_w, window_h = context.renderer.window:getSize()
 
-  local idle = function(event)
-    local scroll_dy, scroll_dx = 0, 0
-    local direction
-    local x, y = event.x, event.y
-    local map_x, map_y = self.gui.map_x, self.gui.map_y
-    if ((y < SCROLL_TOLERANCE or scroll_dy > 0) and map_y > 0) then
-      self.gui.map_y = self.gui.map_y - 1
-      direction = "up"
-    elseif (((y > window_h - SCROLL_TOLERANCE) or scroll_dy < 0) and map_y < map_h - map_sh) then
-      self.gui.map_y = self.gui.map_y + 1
-      direction = "down"
-    elseif ((x < SCROLL_TOLERANCE or scroll_dx < 0)  and map_x > 0) then
-      self.gui.map_x = self.gui.map_x - 1
-      direction = "left"
-    elseif (((x > window_w - SCROLL_TOLERANCE) or scroll_dx > 0) and map_x < map_w - map_sw) then
-      self.gui.map_x = self.gui.map_x + 1
-      direction = "right"
-    end
+  local interface = engine.interface
 
-    if (direction) then
-      self:_update_shown_map()
+  local idle = function(event)
+    if (interface:opened_window_count() == 0) then
+      local scroll_dy, scroll_dx = 0, 0
+      local direction
+      local x, y = event.x, event.y
+      local map_x, map_y = self.gui.map_x, self.gui.map_y
+      if ((y < SCROLL_TOLERANCE or scroll_dy > 0) and map_y > 0) then
+        self.gui.map_y = self.gui.map_y - 1
+        direction = "up"
+      elseif (((y > window_h - SCROLL_TOLERANCE) or scroll_dy < 0) and map_y < map_h - map_sh) then
+        self.gui.map_y = self.gui.map_y + 1
+        direction = "down"
+      elseif ((x < SCROLL_TOLERANCE or scroll_dx < 0)  and map_x > 0) then
+        self.gui.map_x = self.gui.map_x - 1
+        direction = "left"
+      elseif (((x > window_w - SCROLL_TOLERANCE) or scroll_dx > 0) and map_x < map_w - map_sw) then
+        self.gui.map_x = self.gui.map_x + 1
+        direction = "right"
+      end
+
+      if (direction) then
+        self:_update_shown_map()
+      end
+      return true
     end
-    return true
   end
 
 

@@ -49,7 +49,6 @@ function Interface.create(engine)
       obj_by_type = {
         game_panel = nil,
       },
-      opened_windows = 0,
       active_tile_change_listener = nil,
     }
   }
@@ -294,6 +293,10 @@ function Interface:remove_window(window, do_not_emit_update)
 
   print("window " .. idx .. " removed")
   self:_layout_windows()
+end
+
+function Interface:opened_window_count()
+  return #self.drawing.windows
 end
 
 return Interface
