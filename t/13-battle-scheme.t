@@ -14,7 +14,7 @@ local BattleFormula = require 'polkovodets.BattleFormula'
 local BattleScheme = require 'polkovodets.BattleScheme'
 
 local gear = Gear.create()
-gear:declare("renderer", function() return DummyRenderer.create(640, 480) end)
+gear:declare("renderer", { constructor = function() return DummyRenderer.create(640, 480) end})
 local engine = Engine.create(gear, "en")
 
 local bs = BattleScheme.create()

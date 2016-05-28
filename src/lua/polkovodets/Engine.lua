@@ -119,204 +119,231 @@ function _fill_initial_data(gear)
     },
   })
 
-  gear:declare("weapons/definitions::map", {"weapons/definitions"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("weapons/definitions::map", {
+    dependencies = {"weapons/definitions"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("nations::map", {"nations"},
-    function() return {} end,
-    function(gear, instance, nations) to_map(instance, nations) end
-  )
+  gear:declare("nations::map", {
+    dependencies = {"nations"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, nations) to_map(instance, nations) end,
+  })
 
-  gear:declare("data/weapons/target_types::map", {"data/weapons/target_types"},
-    function() return {} end,
-    function(gear, instance, target_types) to_map(instance, target_types) end
-  )
+  gear:declare("data/weapons/target_types::map", {
+    dependencies = {"data/weapons/target_types"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, target_types) to_map(instance, target_types) end
+  })
 
-  gear:declare("data/weapons/movement_types::map", {"data/weapons/movement_types"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("data/weapons/movement_types::map", {
+    dependencies = {"data/weapons/movement_types"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("weapons/classes::map", {"weapons/classes"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("weapons/classes::map", {
+    dependencies = {"weapons/classes"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("data/weapons/categories::map", {"data/weapons/categories"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("data/weapons/categories::map", {
+    dependencies = {"data/weapons/categories"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("weapons/types::map", {"weapons/types"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("weapons/types::map", {
+    dependencies = {"weapons/types"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("data/units/types::map", {"data/units/types"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("data/units/types::map", {
+    dependencies = {"data/units/types"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("data/units/classes::map", {"data/units/classes"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("data/units/classes::map", {
+    dependencies = {"data/units/classes"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("theme", {"data/theme", "renderer", "data/dirs"},
-    function() return Theme.create() end,
-    function(gear, instance, ...) instance:initialize(...) end
-  )
+  gear:declare("theme", {
+    dependencies = {"data/theme", "renderer", "data/dirs"},
+    constructor  = function() return Theme.create() end,
+    initializer  = function(gear, instance, ...) instance:initialize(...) end,
+  })
 
-  gear:declare("units/definitions::map", {"units/definitions"},
-    function() return {} end,
-    function(gear, instance, list) to_map(instance, list) end
-  )
+  gear:declare("units/definitions::map", {
+    dependencies = {"units/definitions"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list) to_map(instance, list) end,
+  })
 
-  gear:declare("nation/player::map", {"players", "nations::map"},
-    function() return {} end,
-    function(gear, instance, players, nation_for)
+  gear:declare("nation/player::map", {
+    dependencies = {"players", "nations::map"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, players, nation_for)
       for _, player in pairs(players) do
         for _, nation in pairs(player.nations) do
           instance[nation.id] = player
         end
       end
-    end
-  )
+    end,
+  })
 
   -- k: player_id, v: list of units
-  gear:declare("player/units::map", {"players", "units"},
-    function() return {} end,
-    function(gear, instance, players, units)
+  gear:declare("player/units::map", {
+    dependencies = {"players", "units"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, players, units)
       for _, unit in pairs(units) do
         local list = instance[unit.player.id] or {}
         table.insert(list, unit)
         instance[unit.player.id] = list
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("terrain", {"data/terrain", "data/dirs", "renderer"},
-    function() return Terrain.create() end,
-    function(gear, instance, terrain_data, dirs_data, renderer)
+  gear:declare("terrain", {
+    dependencies = {"data/terrain", "data/dirs", "renderer"},
+    constructor  = function() return Terrain.create() end,
+    initializer  = function(gear, instance, terrain_data, dirs_data, renderer)
       instance:initialize(renderer, terrain_data, dirs_data)
-    end
-  )
+    end,
+  })
 
-  gear:declare("map", {"data/map", "engine", "renderer", "terrain", "helper/map/tiles_generator" },
-    function() return Map.create() end,
-    function(gear, instance, map_data, engine, renderer, terrain, tiles_generator)
+  gear:declare("map", {
+    dependencies = {"data/map", "engine", "renderer", "terrain", "helper/map/tiles_generator" },
+    constructor  = function() return Map.create() end,
+    initializer  = function(gear, instance, map_data, engine, renderer, terrain, tiles_generator)
       instance:initialize(engine, renderer, terrain, tiles_generator, map_data)
-    end
-  )
+    end,
+  })
 
-  gear:declare("nations", {"data/nations", "data/dirs", "renderer"},
-    function() return {} end,
-    function(gear, instance, data_nations, data_dirs, renderer)
+  gear:declare("nations", {
+    dependencies = {"data/nations", "data/dirs", "renderer"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, data_nations, data_dirs, renderer)
       for _, nation_data in pairs(data_nations) do
         local n = Nation.create()
         n:initialize(renderer, nation_data, data_dirs)
         table.insert(instance, n)
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("objectives", {"data/objectives", "nations::map", "map", "renderer"},
-    function() return {} end,
-    function(gear, instance, list, ... )
+  gear:declare("objectives", {
+    dependencies = {"data/objectives", "nations::map", "map", "renderer"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list, ... )
       for _, data in pairs(list) do
         local o = Objective.create()
         o:initialize(data, ... )
         table.insert(instance, o)
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("players", {"data/players", "nations::map"},
-    function() return {} end,
-    function(gear, instance, data_players, nation_for)
+  gear:declare("players", {
+    dependencies = {"data/players", "nations::map"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, data_players, nation_for)
       for _, player_data in pairs(data_players) do
         local p = Player.create()
         p:initialize(nation_for, player_data)
         table.insert(instance, p)
       end
     end
-  )
+  })
 
-  gear:declare("weapons/definitions", {"data/weapons/definitions",
-    "weapons/classes::map", "weapons/types::map", "data/weapons/categories::map",
-    "data/weapons/movement_types::map", "data/weapons/target_types::map", "nations::map",
-    "data/dirs", "renderer"},
-    function() return {} end,
-    function(gear, instance, list, classes_for, types_for, category_for, movement_type_for, target_type_for, nation_for, data_dirs, renderer)
+  gear:declare("weapons/definitions", {
+    dependencies = {"data/weapons/definitions", "weapons/classes::map", "weapons/types::map",
+      "data/weapons/categories::map", "data/weapons/movement_types::map", "data/weapons/target_types::map",
+      "nations::map", "data/dirs", "renderer"
+    },
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list, classes_for, types_for, category_for, movement_type_for, target_type_for, nation_for, data_dirs, renderer)
       for _, weapon_data in ipairs(list) do
         local w = Weapon.create()
         w:initialize(renderer, weapon_data, classes_for, types_for, category_for, movement_type_for, target_type_for, nation_for, data_dirs)
         table.insert(instance, w)
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("weapons/classes", {"data/weapons/classes", "data/dirs", "renderer"},
-    function() return {} end,
-    function(gear, instance, list, data_dirs, renderer)
+  gear:declare("weapons/classes", {
+    dependencies = {"data/weapons/classes", "data/dirs", "renderer"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list, data_dirs, renderer)
       _.each(list, function(_, weapon_class_data)
         local wc = WeaponClass.create()
         wc:initialize(renderer, weapon_class_data, data_dirs)
         table.insert(instance, wc)
       end)
-    end
-  )
+    end,
+  })
 
-  gear:declare("weapons/types", {"data/weapons/types", "weapons/classes::map"},
-    function() return {} end,
-    function(gear, instance, list, class_for)
+  gear:declare("weapons/types", {
+    dependencies = {"data/weapons/types", "weapons/classes::map"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list, class_for)
       _.each(list, function(_, weapon_type_data)
         local wt = WeaponType.create()
         wt:initialize(weapon_type_data, class_for)
         table.insert(instance, wt)
       end)
-    end
-  )
+    end,
+  })
 
-  gear:declare("units/definitions", {"data/units/definitions", "data/units/classes::map", "data/units/types::map",
-    "nations::map", "weapons/types::map", "data/dirs", "renderer"},
-    function() return {} end,
-    function(gear, instance, list, classes_for, types_for, nations_for, weapon_types_for, data_dirs, renderer)
+  gear:declare("units/definitions", {
+    dependencies = {"data/units/definitions", "data/units/classes::map", "data/units/types::map",
+      "nations::map", "weapons/types::map", "data/dirs", "renderer"
+    },
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, list, classes_for, types_for, nations_for, weapon_types_for, data_dirs, renderer)
       for _, definition_data in ipairs(list) do
         local ud = UnitDefinition.create()
         ud:initialize(renderer, definition_data, classes_for, types_for, nations_for, weapon_types_for, data_dirs)
         table.insert(instance, ud)
       end
-    end
-  )
+    end,
+  })
 
   -- battle scheme & formula
-  gear:declare("battle_formula", {"engine"},
-    function() return BattleFormula.create() end,
-    function(gear, instance, engine) instance:initialize(engine) end
-  )
+  gear:declare("battle_formula", {
+    dependencies = {"engine"},
+    constructor  = function() return BattleFormula.create() end,
+    initializer  = function(gear, instance, engine) instance:initialize(engine) end,
+  })
 
-  gear:declare("battle_scheme", {"data/battle_blocks", "battle_formula"},
-    function() return BattleScheme.create() end,
-    function(gear, instance, battle_blocks, battle_formula) instance:initialize(battle_formula, battle_blocks) end
-  )
+  gear:declare("battle_scheme", {
+    dependencies = {"data/battle_blocks", "battle_formula"},
+    constructor  = function() return BattleScheme.create() end,
+    initializer  = function(gear, instance, battle_blocks, battle_formula) instance:initialize(battle_formula, battle_blocks) end
+  })
 
   -- scenario
-  gear:declare("scenario", {"data/scenario", "objectives", "data/armies",
-    "engine", "renderer", "map",
-    "nations::map", "weapons/definitions::map", "units/definitions::map", "nation/player::map"},
-    function() return Scenario.create() end,
-    function(gear, instance, ...)
+  gear:declare("scenario", {
+    dependencies = {"data/scenario", "objectives", "data/armies", "engine", "renderer", "map",
+      "nations::map", "weapons/definitions::map", "units/definitions::map", "nation/player::map"
+    },
+    constructor  = function() return Scenario.create() end,
+    initializer  = function(gear, instance, ...)
       instance:initialize(...)
-    end
-  )
+    end,
+  })
 
   -- validators
-  gear:declare("validators/terrain/flags", {"terrain"},
-    function() return { name = "terrain type flags"} end,
-    function(gear, instance, terrain)
+  gear:declare("validators/terrain/flags", {
+    dependencies = {"terrain"},
+    constructor  = function() return { name = "terrain type flags"} end,
+    initializer  = function(gear, instance, terrain)
       instance.fn = function()
         for id, terrain_type in pairs(terrain.terrain_types) do
           for flag, value in pairs(terrain_type) do
@@ -327,12 +354,13 @@ function _fill_initial_data(gear)
         end
         print("terrain type flags are valid")
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("validators/weapons/movement_types", {"data/weapons/movement_types", "data/terrain"},
-    function() return { name = "weapon movement types"} end,
-    function(gear, instance, movement_types, terrain_data)
+  gear:declare("validators/weapons/movement_types", {
+    dependencies = {"data/weapons/movement_types", "data/terrain"},
+    constructor  = function() return { name = "weapon movement types"} end,
+    initializer  = function(gear, instance, movement_types, terrain_data)
       instance.fn = function()
         for _, movement_type in pairs(movement_types) do
           for j, terrain_type in pairs(terrain_data.terrain_types) do
@@ -344,12 +372,13 @@ function _fill_initial_data(gear)
         end
         print("weapon movement types are valid")
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("validators/units/classes", {"data/units/classes", "data/units/types::map"},
-    function() return { name = "unit classes"} end,
-    function(gear, instance, classes, type_for)
+  gear:declare("validators/units/classes", {
+    dependencies = {"data/units/classes", "data/units/types::map"},
+    constructor  = function() return { name = "unit classes"} end,
+    initializer  = function(gear, instance, classes, type_for)
       instance.fn = function()
         for _, class in pairs(classes) do
           local t = class["type"]
@@ -357,21 +386,20 @@ function _fill_initial_data(gear)
         end
         print("unit classes are valid")
       end
-    end
-  )
+    end,
+  })
 
-  gear:declare("validator", { "validators/weapons/movement_types", "validators/units/classes",
-    "validators/terrain/flags"},
-    function() return { } end,
-    function(gear, instance, ...)
+  gear:declare("validator", {
+    dependencies = { "validators/weapons/movement_types", "validators/units/classes", "validators/terrain/flags"},
+    constructor  = function() return { } end,
+    initializer  = function(gear, instance, ...)
       local validators = { ... }
       instance.fn = function()
         _.each(validators, function(_, v) v.fn() end)
         print("all data seems to be valid")
       end
-    end
-  )
-
+    end,
+  })
 
 end
 

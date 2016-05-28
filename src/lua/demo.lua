@@ -58,9 +58,9 @@ assert(renderer, err)
 local gear = Gear.create()
 local engine = Engine.create(gear, "ru")
 
-gear:declare("renderer",
-  function() return Renderer.create(engine, window, renderer) end
-)
+gear:declare("renderer", {
+  constructor = function() return Renderer.create(engine, window, renderer) end
+})
 
 SampleData.generate_battle_scheme(gear)
 SampleData.generate_map(gear)
