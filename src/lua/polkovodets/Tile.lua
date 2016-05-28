@@ -455,8 +455,12 @@ function Tile:get_possible_actions()
       end)
     end
 
-    -- unit action: move to the tile. We cannot move unit here if we we can merge there.
-    if (my_unit.data.actions_map.move[self.id] and not my_unit.data.actions_map.merge[self.id]) then
+    -- unit action: move to the tile. We cannot move unit here if there are other units on the same
+    -- layer, but something additional might be done, e.g. merge
+    local other_units = _.select(tile_units, function(idx, unit)
+      return unit.data.layer == my_unit.data.layer
+    end)
+    if (my_unit.data.actions_map.move[self.id] and (#other_units == 0)) then
       table.insert(list, {
         priority = 20,
         policy = "click",
