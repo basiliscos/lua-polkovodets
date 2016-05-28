@@ -323,17 +323,19 @@ function Tile:_get_possbile_battle_actions()
   end)
 
   local list = _.map(my_tile_battles, function(idx, record)
+    local i_unit = engine:get_unit(record.context.i_units[1].unit_id)
+    local p_unit = engine:get_unit(record.context.p_units[1].unit_id)
     local action = {
       policy = "click",
       priority = 200 + idx,
-      hint = engine:translate('ui.radial-menu.hex.battle_hist', {index = idx}),
+      hint = engine:translate('ui.radial-menu.hex.battle_hist', {index = idx, i = i_unit.name, p = p_unit.name}),
       state = "available",
       images = {
         available = theme.actions.battle_history.available,
         hilight   = theme.actions.battle_history.hilight,
       },
       callback = function()
-        print("[todo] show battle details")
+        engine.interface:add_window('battle_details_window', record)
       end
     }
     return action
