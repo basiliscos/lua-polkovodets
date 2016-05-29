@@ -298,6 +298,7 @@ function DataLoader.load(gear, scenario_path)
     table.insert(weapons_types, {
       id       = assert(data.id, weapons_types_path .. " should have id in type " .. idx),
       class_id = assert(data.class_id, weapons_types_path .. " should have class_id in type " .. idx),
+      flags    = data.flags or {},
     })
   end
   gear:set("data/weapons/types", weapons_types)

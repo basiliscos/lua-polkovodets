@@ -27,11 +27,20 @@ end
 
 function WeaponType:initialize(weapon_type_data, classes_for)
   local id       = assert(weapon_type_data.id, "weapon type should have id")
+  local flags    = assert(weapon_type_data.flags, "weapon type " .. id ..  " should have flags")
   local class_id = assert(weapon_type_data.class_id, "weapon type " .. id .. " should have class_id")
   local class    = assert(classes_for[class_id], "weapon class " .. class_id .. " is not available for weapon type " .. id)
 
   self.id = id
   self.class = class
+  self.flags = flags
 end
+
+function WeaponType:is_capable(flag_mask)
+  for flag, value in pairs(self.flags) do
+    if (string.find(flag, flag_mask)) then return flag, value end
+  end
+end
+
 
 return WeaponType

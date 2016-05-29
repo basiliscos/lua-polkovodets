@@ -44,6 +44,7 @@ function UnitDefinition:initialize(renderer, definition_data, unit_classes_for, 
       local texture = renderer:load_texture(full_path)
       state_icons[state] = texture
    end
+   -- [TODO] move that to validator?
    if (unit_type_id == 'ut_land') then
       assert(state_icons.attacking, 'land unit definition ' .. definition_data.id  .. ' must have "attacking" icon')
       assert(state_icons.defending, 'land unit definition ' .. definition_data.id  .. 'must have "defending" icon')

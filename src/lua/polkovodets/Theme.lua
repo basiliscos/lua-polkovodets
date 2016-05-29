@@ -135,8 +135,8 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         hilight   = renderer:load_texture(theme_dir .. '/actions/attack-hilight.png'),
       },
       battle_history = {
-        available = renderer:load_texture(theme_dir .. '/actions/detach.png'),
-        hilight   = renderer:load_texture(theme_dir .. '/actions/detach-hilight.png'),
+        available = renderer:load_texture(theme_dir .. '/actions/battle-history.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/battle-history-hilight.png'),
       },
    }
    self.change_attack_type = {

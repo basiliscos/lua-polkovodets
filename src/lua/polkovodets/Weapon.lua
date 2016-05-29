@@ -73,9 +73,13 @@ function Weapon:initialize(renderer, weapon_data, classes_for, types_for, catego
 
   -- gather all flags
   local flags = {}
-  for flag, value in pairs(category.flags) do flags[flag] = value end
-  for flag, value in pairs(class.flags) do flags[flag] = value end
-  for flag, value in pairs(weapon_data.flags) do flags[flag] = value end
+  _.each({category.flags, class.flags, class.flags, weapon_type.flags, weapon_data.flags},
+    function(_, flags_map)
+      for flag, value in pairs(flags_map) do
+        flags[flag] = value
+      end
+    end
+  )
 
   self.id            = id
   self.name          = name

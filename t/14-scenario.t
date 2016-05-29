@@ -93,10 +93,10 @@ gear:set("data/weapons/categories", {
 })
 
 gear:set("data/weapons/types", {
-  {id = "wt_infant",     class_id = "wk_infant"},
-  {id = "wt_tankInfMid", class_id = "wk_armor" },
-  {id = "wt_artil",      class_id = "wk_artil"},
-  {id = "wt_FightLt",    class_id = "wk_fighter"},
+  {id = "wt_infant",     class_id = "wk_infant",  flags = {}},
+  {id = "wt_tankInfMid", class_id = "wk_armor" ,  flags = {}},
+  {id = "wt_artil",      class_id = "wk_artil",   flags = {}},
+  {id = "wt_FightLt",    class_id = "wk_fighter", flags = {}},
 })
 
 gear:set("data/weapons/definitions", {

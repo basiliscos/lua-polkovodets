@@ -381,20 +381,20 @@ function SampleData.generate_scenario(gear)
   })
 
   gear:set("data/weapons/categories", {
-    {id = "wc_infant", flags = {} },
-    {id = "wc_tank", flags = {} },
-    {id = "wc_artil", flags = {} },
-    {id = "wc_rear", flags = {}},
-    {id = "wc_fighter", flags = {}},
+    {id = "wc_infant",  flags = {} },
+    {id = "wc_tank",    flags = {} },
+    {id = "wc_artil",   flags = {} },
+    {id = "wc_rear",    flags = {} },
+    {id = "wc_fighter", flags = {} },
   })
 
   gear:set("data/weapons/types", {
-    {id = "wt_infant",     class_id = "wk_infant"},
-    {id = "wt_engineer",   class_id = "wk_infant"},
-    {id = "wt_tankInfMid", class_id = "wk_armor" },
-    {id = "wt_transp",     class_id = "wk_transp"},
-    {id = "wt_artil",      class_id = "wk_artil"},
-    {id = "wt_FightLt",    class_id = "wk_fighter"},
+    {id = "wt_infant",     class_id = "wk_infant",  flags = {} },
+    {id = "wt_engineer",   class_id = "wk_infant",  flags = {} },
+    {id = "wt_tankInfMid", class_id = "wk_armor",   flags = {} },
+    {id = "wt_transp",     class_id = "wk_transp",  flags = {} },
+    {id = "wt_artil",      class_id = "wk_artil",   flags = {} },
+    {id = "wt_FightLt",    class_id = "wk_fighter", flags = {} },
   })
 
   gear:set("data/weapons/definitions", {
@@ -553,9 +553,10 @@ function SampleData.generate_scenario(gear)
         wt_infant = 300,
       },
       icons = {
-        marching  = "units/rus/rus_inf_M1.png",
-        defending = "units/rus/rus_inf_D1.png",
-        attacking = "units/rus/rus_inf_A1.png",
+        marching           = "units/rus/rus_inf_M1.png",
+        defending          = "units/rus/rus_inf_D1.png",
+        circular_defending = "units/rus/rus_inf_D1.png",
+        attacking          = "units/rus/rus_inf_A1.png",
       }
     },
     {
@@ -572,9 +573,10 @@ function SampleData.generate_scenario(gear)
         wt_transp = 300,
       },
       icons = {
-        marching  = "units/rus/rus_inf_M1.png",
-        defending = "units/rus/rus_inf_D1.png",
-        attacking = "units/rus/rus_inf_A1.png",
+        marching           = "units/rus/rus_inf_M1.png",
+        defending          = "units/rus/rus_inf_D1.png",
+        circular_defending = "units/rus/rus_inf_D1.png",
+        attacking          = "units/rus/rus_inf_A1.png",
       }
     },
     {
@@ -590,9 +592,10 @@ function SampleData.generate_scenario(gear)
         wt_artil = 30,
       },
       icons = {
-        marching  = "units/rus/rus_art_M1.png",
-        defending = "units/rus/rus_art_D2.png",
-        attacking = "units/rus/rus_art_A1.png",
+        marching           = "units/rus/rus_art_M1.png",
+        defending          = "units/rus/rus_art_D2.png",
+        circular_defending = "units/rus/rus_art_D2.png",
+        attacking          = "units/rus/rus_art_A1.png",
       }
     },
     {
@@ -608,9 +611,10 @@ function SampleData.generate_scenario(gear)
         wt_tankInfMid = 100,
       },
       icons = {
-        marching  = "units/rus/rus_tank_M1.png",
-        defending = "units/rus/rus_tank_D1.png",
-        attacking = "units/rus/rus_tank_A1.png",
+        marching           = "units/rus/rus_tank_M1.png",
+        defending          = "units/rus/rus_tank_D1.png",
+        circular_defending = "units/rus/rus_tank_D1.png",
+        attacking          = "units/rus/rus_tank_A1.png",
       }
     },
     {
@@ -649,9 +653,10 @@ function SampleData.generate_scenario(gear)
         wt_transp = 15,
       },
       icons = {
-        marching  = "units/rus/rus_stab_M1.png",
-        defending = "units/rus/rus_stab_D1.png",
-        attacking = "units/rus/rus_stab_D1.png",
+        marching           = "units/rus/rus_stab_M1.png",
+        defending          = "units/rus/rus_stab_D1.png",
+        circular_defending = "units/rus/rus_stab_D1.png",
+        attacking          = "units/rus/rus_stab_D1.png",
       },
     },
     {
@@ -667,9 +672,10 @@ function SampleData.generate_scenario(gear)
         wt_infant = 35,
       },
       icons = {
-        marching  = "units/ger/GerInf01.png",
-        defending = "units/ger/GerInf01.png",
-        attacking = "units/ger/GerInf01.png",
+        marching           = "units/ger/GerInf01.png",
+        defending          = "units/ger/GerInf01.png",
+        circular_defending = "units/ger/GerInf01.png",
+        attacking          = "units/ger/GerInf01.png",
       }
     },
     {
@@ -685,9 +691,10 @@ function SampleData.generate_scenario(gear)
         wt_engineer = 20,
       },
       icons = {
-        marching  = "units/ger/GerInf01.png",
-        defending = "units/ger/GerInf01.png",
-        attacking = "units/ger/GerInf01.png",
+        marching           = "units/ger/GerInf01.png",
+        defending          = "units/ger/GerInf01.png",
+        circular_defending = "units/ger/GerInf01.png",
+        attacking          = "units/ger/GerInf01.png",
       }
     },
   })

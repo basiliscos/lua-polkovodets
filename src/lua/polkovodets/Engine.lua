@@ -389,8 +389,63 @@ function _fill_initial_data(gear)
     end,
   })
 
+  gear:declare("validators/units/definitions", {
+    dependencies = {"units/definitions", "weapons/types::map"},
+    constructor  = function() return { name = "unit definitions"} end,
+    initializer  = function(gear, instance, unit_definitions, type_for)
+      instance.fn = function()
+
+        -- k: state_name, value: functons, which determines, whether state should present,
+        local state_definitions = {
+          -- land units should have attacking state, if there is at least one weapon type
+          -- without NON_ATTACKING flag
+          attacking = function(unit_definition)
+            local has_attacking_weapon
+            if (unit_definition.unit_type.id  == 'ut_land') then
+              for weapon_type_id, _ in pairs(unit_definition.staff) do
+                local weapon_type = type_for[weapon_type_id]
+                if (not weapon_type:is_capable("NON_ATTACKING")) then
+                  has_attacking_weapon = true
+                  break
+                end
+              end
+            end
+            return has_attacking_weapon
+          end,
+
+          -- land units, if there is at least one weamont without NON_ORIENTABLE flag
+          circular_defending = function(unit_definition)
+            local has
+            if (unit_definition.unit_type.id  == 'ut_land') then
+              for weapon_type_id, _ in pairs(unit_definition.staff) do
+                local weapon_type = type_for[weapon_type_id]
+                if (not weapon_type:is_capable("ORIENTED")) then
+                  has = true
+                  break
+                end
+              end
+            end
+            return has
+          end
+        }
+
+        for _, unit_definition in pairs(unit_definitions) do
+          for possible_state, detect_fn in pairs(state_definitions) do
+            if (detect_fn(unit_definition)) then
+              assert(unit_definition.state_icons[possible_state],
+                "unit definition " .. unit_definition.id .. " should have state icon for " .. possible_state);
+            end
+          end
+        end
+        print("unit definitions are valid")
+      end
+    end,
+  })
+
   gear:declare("validator", {
-    dependencies = { "validators/weapons/movement_types", "validators/units/classes", "validators/terrain/flags"},
+    dependencies = { "validators/weapons/movement_types", "validators/units/classes", "validators/terrain/flags",
+      "validators/units/definitions",
+    },
     constructor  = function() return { } end,
     initializer  = function(gear, instance, ...)
       local validators = { ... }
