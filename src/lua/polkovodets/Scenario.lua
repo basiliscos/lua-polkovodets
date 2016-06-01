@@ -91,10 +91,9 @@ function Scenario:initialize(scenario_data, objectives_data, armies_data,
     end
   end
 
-  engine.gear:set("weapon_instaces::map", weapon_instance_for)
-  engine.gear:set("units", units)
-  engine.gear:set("units::map", unit_for)
   self.units = units
+
+  return units, unit_for, weapon_instance_for
 end
 
 return Scenario

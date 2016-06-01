@@ -100,14 +100,6 @@ function _fill_initial_data(gear)
     end)
   end
 
-  -- default data
-  gear:set("data/dirs", {
-    scenarios   = 'data/db/scenarios',
-    definitions = 'data/db',
-    gfx         = 'data/gfx',
-    themes      = 'data/gfx/themes/'
-  })
-
   gear:set("data/theme", {
     name          = 'default',
     active_hex    = {
@@ -335,8 +327,9 @@ function _fill_initial_data(gear)
     },
     constructor  = function() return Scenario.create() end,
     initializer  = function(gear, instance, ...)
-      instance:initialize(...)
+      return instance:initialize(...)
     end,
+    provides     = {"units", "units::map", "weapon_instaces::map"}
   })
 
   -- validators
@@ -390,50 +383,82 @@ function _fill_initial_data(gear)
   })
 
   gear:declare("validators/units/definitions", {
-    dependencies = {"units/definitions", "weapons/types::map"},
+    dependencies = {"units", "weapons/types::map"},
     constructor  = function() return { name = "unit definitions"} end,
-    initializer  = function(gear, instance, unit_definitions, type_for)
+    initializer  = function(gear, instance, units, type_for)
       instance.fn = function()
 
         -- k: state_name, value: functons, which determines, whether state should present,
         local state_definitions = {
           -- land units should have attacking state, if there is at least one weapon type
           -- without NON_ATTACKING flag
-          attacking = function(unit_definition)
-            local has_attacking_weapon
-            if (unit_definition.unit_type.id  == 'ut_land') then
-              for weapon_type_id, _ in pairs(unit_definition.staff) do
-                local weapon_type = type_for[weapon_type_id]
-                if (not weapon_type:is_capable("NON_ATTACKING")) then
-                  has_attacking_weapon = true
-                  break
-                end
-              end
-            end
-            return has_attacking_weapon
-          end,
-
-          -- land units, if there is at least one weamont without NON_ORIENTABLE flag
-          circular_defending = function(unit_definition)
+          attacking = function(unit)
             local has
-            if (unit_definition.unit_type.id  == 'ut_land') then
-              for weapon_type_id, _ in pairs(unit_definition.staff) do
-                local weapon_type = type_for[weapon_type_id]
-                if (not weapon_type:is_capable("ORIENTED")) then
+            if (unit.definition.unit_type.id  == 'ut_land') then
+              for _, wi in pairs(unit.staff) do
+                if (not wi.weapon:is_capable("NON_ATTACKING") ) then
                   has = true
                   break
                 end
               end
             end
             return has
-          end
-        }
+          end,
 
-        for _, unit_definition in pairs(unit_definitions) do
+          -- land units, if there is at least one weapon without ORIENTED_ONLY flag
+          -- Example of orinented only weapon: barricade
+          circular_defending = function(unit)
+            local has
+            if (unit.definition.unit_type.id  == 'ut_land') then
+              for _, wi in pairs(unit.staff) do
+                if (not wi.weapon:is_capable("ORIENTED_ONLY") ) then
+                  has = true
+                  break
+                end
+              end
+            end
+            return has
+          end,
+
+          -- land units, if there is at least one weapon without NON_ORIENTED_ONLY flag
+          -- example of non orinented only weapon: landed mines
+          defending = function(unit)
+            local has
+            if (unit.definition.unit_type.id  == 'ut_land') then
+              for _, wi in pairs(unit.staff) do
+                if (not wi.weapon:is_capable("NON_ORIENTED_ONLY") ) then
+                  has = true
+                  break
+                end
+              end
+            end
+            return has
+          end,
+
+          -- land units, if there is at least one movable unit
+          retreating = function(unit)
+            local has
+            if (unit.definition.unit_type.id  == 'ut_land') then
+              for _, wi in pairs(unit.staff) do
+                if (not wi.weapon.movement_type.id ~= 'static') then
+                  has = true
+                  break
+                end
+              end
+            end
+            return has
+          end,
+
+        }
+        for _, unit in pairs(units) do
           for possible_state, detect_fn in pairs(state_definitions) do
-            if (detect_fn(unit_definition)) then
-              assert(unit_definition.state_icons[possible_state],
-                "unit definition " .. unit_definition.id .. " should have state icon for " .. possible_state);
+            if (detect_fn(unit)) then
+              print("unit " .. unit.id .. " should have state " .. possible_state)
+              if (not unit.definition.state_icons[possible_state]) then
+                local msg = string.format("unit definition %s should have state icon for state '%s', triggered by unit %s",
+                  unit.definition.id, possible_state, unit.id)
+                  error(msg)
+              end
             end
           end
         end

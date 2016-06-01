@@ -62,6 +62,7 @@ gear:declare("renderer", {
   constructor = function() return Renderer.create(engine, window, renderer) end
 })
 
+SampleData.generate_test_data(gear)
 SampleData.generate_battle_scheme(gear)
 SampleData.generate_map(gear)
 SampleData.generate_scenario(gear)
@@ -69,7 +70,6 @@ SampleData.generate_terrain(gear)
 
 local validator = gear:get("validator")
 validator.fn()
-local scenario = gear:get("scenario")
 engine:end_turn()
 local gui_renderer = gear:get("renderer")
 

@@ -60,9 +60,16 @@ gear:declare("renderer", {
   constructor = function() return Renderer.create(engine, window, renderer) end
 })
 
+-- default data
+gear:set("data/dirs", {
+  scenarios   = 'data/db/scenarios',
+  definitions = 'data/db',
+  gfx         = 'data/gfx',
+  themes      = 'data/gfx/themes/'
+})
+
 DataLoader.load(gear, 'Test3')
 
-local scenario = gear:get("scenario")
 engine:end_turn()
 
 local gui_renderer = gear:get("renderer")
