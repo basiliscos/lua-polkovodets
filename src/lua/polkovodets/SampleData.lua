@@ -558,6 +558,10 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/rus/rus_inf_DC.png",
         attacking          = "units/rus/rus_inf_A1.png",
         retreating         = "units/rus/rus_inf_MR.png",
+        escaping           = "units/rus/rus_inf_ME.png",
+        captured           = "units/rus/rus_inf_C.png",
+        refuelling         = "units/rus/rus_inf_REF.png",
+        unloading          = "units/rus/rus_inf_U.png",
       }
     },
     {
@@ -579,6 +583,10 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/rus/rus_inf_DC.png",
         attacking          = "units/rus/rus_inf_A1.png",
         retreating         = "units/rus/rus_inf_MR.png",
+        escaping           = "units/rus/rus_inf_ME.png",
+        captured           = "units/rus/rus_inf_C.png",
+        refuelling         = "units/rus/rus_inf_REF.png",
+        unloading          = "units/rus/rus_inf_U.png",
       }
     },
     {
@@ -599,6 +607,10 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/rus/rus_art_DC.png",
         attacking          = "units/rus/rus_art_A1.png",
         retreating         = "units/rus/rus_art_MR.png",
+        escaping           = "units/rus/rus_art_ME.png",
+        captured           = "units/rus/rus_art_C.png",
+        refuelling         = "units/rus/rus_art_REF.png",
+        unloading          = "units/rus/rus_art_U.png",
       }
     },
     {
@@ -619,6 +631,10 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/rus/rus_tank_DC.png",
         attacking          = "units/rus/rus_tank_A1.png",
         retreating         = "units/rus/rus_tank_MR.png",
+        escaping           = "units/rus/rus_tank_ME.png",
+        captured           = "units/rus/rus_tank_C.png",
+        refuelling         = "units/rus/rus_tank_REF.png",
+        unloading          = "units/rus/rus_tank_U.png",
       }
     },
     {
@@ -634,8 +650,8 @@ function SampleData.generate_scenario(gear)
         wt_FightLt = 15,
       },
       icons = {
-        flying  = "units/rus/rus_avia_F1.png",
-        landed  = "units/rus/rus_avia_S1.png",
+        flying      = "units/rus/rus_avia_F1.png",
+        refuelling  = "units/rus/rus_avia_S1.png",
       },
     },
     {
@@ -662,6 +678,10 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/rus/rus_stab_DC.png",
         attacking          = "units/rus/rus_stab_D1.png",
         retreating         = "units/rus/rus_stab_MR.png",
+        escaping           = "units/rus/rus_stab_ME.png",
+        captured           = "units/rus/rus_stab_C.png",
+        refuelling         = "units/rus/rus_stab_REF.png",
+        unloading          = "units/rus/rus_stab_U.png",
       },
     },
     {
@@ -682,6 +702,10 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/ger/GerInf01.png",
         attacking          = "units/ger/GerInf01.png",
         retreating         = "units/ger/GerInf01.png",
+        escaping           = "units/ger/GerInf01.png",
+        captured           = "units/ger/GerInf01.png",
+        refuelling         = "units/ger/GerInf01.png",
+        unloading          = "units/ger/GerInf01.png",
       }
     },
     {
@@ -702,6 +726,11 @@ function SampleData.generate_scenario(gear)
         circular_defending = "units/ger/GerInf01.png",
         attacking          = "units/ger/GerInf01.png",
         retreating         = "units/ger/GerInf01.png",
+        escaping           = "units/ger/GerInf01.png",
+        captured           = "units/ger/GerInf01.png",
+        refuelling         = "units/ger/GerInf01.png",
+        unloading          = "units/ger/GerInf01.png",
+        constructing       = "units/ger/GerInf01.png",
       }
     },
   })
