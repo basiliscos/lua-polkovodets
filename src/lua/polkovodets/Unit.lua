@@ -1102,6 +1102,217 @@ function Unit:get_attack_kinds(tile)
    return kinds
 end
 
+function Unit:get_actions(tile)
+  local list = {}
+  local engine = self.engine
+  local theme = engine.gear:get("theme")
+
+  if (self.tile == tile) then
+    -- unit info
+    table.insert(list, {
+      priority = 10,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_info', {name = self.name}),
+      state = "available",
+      images = {
+        available = theme.actions.information.available,
+        hilight   = theme.actions.information.hilight,
+      },
+      callback = function()
+        engine.interface:add_window('unit_info_window', self)
+      end
+    })
+
+
+    -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
+    local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
+    if (#orientable_weapons > 0) then
+      table.insert(list, {
+        priority = 10,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_rotate'),
+        state = "available",
+        images = {
+          available = theme.actions.change_orientation.available,
+          hilight   = theme.actions.change_orientation.hilight,
+        },
+        callback = function()
+          self:change_orientation()
+        end
+      })
+    end
+
+    -- take (oriented) defence, if there is at least one orientable weapon
+    if (#orientable_weapons > 0) then
+      table.insert(list, {
+        priority = 11,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_defence'),
+        state = "available",
+        images = {
+          available = theme.actions.defence.available,
+          hilight   = theme.actions.defence.hilight,
+        },
+        callback = function()
+          print("[TODO] defence")
+        end
+      })
+    end
+
+    -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
+    local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
+    if (#non_orientable_weapons > 0) then
+      table.insert(list, {
+        priority = 12,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_cir_defence'),
+        state = "available",
+        images = {
+          available = theme.actions.circular_defence.available,
+          hilight   = theme.actions.circular_defence.hilight,
+        },
+        callback = function()
+          print("[TODO] circular defence")
+        end
+      })
+    end
+
+    -- detach attached units
+    _.each(self.data.attached, function(idx, unit)
+      table.insert(list, {
+        priority = 20 + idx,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
+        state = "available",
+        images = {
+          available = theme.actions.detach.available,
+          hilight   = theme.actions.detach.hilight,
+        },
+        callback = function()
+          unit:update_actions_map()
+          state:set_selected_unit(unit)
+        end
+      })
+    end)
+
+  end
+
+  -- unit action: move to the tile. We cannot move unit here if there are other units on the same
+  -- layer, but something additional might be done, e.g. merge
+  local tile_units = tile:get_all_units(function() return true end)
+  local other_units = _.select(tile_units, function(idx, unit)
+    return unit.data.layer == self.data.layer
+  end)
+  local can_move_to_tile = self.data.actions_map.move[tile.id] and (#other_units == 0)
+  if (can_move_to_tile) then
+    table.insert(list, {
+      priority = 20,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_move', {x = tile.data.x, y = tile.data.y}),
+      state = "available",
+      images = {
+        available = theme.actions.move.available,
+        hilight   = theme.actions.move.hilight,
+      },
+      callback = function()
+        self:move_to(tile)
+      end
+    })
+  end
+
+  if (can_move_to_tile and self.definition.state_icons.retreating) then
+    table.insert(list, {
+      priority = 20,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_retreat', {x = tile.data.x, y = tile.data.y}),
+      state = "available",
+      images = {
+        available = theme.actions.retreat.available,
+        hilight   = theme.actions.retreat.hilight,
+      },
+      callback = function()
+        print("[TODO] retreat")
+      end
+    })
+  end
+
+
+  -- unit action: merge
+  if (self.data.actions_map.merge[tile.id]) then
+    table.insert(list, {
+      priority = 30,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_merge'),
+      state = "available",
+      images = {
+        available = theme.actions.merge.available,
+        hilight   = theme.actions.merge.hilight,
+      },
+      callback = function()
+        self:merge_at(tile)
+      end
+    })
+  end
+
+  -- unit action: battle
+  if (self.data.actions_map.attack[tile.id]) then
+    table.insert(list, {
+      priority = 40,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_battle'),
+      state = "available",
+      images = {
+        available = theme.actions.battle.available,
+        hilight   = theme.actions.battle.hilight,
+      },
+      callback = function()
+        self:attack_on(tile, "battle")
+      end
+    })
+  end
+
+  -- unit special action: construction
+  local special_actions = self.data.actions_map.special[tile.id]
+  if (special_actions and special_actions.build) then
+    table.insert(list, {
+      priority = 35,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_construct'),
+      state = "available",
+      images = {
+        available = theme.actions.construction.available,
+        hilight   = theme.actions.construction.hilight,
+      },
+      callback = function()
+        self:special_action(tile, 'build')
+      end
+    })
+  end
+
+  -- refuel action: for land units on the self tile, for  air units in aiprots,
+  -- for naval units in haven
+  local can_refuel
+    =  (self.definition.unit_type.id == 'ut_land' and self.tile == tile)
+    or (self.definition.unit_type.id == 'ut_air' and self.data.actions_map.landing[tile.id])
+  if (can_refuel) then
+    table.insert(list, {
+      priority = 37,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_refuel'),
+      state = "available",
+      images = {
+        available = theme.actions.refuel.available,
+        hilight   = theme.actions.refuel.hilight,
+      },
+      callback = function()
+        print("[TODO] refuel")
+      end
+    })
+  end
+
+  return list
+end
+
 function Unit:change_orientation()
   local o = (self.data.orientation == 'left') and 'right' or 'left'
   self.data.orientation = o

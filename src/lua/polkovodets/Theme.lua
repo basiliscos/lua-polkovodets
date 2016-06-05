@@ -130,6 +130,22 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         available = renderer:load_texture(theme_dir .. '/actions/construction.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/construction-hilight.png'),
       },
+      defence = {
+        available = renderer:load_texture(theme_dir .. '/actions/defending.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/defending-hilight.png'),
+      },
+      retreat = {
+        available = renderer:load_texture(theme_dir .. '/actions/retreating.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/retreating-hilight.png'),
+      },
+      refuel = {
+        available = renderer:load_texture(theme_dir .. '/actions/refuelling.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/refuelling-hilight.png'),
+      },
+      circular_defence = {
+        available = renderer:load_texture(theme_dir .. '/actions/circular-defending.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/circular-defending-hilight.png'),
+      },
       battle = {
         available = renderer:load_texture(theme_dir .. '/actions/attack.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/attack-hilight.png'),
