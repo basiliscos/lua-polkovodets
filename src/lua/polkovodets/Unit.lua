@@ -1220,6 +1220,7 @@ function Unit:get_actions(tile)
     })
   end
 
+  -- march
   if (can_move_to_tile and self.definition.state_icons.retreating) then
     table.insert(list, {
       priority = 20,
@@ -1236,6 +1237,39 @@ function Unit:get_actions(tile)
     })
   end
 
+  -- unit action: patrol
+  if (can_move_to_tile and self.definition.state_icons.patrol) then
+    table.insert(list, {
+      priority = 21,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_patrol', {x = tile.data.x, y = tile.data.y}),
+      state = "available",
+      images = {
+        available = theme.actions.patrol.available,
+        hilight   = theme.actions.patrol.hilight,
+      },
+      callback = function()
+        print("[TODO] patrol")
+      end
+    })
+  end
+
+  -- unit action: raid
+  if (can_move_to_tile and self.definition.state_icons.raid) then
+    table.insert(list, {
+      priority = 22,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_raid', {x = tile.data.x, y = tile.data.y}),
+      state = "available",
+      images = {
+        available = theme.actions.raid.available,
+        hilight   = theme.actions.raid.hilight,
+      },
+      callback = function()
+        print("[TODO] raid")
+      end
+    })
+  end
 
   -- unit action: merge
   if (self.data.actions_map.merge[tile.id]) then

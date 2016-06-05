@@ -142,6 +142,14 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         available = renderer:load_texture(theme_dir .. '/actions/refuelling.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/refuelling-hilight.png'),
       },
+      raid = {
+        available = renderer:load_texture(theme_dir .. '/actions/raid.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/raid-hilight.png'),
+      },
+      patrol = {
+        available = renderer:load_texture(theme_dir .. '/actions/patroling.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/patroling-hilight.png'),
+      },
       circular_defence = {
         available = renderer:load_texture(theme_dir .. '/actions/circular-defending.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/circular-defending-hilight.png'),
