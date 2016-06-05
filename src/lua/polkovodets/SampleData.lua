@@ -561,7 +561,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/rus/rus_inf_ME.png",
         captured           = "units/rus/rus_inf_C.png",
         refuelling         = "units/rus/rus_inf_REF.png",
-        unloading          = "units/rus/rus_inf_U.png",
       }
     },
     {
@@ -586,7 +585,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/rus/rus_inf_ME.png",
         captured           = "units/rus/rus_inf_C.png",
         refuelling         = "units/rus/rus_inf_REF.png",
-        unloading          = "units/rus/rus_inf_U.png",
       }
     },
     {
@@ -610,7 +608,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/rus/rus_art_ME.png",
         captured           = "units/rus/rus_art_C.png",
         refuelling         = "units/rus/rus_art_REF.png",
-        unloading          = "units/rus/rus_art_U.png",
       }
     },
     {
@@ -634,7 +631,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/rus/rus_tank_ME.png",
         captured           = "units/rus/rus_tank_C.png",
         refuelling         = "units/rus/rus_tank_REF.png",
-        unloading          = "units/rus/rus_tank_U.png",
       }
     },
     {
@@ -681,7 +677,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/rus/rus_stab_ME.png",
         captured           = "units/rus/rus_stab_C.png",
         refuelling         = "units/rus/rus_stab_REF.png",
-        unloading          = "units/rus/rus_stab_U.png",
       },
     },
     {
@@ -705,7 +700,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/ger/GerInf01.png",
         captured           = "units/ger/GerInf01.png",
         refuelling         = "units/ger/GerInf01.png",
-        unloading          = "units/ger/GerInf01.png",
       }
     },
     {
@@ -729,7 +723,6 @@ function SampleData.generate_scenario(gear)
         escaping           = "units/ger/GerInf01.png",
         captured           = "units/ger/GerInf01.png",
         refuelling         = "units/ger/GerInf01.png",
-        unloading          = "units/ger/GerInf01.png",
         constructing       = "units/ger/GerInf01.png",
       }
     },

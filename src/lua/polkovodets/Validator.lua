@@ -92,22 +92,24 @@ function Validator.declare(gear)
           return has
         end
 
+        local land_unit_attacking = function(unit)
+          local has
+          if (unit.definition.unit_type.id  == 'ut_land') then
+            for _, wi in pairs(unit.staff) do
+              if (not wi.weapon:is_capable("NON_ATTACKING") ) then
+                has = true
+                break
+              end
+            end
+          end
+          return has
+        end
+
         -- k: state_name, value: functons, which determines, whether state should present,
         local state_definitions = {
           -- land units should have attacking state, if there is at least one weapon type
           -- without NON_ATTACKING flag
-          attacking = function(unit)
-            local has
-            if (unit.definition.unit_type.id  == 'ut_land') then
-              for _, wi in pairs(unit.staff) do
-                if (not wi.weapon:is_capable("NON_ATTACKING") ) then
-                  has = true
-                  break
-                end
-              end
-            end
-            return has
-          end,
+          attacking = land_unit_attacking,
 
           -- land units, if there is at least one weapon without ORIENTED_ONLY flag
           -- Example of orinented only weapon: barricade
@@ -162,32 +164,12 @@ function Validator.declare(gear)
 
           marching = land_unit_marching,
 
-          -- land units, with weapon with CAN_PATROL capabilities
           patroling = function(unit)
-            local has
-            if (unit.definition.unit_type.id  == 'ut_land') then
-              for _, wi in pairs(unit.staff) do
-                if (wi.weapon:is_capable("CAN_PATROL") ) then
-                  has = true
-                  break
-                end
-              end
-            end
-            return has
+            return unit.definition.state_icons.patroling and land_unit_attacking(unit)
           end,
 
-          -- land units, with weapon with CAN_RAID capabilities
           raiding = function(unit)
-            local has
-            if (unit.definition.unit_type.id  == 'ut_land') then
-              for _, wi in pairs(unit.staff) do
-                if (wi.weapon:is_capable("CAN_RAID") ) then
-                  has = true
-                  break
-                end
-              end
-            end
-            return has
+            return unit.definition.state_icons.raiding and land_unit_attacking(unit)
           end,
 
           -- any moveable unit can be refuelled
@@ -202,8 +184,6 @@ function Validator.declare(gear)
             return has
           end,
 
-          -- any land unit, capable to move can be unloaded from transport
-          unloading = land_unit_marching,
 
           -- land units, with weapon with CAN_ASSULT capabilities
           assulting = function(unit)
