@@ -60,7 +60,7 @@ subtest("weapons-parse",
         function()
            local csv_data = [[
 name;nation;weap_type;weap_class;weap_category;target_type;movement;move_type;range;<attack;soft;hard;air;naval;/>;def_ground;def_air;icon_id;;;;;
-Маневренный бронеход "Витязь" обр.1930;rus;wt_tankInfMid;wk_armor;wc_tank;hard;5;tracked;1;*;11;15;0;0;*;11;9;weapon\rus\armory\RusTank01.png;weapon\rus\armory;\;RusTank01;.png;weapon\rus\armory\RusTank01.png
+Маневренный бронеход "Витязь" обр.1930 ;rus;wt_tankInfMid;wk_armor;wc_tank;hard;5;tracked;1;*;11;15;0;0;*;11;9;weapon\rus\armory\RusTank01.png;weapon\rus\armory;\;RusTank01;.png;weapon\rus\armory\RusTank01.png
 Стрелковое отделение обр.1935;rus;wt_infant;wk_infant;wc_infant ;soft;3;leg;1;*;2;1;0;0;*;6;7;weapon\rus\infantry\RusInf01.png;weapon\rus\infantry;\;RusInf01;.png;weapon\rus\infantry\RusInf01.png
                   ]]
            local c = Converter.create(create_iterator(csv_data))
@@ -107,7 +107,7 @@ name;nation;weap_type;weap_class;weap_category;target_type;movement;move_type;ra
                         nation = "rus",
                         range = "1",
                         target_type = "soft",
-                        weap_category = "wc_infant ",
+                        weap_category = "wc_infant",
                         weap_class = "wk_infant",
                         weap_type = "wt_infant"
                      },
@@ -342,7 +342,7 @@ wc_tractor;Тягачи;;TRANSPORTS_TOWED;TRUE;
                      {
                         flags = { },
                         id = "wc_antiair",
-                        name = "Средства ПВО "
+                        name = "Средства ПВО"
                      }, {
                         flags = {
                            TRANSPORTS_TOWED = "TRUE"

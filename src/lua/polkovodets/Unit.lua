@@ -1033,13 +1033,13 @@ function Unit:subordinate(subject)
       if (unit_sizes_limit ~= 'unlimited') then
          local total_subjects = 0
          for k, unit in pairs(self.data.subordinated) do
-            if (unit.definition.size == subject.definition.data.size) then
+            if (unit.definition.size == subject.definition.size) then
                total_subjects = total_subjects + 1
             end
          end
          assert(total_subjects < tonumber(unit_sizes_limit),
                 "not able to subordinate " .. subject.id .. ": already have " .. total_subjects
-                 .. "of size " .. subject.definition.data.size
+                 .. " of size " .. subject.definition.size
          )
       end
       -- all OK, can subordinate

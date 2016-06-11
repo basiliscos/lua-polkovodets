@@ -183,6 +183,10 @@ function Converter:_convert_csv()
               elseif (string.find(value, '\\')) then -- windows backslashes => unix slashes
                  value = string.gsub(value, '\\', '/')
               end
+              -- remove trailing spaces
+              if (type(value) == 'string') then
+                value = string.gsub(value, "([^ ])[ ]+$", "%1");
+              end
               push_value(value, column)
               column = column + 1
            end
