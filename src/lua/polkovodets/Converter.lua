@@ -172,6 +172,8 @@ function Converter:_convert_csv()
            if (string.sub(value, -1, #value) == ';') then
               value = string.sub(value, 1, -2)
            end
+           -- remove trailing spaces
+           value = string.gsub(value, "([^ ])[ ]+$", "%1");
            if (column <= columns) then
               -- print("v: " .. column .. " " .. (value or 'nil'))
               if (string.find(value, '#', nil, true)) then -- make a list of values
@@ -182,10 +184,6 @@ function Converter:_convert_csv()
                 value = array
               elseif (string.find(value, '\\')) then -- windows backslashes => unix slashes
                  value = string.gsub(value, '\\', '/')
-              end
-              -- remove trailing spaces
-              if (type(value) == 'string') then
-                value = string.gsub(value, "([^ ])[ ]+$", "%1");
               end
               push_value(value, column)
               column = column + 1
