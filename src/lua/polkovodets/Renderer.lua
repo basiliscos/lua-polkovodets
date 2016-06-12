@@ -209,6 +209,13 @@ function Renderer:main_loop()
   local running = true
   local sdl_renderer = self.sdl_renderer
   local kind = SDL.eventWindow
+  local fn_idle = function()
+    local state, x, y = SDL.getMouseState()
+    local event = { x = x,  y = y, }
+    -- process handlers in stack (FILO) order
+    self.handlers.idle:apply(function(cb) return cb(event) end)
+  end
+
   while (running) do
     local e = SDL.waitEvent(EVENT_DELAY)
     if (e) then
@@ -254,16 +261,12 @@ function Renderer:main_loop()
         }
         -- process handlerss in stack (FILO) order
         self.handlers.mouse_click:apply(function(cb) return cb(event) end)
-      end
+	   else
+       fn_idle()
+     end
     -- idle
     else
-      local state, x, y = SDL.getMouseState()
-      local event = {
-        x       = x,
-        y       = y,
-      }
-      -- process handlers in stack (FILO) order
-      self.handlers.idle:apply(function(cb) return cb(event) end)
+      fn_idle()
     end
     engine.reactor:replay_masked_events()
     sdl_renderer:clear()

@@ -380,7 +380,7 @@ function DataLoader.load(gear, scenario_path)
     assert(data.staff, units_definitions_path .. " should have staff in definition " .. idx)
     assert(type(data.staff) == 'table', units_definitions_path .. " staff should be a table in definition " .. idx )
 
-    print(inspect(data))
+    -- print(inspect(data))
     table.insert(units_definitions, {
       id         = assert(data.id, units_definitions_path .. " should have id in unit definition " .. idx),
       name       = assert(data.name, units_definitions_path .. " should have name in unit definition " .. idx),

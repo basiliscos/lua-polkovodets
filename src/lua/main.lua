@@ -68,7 +68,7 @@ gear:set("data/dirs", {
   themes      = 'data/gfx/themes/'
 })
 
-DataLoader.load(gear, 'Test3')
+DataLoader.load(gear, 'Poland')
 
 engine:end_turn()
 
