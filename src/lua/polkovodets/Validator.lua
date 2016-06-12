@@ -162,7 +162,17 @@ function Validator.declare(gear)
             return has
           end,
 
-          marching = land_unit_marching,
+          -- any unit (not land only) should have marching (moving) state
+          marching = function(unit)
+            local has
+            for _, wi in pairs(unit.staff) do
+              if (not wi.weapon.movement_type.id ~= 'static') then
+                has = true
+                break
+              end
+            end
+            return has
+          end,
 
           patroling = function(unit)
             return unit.definition.state_icons.patroling and land_unit_attacking(unit)

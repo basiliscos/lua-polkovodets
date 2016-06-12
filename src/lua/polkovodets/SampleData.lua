@@ -646,7 +646,7 @@ function SampleData.generate_scenario(gear)
         wt_FightLt = 15,
       },
       icons = {
-        flying      = "units/rus/rus_avia_F1.png",
+        marching    = "units/rus/rus_avia_F1.png",
         refuelling  = "units/rus/rus_avia_S1.png",
       },
     },
@@ -823,7 +823,7 @@ function SampleData.generate_scenario(gear)
     {
       id = "rus_unit_6",
       name = "Russian air-fighters batallion 5/1",
-      state = "flying",
+      state = "marching",
       unit_definition_id = "rus_ud_5",
       x = 6, y = 6,
       exp = 0,

@@ -74,7 +74,7 @@ t = {
     ['db.unit.state.attacking']       = 'атака',
     ['db.unit.state.defending']       = 'защита',
     ['db.unit.state.landed']          = 'посажен',
-    ['db.unit.state.flying']          = 'в полёте',
+    ['db.unit.state.marching']        = 'в движении',
 
     -- orientation
     ['db.unit.orientation.left']      = 'налево',

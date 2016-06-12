@@ -97,7 +97,8 @@ end
 
 function Unit:_update_layer()
    local unit_type = self.definition.unit_type.id
-   local layer = self.data.state == 'flying' and 'air' or 'surface'
+   local air_flights = (unit_type  == 'ut_air') and (self.data.state == 'marching')
+   local layer = air_flights and 'air' or 'surface'
    self.data.layer = layer
 end
 
@@ -557,7 +558,7 @@ function Unit:move_to(dst_tile)
   if (unit_type == 'ut_land') then
     new_state = self:_enemy_near(dst_tile) and 'defending' or 'marching'
   elseif (unit_type == 'ut_air') then
-    new_state = 'flying'
+    new_state = 'marching'
   end
   self:_update_state(new_state)
   self:_update_layer()
