@@ -85,8 +85,8 @@ function DataLoader.load(gear, scenario_path)
     local terrain_name = assert(string.sub(datum,1,1), "cannot extract terrain name for tile " .. tile_id)
     local image_idx = assert(string.sub(datum,2, -1), "cannot extract image index for tile " .. tile_id)
     image_idx = tonumber(image_idx)
-    local terrain_type = terrain:get_type(terrain_name)
     local name = tile_names[idx] or terrain_name
+    local terrain_type = terrain:get_type(terrain_name)
     local tile_data = {
       x            = x,
       y            = y,

@@ -49,15 +49,20 @@ local input_for = {
 
 local kind, in_dir, out_dir = arg[1], arg[2], arg[3]
 for k, name in pairs(input_for[kind]) do
-   local in_path = in_dir .. '/' .. name
-   local in_file = assert(io.open(in_path, 'r'))
-   local out_path = out_dir .. '/' .. string.gsub(name, '.csv', '.json')
-   local iterator = function() return in_file:read('*l') end
-   local converter = Converter.create(iterator)
-   print(string.format("converting %s => %s", in_path, out_path))
-   local items = converter:convert()
-   local out_file = io.open(out_path , "wb")
-   local serialized_data = json.encode(#items == 1 and items[1] or items, {indent = true})
-   out_file:write(serialized_data)
-   out_file:write("\n")
+  local in_path = in_dir .. '/' .. name
+  local in_file = assert(io.open(in_path, 'r'))
+  local out_path = out_dir .. '/' .. string.gsub(name, '.csv', '.json')
+  local line_no = 0;
+  local iterator = function()
+    line_no = line_no + 1
+    local line = in_file:read('*l');
+    return line, line_no
+  end
+  local converter = Converter.create(iterator)
+  print(string.format("converting %s => %s", in_path, out_path))
+  local items = converter:convert()
+  local out_file = io.open(out_path , "wb")
+  local serialized_data = json.encode(#items == 1 and items[1] or items, {indent = true})
+  out_file:write(serialized_data)
+  out_file:write("\n")
 end

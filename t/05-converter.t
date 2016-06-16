@@ -20,7 +20,7 @@ local create_iterator = function(csv_data)
    return function()
       local idx = line_no
       line_no = line_no + 1
-      return lines[idx]
+      return lines[idx], line_no
    end
 
 end

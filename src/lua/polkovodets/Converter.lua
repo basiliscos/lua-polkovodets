@@ -163,7 +163,7 @@ function Converter:_convert_csv()
    end
 
 
-   local line = iterator()
+   local line, line_no = iterator()
    while (line) do
       local success, msg = pcall(function()
         local column = 1
@@ -191,9 +191,9 @@ function Converter:_convert_csv()
         end
       end)
       if (not success) then
-        error("cannot convert line " .. line .. " : "  .. msg .. ", stack: " .. inspect(stack))
+        error(string.format("cannot convert line %d (%s) : %s, stack: %s", line_no, line, msg, inspect(stack)))
       end
-      line = iterator()
+      line, line_no = iterator()
    end
    -- push the current item into list of items
    push_out()
