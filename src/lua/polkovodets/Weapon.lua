@@ -68,7 +68,7 @@ function Weapon:initialize(renderer, weapon_data, classes_for, types_for, catego
   -- validate attack types
   for attack_type, v in pairs(target_type_for) do
     local exists = attacks[attack_type] or attacks[attack_type] == 0
-    assert(exists, "attack " .. attack_type .. " isn't present in unit " .. id)
+    assert(exists, "attack " .. attack_type .. " isn't present in weapon " .. id)
   end
 
   -- gather all flags
