@@ -211,16 +211,7 @@ function Validator.declare(gear)
 
           -- land units, with weapon with BUILD_CAPABILITIES capabilities
           constructing = function(unit)
-            local has
-            if (unit.definition.unit_type.id  == 'ut_land') then
-              for _, wi in pairs(unit.staff) do
-                if (wi.weapon:is_capable("BUILD_CAPABILITIES") ) then
-                  has = true
-                  break
-                end
-              end
-            end
-            return has
+            return unit.definition.state_icons.constructing and land_unit_attacking(unit)
           end,
 
           -- land units, with weapon with CAN_BRIDGE capabilities
