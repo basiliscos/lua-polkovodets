@@ -63,17 +63,19 @@ my %map = (
   r30  => 'b9',
 );
 
-my $position;
-my $copy = $data;
-
-while (my ($from, $to) = each %map) {
-  my $start = 0;
-  while ((my $pos = index($data, $from, $start)) >= 0 ) {
-    my $advance = length($from);
-    $copy = substr($copy, 0, $pos) . $to . substr($copy, $pos + $advance);
-    $start = $pos + $advance;
-    # print("pos ($from => $to)= $pos / $start\n");
+my $next_pair = sub {
+  my $result;
+  while (my ($from, $to) = each %map) {
+    if (not $map{$to}) {
+      delete $map{$from};
+      return [$from, $to];
+    }
   }
-}
 
-path($ARGV[0])->spew($copy);
+};
+
+while (my $pair = $next_pair->()) {
+  my ($from, $to) = @$pair;
+  $data =~ s/\Q$from\E/$to/g;
+}
+path($ARGV[0])->spew($data);
