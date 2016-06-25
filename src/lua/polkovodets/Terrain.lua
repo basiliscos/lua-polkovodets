@@ -21,8 +21,6 @@ local inspect = require('inspect')
 local Terrain = {}
 Terrain.__index = Terrain
 
-local Parser = require 'polkovodets.Parser'
-
 
 function Terrain.create()
    local o = {

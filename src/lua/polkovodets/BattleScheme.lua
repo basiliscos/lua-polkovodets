@@ -33,7 +33,6 @@ ARG      ← LITERAL
 ]]--
 
 
-local Parser = require 'polkovodets.Parser'
 local inspect = require('inspect')
 local lpeg = require('lpeg')
 local _ = require ("moses")

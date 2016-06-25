@@ -25,7 +25,6 @@ local Nation = require 'polkovodets.Nation'
 local Player = require 'polkovodets.Player'
 local Unit = require 'polkovodets.Unit'
 local WeaponInstance = require 'polkovodets.WeaponInstance'
-local Parser = require 'polkovodets.Parser'
 
 function Scenario.create()
   return setmetatable({}, Scenario)

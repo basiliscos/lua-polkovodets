@@ -20,7 +20,6 @@ local Map = {}
 Map.__index = Map
 
 local _ = require ("moses")
-local Parser = require 'polkovodets.Parser'
 local Terrain = require 'polkovodets.Terrain'
 local Tile = require 'polkovodets.Tile'
 local inspect = require('inspect')
