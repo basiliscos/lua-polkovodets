@@ -61,21 +61,26 @@ my %map = (
   r28  => 'b7',
   r29  => 'b8',
   r30  => 'b9',
+  R11  => 'b10',
 );
 
 my $next_pair = sub {
   my $result;
-  while (my ($from, $to) = each %map) {
-    if (not $map{$to}) {
+  # while (my ($from, $to) = each %map) {
+  for my $from (keys %map) {
+    my $to = $map{$from};
+    if (not exists $map{$to}) {
+      $result = [$from, $to];
       delete $map{$from};
-      return [$from, $to];
+      last;
     }
   }
-
+  return $result;
 };
 
 while (my $pair = $next_pair->()) {
   my ($from, $to) = @$pair;
-  $data =~ s/\Q$from\E/$to/g;
+  print("$from -> $to\n");
+  $data =~ s/\Q$from\E(?!\d)/$to/g;
 }
 path($ARGV[0])->spew($data);
