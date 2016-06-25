@@ -34,6 +34,7 @@ t = {
     ['ui.radial-menu.hex_button']               = 'Меню для гекса',
     ['ui.radial-menu.general_button']           = 'Общеигровое меню',
     ['ui.radial-menu.general.end_turn']         = 'Конец хода',
+    ['ui.radial-menu.general.strategical_map']  = 'Стратегическая карта',
     ['ui.radial-menu.general.toggle_layer']     = 'Переключить активный уровень (поверхность/воздух)',
     ['ui.radial-menu.general.toggle_history']   = 'Показать последние действия',
     ['ui.radial-menu.general.toggle_landscape'] = 'Показать только ландшафт',

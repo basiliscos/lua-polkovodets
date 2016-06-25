@@ -27,6 +27,7 @@ require ('polkovodets.gui.BattleDetailsWindow')
 require ('polkovodets.gui.BattleSelectorPopup')
 require ('polkovodets.gui.RadialMenu')
 require ('polkovodets.gui.UnitInfoWindow')
+require ('polkovodets.gui.StrategicalMapWindow')
 require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
 
 local Interface = {}
@@ -262,6 +263,8 @@ function Interface:add_window(id, data)
   -- print("class for " .. id .. " " .. class_name)
   local class = require ('polkovodets.gui.' .. class_name)
   local window = class.create(self.engine, data)
+  assert(window, "error creaing window " .. class_name)
+  --print(inspect(window))
 
   local dimensions = window:bind_ctx(self.context)
   local obj_index = #self.drawing.objects + 1,

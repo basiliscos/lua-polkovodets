@@ -58,6 +58,22 @@ function RadialMenu:_generic_actions()
 
   local list = {}
 
+  -- strategical map button
+  local strategical_map_button = {
+    policy = "click",
+    hint = engine:translate('ui.radial-menu.general.strategical_map'),
+    state = "available",
+    images = {
+      available = theme.actions.strategical_map.available,
+      hilight   = theme.actions.strategical_map.hilight,
+    },
+    callback = function()
+      engine.interface:add_window('strategical_map_window', engine)
+    end
+  }
+  table.insert(list, strategical_map_button)
+
+
   -- end button
   local end_button = {
     policy = "click",

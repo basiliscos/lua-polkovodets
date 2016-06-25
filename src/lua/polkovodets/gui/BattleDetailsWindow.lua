@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local inspect = require('inspect')
 local _ = require ("moses")
 
-local Button = require ('polkovodets.gui.Button')
 local Widget = require ('polkovodets.gui.Widget')
 local Image = require 'polkovodets.utils.Image'
 local Region = require 'polkovodets.utils.Region'
