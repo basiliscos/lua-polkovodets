@@ -154,7 +154,7 @@ function StrategicalMapWindow:_on_ui_update(show)
       {x = content_x, y = content_y, w = content_w, h = content_h}
     ))
 
-    -- copu terrain
+    -- copy terrain
     for i = 1, map.width do
       for j = 1, map.height do
         local tile = map.tiles[i][j]
