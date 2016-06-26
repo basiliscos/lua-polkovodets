@@ -131,6 +131,8 @@ end
 
 function StrategicalMapWindow:_on_ui_update(show)
   local engine = self.engine
+  local context = self.drawing.context
+  local handlers_bound = self.handlers_bound
 
   if (show) then
     local theme = engine.gear:get("theme")
@@ -142,6 +144,7 @@ function StrategicalMapWindow:_on_ui_update(show)
     local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
     local content_w, content_h = gui.content_size.w, gui.content_size.h
 
+    local window_region = Region.create(x, y, content_x + content_w + self.contentless_size.dx, content_y + content_h + self.contentless_size.dy)
 
     -- pre-render map in memory, just copy it during rendering cycle
     local format = theme.window.background.texture:query()
@@ -169,8 +172,38 @@ function StrategicalMapWindow:_on_ui_update(show)
       assert(sdl_renderer:copy(map_texture, nil, map_dst))
       Widget.draw(self)
     end
-
     Widget.update_drawer(self, x, y, content_w, content_h)
+
+    if (not handlers_bound) then
+      self.handlers_bound = true
+
+      local mouse_move = function(event)
+        engine.state:set_mouse_hint('')
+        if (window_region:is_over(event.x, event.y)) then
+        end
+        return true -- stop further event propagation
+      end
+      local mouse_click = function(event)
+        if (window_region:is_over(event.x, event.y)) then
+        else
+          engine.interface:remove_window(self)
+        end
+        return true -- stop further event propagation
+      end
+
+      context.events_source.add_handler('mouse_move', mouse_move)
+      context.events_source.add_handler('mouse_click', mouse_click)
+
+      self.content.mouse_move = mouse_move
+      self.content.mouse_click = mouse_click
+    end
+  elseif(handlers_bound) then -- unbind everything
+    self.handlers_bound = false
+    context.events_source.remove_handler('mouse_click', self.content.mouse_click)
+    context.events_source.remove_handler('mouse_move', self.content.mouse_move)
+    self.content.mouse_click = nil
+    self.content.mouse_move = nil
+    self.drawing.content_fn = function() end
   end
 end
 

@@ -91,8 +91,8 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         hilight   = renderer:load_texture(theme_dir .. '/actions/end-turn-hilight.png'),
       },
       strategical_map = {
-        available = renderer:load_texture(theme_dir .. '/actions/end-turn.png'),
-        hilight   = renderer:load_texture(theme_dir .. '/actions/end-turn-hilight.png'),
+        available = renderer:load_texture(theme_dir .. '/actions/strategical-map.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/strategical-map-hilight.png'),
       },
       switch_layer = {
         air  = renderer:load_texture(theme_dir .. '/actions/layer-air.png'),
