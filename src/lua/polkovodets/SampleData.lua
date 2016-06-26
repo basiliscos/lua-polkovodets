@@ -282,8 +282,8 @@ end
 
 function SampleData.generate_map(gear)
   gear:set("data/map", {
-    width  = 40,
-    height = 40,
+    width  = 100,
+    height = 100,
   })
 
   local my_map = {

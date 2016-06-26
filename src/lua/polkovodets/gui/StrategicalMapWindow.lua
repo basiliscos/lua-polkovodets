@@ -92,6 +92,8 @@ function StrategicalMapWindow:_construct_gui()
   local tile_w, tile_h = math.modf(scaled_geometry.w), math.modf(scaled_geometry.h)
   local x_offset, y_offset = math.modf(scaled_geometry.x_offset), math.modf(scaled_geometry.y_offset)
 
+  local layer = engine.state:get_active_layer()
+
   -- k: tile_id, value: description
   local tile_positions = {}
   for i = 1, map.width do
@@ -104,10 +106,29 @@ function StrategicalMapWindow:_construct_gui()
         h = tile_h,
       }
       local image = terrain:get_hex_image(tile.data.terrain_type.id, weather, tile.data.image_idx)
+      local flag_data
+
+      local unit = tile:get_unit(layer)
+
+      if (unit) then
+        local flag = unit.definition.nation.unit_flag
+        flag_data = {
+          dst = {
+            x = dst.x + (tile_w - x_offset),
+            y = dst.y,
+            w = tile_w - ((tile_w - x_offset) *2),
+            h = tile_h,
+          },
+          image = flag,
+        }
+        -- print("flag data " .. inspect(flag_data))
+        -- error("dst " .. inspect(dst))
+      end
 
       tile_positions[tile.id] = {
-        dst   = dst,
-        image = image,
+        dst       = dst,
+        image     = image,
+        flag_data = flag_data,
       }
     end
   end
@@ -164,12 +185,19 @@ function StrategicalMapWindow:_on_ui_update(show)
       for j = 1, map.height do
         local tile = map.tiles[i][j]
 
+        -- terrain
         local description = gui.tile_positions[tile.id]
         assert(sdl_renderer:copy(description.image.texture, nil, description.dst))
 
         local spotting = map.united_spotting.map[tile.id]
         if (not spotting) then
+          -- fog of war
           assert(sdl_renderer:copy(fog.texture, nil, description.dst))
+        elseif (description.flag_data) then
+          -- unit flag, scaled up to hex
+          local dst = description.flag_data.dst
+          local image = description.flag_data.image
+          assert(sdl_renderer:copy(image.texture, nil, dst))
         end
       end
     end
