@@ -139,6 +139,7 @@ function StrategicalMapWindow:_on_ui_update(show)
     local sdl_renderer = engine.gear:get("renderer").sdl_renderer
     local gui = self.drawing.gui
     local map = engine.gear:get("map")
+    local terrain = engine.gear:get("terrain")
 
     local x, y = table.unpack(self.drawing.position)
     local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
@@ -157,17 +158,25 @@ function StrategicalMapWindow:_on_ui_update(show)
       {x = content_x, y = content_y, w = content_w, h = content_h}
     ))
 
-    -- copy terrain
+    local fog = terrain:get_icon('fog')
+    -- copy terrain with fog
     for i = 1, map.width do
       for j = 1, map.height do
         local tile = map.tiles[i][j]
+
         local description = gui.tile_positions[tile.id]
         assert(sdl_renderer:copy(description.image.texture, nil, description.dst))
+
+        local spotting = map.united_spotting.map[tile.id]
+        if (not spotting) then
+          assert(sdl_renderer:copy(fog.texture, nil, description.dst))
+        end
       end
     end
     assert(sdl_renderer:setTarget(nil))
     local map_dst = {x = content_x, y = content_y, w = content_w, h = content_h}
 
+    -- actual draw function is rather simple
     self.drawing.content_fn = function()
       assert(sdl_renderer:copy(map_texture, nil, map_dst))
       Widget.draw(self)
