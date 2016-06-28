@@ -211,6 +211,19 @@ function _fill_initial_data(gear)
       instance.height = data.height
       instance.x_offset = data.x_offset
       instance.y_offset = data.y_offset
+
+      -- There is Euclid's method to calculate GCD, but for small numbers, it's fine
+      -- to have simple enumeration
+      local gcd = 1
+      local numbers = {data.width, data.height, data.x_offset, data.y_offset}
+      local upto = math.modf(math.sqrt(math.min(table.unpack(numbers))))
+      for i = 1, upto do
+        local fine = _.all(numbers, function(_, value) return (value % i == 0) end)
+        -- print(string.format("%d: %s", i, fine))
+        if (fine) then gcd = i end
+      end
+      assert(gcd > 1, "cannot find greatest common divisor > 1 for the provided hex geometry")
+      instance.max_scale = gcd
     end,
   })
 

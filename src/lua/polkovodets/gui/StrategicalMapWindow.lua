@@ -68,16 +68,9 @@ function StrategicalMapWindow:_construct_gui()
     return map.height * hex_geometry.height / scale
   end
 
-
   local window_w, window_h = renderer:get_size()
-  local max_w, max_h = math.modf(window_w * 1.0), math.modf(window_h * 1.0)
 
-  local scale_w, scale_h = 1, 1;
-  while (get_sclaled_width(scale_w) > max_w) do scale_w = scale_w + 1 end
-  while (get_sclaled_height(scale_h) > max_h) do scale_h = scale_h + 1 end
-
-  -- local scale = math.max(scale_w, scale_h)
-  local scale = 5
+  local scale = hex_geometry.max_scale
   local w, h = math.modf(get_sclaled_width(scale)), math.modf(get_sclaled_height(scale))
   print(string.format("w = %d, h = %d, scale = %d", w, h, scale))
 
