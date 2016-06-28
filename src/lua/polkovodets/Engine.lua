@@ -203,19 +203,30 @@ function _fill_initial_data(gear)
     end,
   })
 
+  gear:declare("hex_geometry", {
+    dependencies = {"data/hex_geometry"},
+    constructor  = function() return {} end,
+    initializer  = function(gear, instance, data)
+      instance.width = data.width
+      instance.height = data.height
+      instance.x_offset = data.x_offset
+      instance.y_offset = data.y_offset
+    end,
+  })
+
   gear:declare("terrain", {
-    dependencies = {"data/terrain", "data/dirs", "renderer"},
+    dependencies = {"hex_geometry", "data/terrain", "data/dirs", "renderer"},
     constructor  = function() return Terrain.create() end,
-    initializer  = function(gear, instance, terrain_data, dirs_data, renderer)
-      instance:initialize(renderer, terrain_data, dirs_data)
+    initializer  = function(gear, instance, hex_geometry, terrain_data, dirs_data, renderer)
+      instance:initialize(renderer, hex_geometry, terrain_data, dirs_data)
     end,
   })
 
   gear:declare("map", {
-    dependencies = {"data/map", "engine", "renderer", "terrain", "helper/map/tiles_generator" },
+    dependencies = {"data/map", "engine", "renderer", "hex_geometry", "terrain", "data/map" },
     constructor  = function() return Map.create() end,
-    initializer  = function(gear, instance, map_data, engine, renderer, terrain, tiles_generator)
-      instance:initialize(engine, renderer, terrain, tiles_generator, map_data)
+    initializer  = function(gear, instance, map_data, engine, renderer, hex_geometry, terrain, map_data)
+      instance:initialize(engine, renderer, hex_geometry, terrain, map_data)
     end,
   })
 
@@ -232,11 +243,11 @@ function _fill_initial_data(gear)
   })
 
   gear:declare("objectives", {
-    dependencies = {"data/objectives", "nations::map", "map", "renderer"},
+    dependencies = {"data/objectives", "nations::map", "map", "renderer", "hex_geometry"},
     constructor  = function() return {} end,
     initializer  = function(gear, instance, list, ... )
       for _, data in pairs(list) do
-        local o = Objective.create()
+        local o = Objective.create(self)
         o:initialize(data, ... )
         table.insert(instance, o)
       end

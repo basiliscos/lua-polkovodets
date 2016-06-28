@@ -20,7 +20,6 @@ local Map = {}
 Map.__index = Map
 
 local _ = require ("moses")
-local Terrain = require 'polkovodets.Terrain'
 local Tile = require 'polkovodets.Tile'
 local inspect = require('inspect')
 local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
@@ -66,21 +65,16 @@ function Map.create()
   return m
 end
 
-function Map:initialize(engine, renderer, terrain, tiles_generator, map_data)
+function Map:initialize(engine, renderer, hex_geometry, terrain, map_data)
   self.engine   = engine
   self.renderer = renderer
-  self.terrain  = terrain
-  self.tile_geometry = {
-    w        = terrain.hex_width,
-    h        = terrain.hex_height,
-    x_offset = terrain.hex_x_offset,
-    y_offset = terrain.hex_y_offset,
-  }
+  self.hex_geometry = hex_geometry
+  self.terrain = terrain
   assert(map_data.width)
   assert(map_data.height)
   self.width  = tonumber(map_data.width)
   self.height = tonumber(map_data.height)
-  self:_fill_tiles(tiles_generator)
+  self:_fill_tiles(terrain, map_data)
   engine.state:set_active_tile(self.tiles[1][1])
 
   local reactor = self.engine.reactor
@@ -202,8 +196,8 @@ end
 
 function Map:_update_shown_map()
   local gui = self.gui
-  gui.map_sx = -self.terrain.hex_x_offset
-  gui.map_sy = -self.terrain.hex_height
+  gui.map_sx = -self.hex_geometry.x_offset
+  gui.map_sy = -self.hex_geometry.height
 
   -- calculate drawn number of tiles
   local w, h = self.renderer:get_size()
@@ -211,7 +205,7 @@ function Map:_update_shown_map()
   local ptr = gui.map_sx
   while(ptr < w) do
     step = step + 1
-    ptr = ptr + self.terrain.hex_x_offset
+    ptr = ptr + self.hex_geometry.x_offset
   end
   gui.map_sw = step
 
@@ -219,7 +213,7 @@ function Map:_update_shown_map()
   ptr = gui.map_sy
   while(ptr < h) do
     step = step + 1
-    ptr = ptr + self.terrain.hex_height
+    ptr = ptr + self.hex_geometry.height
   end
   gui.map_sh = step
   print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
@@ -272,9 +266,9 @@ function Map:get_adjastent_tiles(tile, skip_tiles)
 end
 
 function Map:pointer_to_tile(x,y)
-   local geometry = self.tile_geometry
-   local hex_h = geometry.h
-   local hex_w = geometry.w
+   local geometry = self.hex_geometry
+   local hex_h = geometry.height
+   local hex_w = geometry.width
    local hex_x_offset = geometry.x_offset
    local hex_y_offset = geometry.y_offset
 
@@ -328,9 +322,17 @@ function Map:pointer_to_tile(x,y)
 end
 
 
-function Map:_fill_tiles(tile_generator)
-  local engine = self.engine
-  local terrain = self.terrain
+function Map:_fill_tiles(terrain, map_data)
+
+  local hex_geometry = self.hex_geometry
+
+  local map_w = map_data.width
+  local map_h = map_data.height
+  local map_path = map_data.path
+
+  local tiles_data = map_data.tiles_data
+  local tile_names = map_data.tile_names
+
 
   -- 2 dimentional array, [x:y]
   local tiles = {}
@@ -338,7 +340,23 @@ function Map:_fill_tiles(tile_generator)
   for x = 1, self.width do
     local column = {}
     for y = 1, self.height do
-      local tile = tile_generator(terrain, x, y)
+      local idx = (y-1) * map_w + x
+      local tile_id = x .. ":" .. y
+      local datum = assert(tiles_data[idx], map_path .. " don't have data for tile " .. tile_id)
+      local terrain_name = assert(string.sub(datum,1,1), "cannot extract terrain name for tile " .. tile_id)
+      local image_idx = assert(string.sub(datum,2, -1), "cannot extract image index for tile " .. tile_id)
+      image_idx = tonumber(image_idx)
+      local name = tile_names[idx] or terrain_name
+      local terrain_type = terrain:get_type(terrain_name)
+      local tile_data = {
+        x            = x,
+        y            = y,
+        name         = name,
+        terrain_name = terrain_name,
+        image_idx    = image_idx,
+        terrain_type = terrain_type,
+      }
+      local tile = Tile.create(self.engine, hex_geometry, tile_data)
       column[ y ] = tile
       tile_for[tile.id] = tile
     end
@@ -374,7 +392,7 @@ end
 
 function Map:_on_map_update()
   local engine = self.engine
-  local terrain = self.terrain
+  local hex_geometry = self.hex_geometry
   local context = self.drawing.context
 
   local start_map_x = self.gui.map_x
@@ -407,11 +425,10 @@ function Map:_on_map_update()
   local map_context = _.clone(context, true)
   map_context.map = self
   map_context.tile_visibility_test = tile_visibility_test
-  map_context.tile_geometry = self.tile_geometry
   map_context.screen = {
     offset = {
-      self.gui.map_sx - (self.gui.map_x * terrain.hex_x_offset),
-      self.gui.map_sy - (self.gui.map_y * terrain.hex_height),
+      self.gui.map_sx - (self.gui.map_x * hex_geometry.x_offset),
+      self.gui.map_sy - (self.gui.map_y * hex_geometry.height),
     }
   }
   local active_layer = engine.state:get_active_layer()
@@ -513,7 +530,6 @@ end
 
 function Map:bind_ctx(context)
   local engine = self.engine
-  local terrain = self.terrain
 
   local mouse_move = function(event)
     local new_tile = self:pointer_to_tile(event.x, event.y)

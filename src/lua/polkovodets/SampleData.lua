@@ -21,6 +21,7 @@ function SampleData.generate_terrain(gear)
     x_offset = 45,
     y_offset = 25,
   }
+  gear:set("data/hex_geometry", hex_geometry)
 
   local icon_for = {
     fog         = "terrain/fog.png",
@@ -265,8 +266,8 @@ function SampleData.generate_terrain(gear)
       }
     },
   }
+
   gear:set("data/terrain", {
-    hex_geometry  = hex_geometry,
     weather_types = weather_types,
     terrain_types = terrain_types,
     icons         = icon_for
@@ -281,10 +282,8 @@ function SampleData.generate_battle_scheme(gear)
 end
 
 function SampleData.generate_map(gear)
-  gear:set("data/map", {
-    width  = 100,
-    height = 100,
-  })
+
+  local width, height = 100, 100
 
   local my_map = {
 
@@ -303,26 +302,33 @@ function SampleData.generate_map(gear)
   }
 
   local engine = gear:get("engine")
-  gear:set("helper/map/tiles_generator", function(terrain, x, y)
-    local key = x .. "_" .. y
 
-    -- clear terrain by default
-    local t_type, image_idx = 'c', 13
-    local alternative_data = my_map[key]
-    if (alternative_data) then
-      t_type, image_idx = table.unpack(alternative_data)
+  local map_data = {
+    path   = "Sample data, no path available",
+    width  = 100,
+    height = 100,
+    tiles_data = {},
+    tile_names = {}
+  }
+
+  for y = 1, height do
+    for x = 1, width do
+      local key = x .. "_" .. y
+
+      -- clear terrain by default
+      local t_type, image_idx = 'c', 13
+      local alternative_data = my_map[key]
+      if (alternative_data) then
+        t_type, image_idx = table.unpack(alternative_data)
+      end
+
+      local datum = t_type .. image_idx
+      table.insert(map_data.tiles_data, datum)
+      table.insert(map_data.tile_names, 'dummy/' .. t_type)
     end
-    local tile_data = {
-      x            = x,
-      y            = y,
-      name         = 'dummy/' .. t_type,
-      image_idx    = image_idx,
-      terrain_name = t_type,
-      terrain_type = terrain:get_type(t_type),
-    }
-    return Tile.create(engine, terrain, tile_data)
-  end)
+  end
 
+  gear:set("data/map", map_data)
 end
 
 function SampleData.generate_scenario(gear)

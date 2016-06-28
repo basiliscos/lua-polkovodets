@@ -286,19 +286,19 @@ function RadialMenu:_construct_gui()
 end
 
 function RadialMenu:_on_ui_update(show)
-  local ctx      = self.drawing.context
-  local gui      = self.drawing.gui
-  local engine   = self.engine
-  local terrain  = engine.gear:get("terrain")
-  local renderer = engine.gear:get("renderer")
+  local ctx          = self.drawing.context
+  local gui          = self.drawing.gui
+  local engine       = self.engine
+  local hex_geometry = engine.gear:get("hex_geometry")
+  local renderer     = engine.gear:get("renderer")
   local tile_context = self.tile_context
 
   if (show) then
 
     local tile_x = tile_context.x
     local tile_y = tile_context.y
-    local hex_h = terrain.hex_height
-    local hex_w = terrain.hex_width
+    local hex_h = hex_geometry.height
+    local hex_w = hex_geometry.width
 
     -- adjustments to radial-menu coordinates
     local delta_x, delta_y = -(tile_x + hex_w/2) + gui.w/2, -(tile_y + hex_h/2) + gui.h/2

@@ -31,18 +31,11 @@ function Terrain.create()
    return o
 end
 
-function Terrain:initialize(renderer, terrain_data, dirs_data)
+function Terrain:initialize(renderer, hex_geometry, terrain_data, dirs_data)
   self.renderer = renderer
-  local hex_geometry       = assert(terrain_data.hex_geometry)
   local weather_types_data = assert(terrain_data.weather_types)
   local terrain_types_data = assert(terrain_data.terrain_types)
   local icon_for           = assert(terrain_data.icons)
-
-   -- hex tile geometry
-  self.hex_width    = tonumber(hex_geometry['width'])
-  self.hex_height   = tonumber(hex_geometry['height'])
-  self.hex_x_offset = tonumber(hex_geometry['x_offset'])
-  self.hex_y_offset = tonumber(hex_geometry['y_offset'])
 
   -- load generic landscape icons
   local load_icon = function(key)
@@ -73,7 +66,7 @@ function Terrain:initialize(renderer, terrain_data, dirs_data)
 
    -- terrain types
    local terrain_images = {} -- key: terrain key, value - table[weather key:icon_path]
-   local hex_width = self.hex_width
+   local hex_width = hex_geometry.width
    local iterator_factory = function(surface) return renderer:create_simple_iterator(surface, hex_width, 0) end
 
    local terrain_types = {}

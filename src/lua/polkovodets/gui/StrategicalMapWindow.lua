@@ -55,16 +55,17 @@ function StrategicalMapWindow:_construct_gui()
   local engine = self.engine
   local renderer = engine.gear:get("renderer")
   local map = engine.gear:get("map")
-  local tile_geometry = map.tile_geometry
+  local terrain = engine.gear:get("terrain")
+  local hex_geometry = engine.gear:get("hex_geometry")
+
   local context = self.drawing.context
   local weather = engine:current_weather()
-  local terrain = engine.gear:get("terrain")
 
   local get_sclaled_width = function(scale)
-    return map.width * map.tile_geometry.x_offset / scale
+    return map.width * hex_geometry.x_offset / scale
   end
   local get_sclaled_height = function(scale)
-    return map.height * map.tile_geometry.h / scale
+    return map.height * hex_geometry.height / scale
   end
 
 
@@ -81,10 +82,10 @@ function StrategicalMapWindow:_construct_gui()
   print(string.format("w = %d, h = %d, scale = %d", w, h, scale))
 
   local scaled_geometry = {
-    w        = tile_geometry.w / scale,
-    h        = tile_geometry.h / scale,
-    x_offset = tile_geometry.x_offset / scale,
-    y_offset = tile_geometry.y_offset / scale,
+    w        = hex_geometry.width / scale,
+    h        = hex_geometry.height / scale,
+    x_offset = hex_geometry.x_offset / scale,
+    y_offset = hex_geometry.y_offset / scale,
   }
   -- local screen_dx, screen_dy = table.unpack(context.screen.offset)
   local screen_dx, screen_dy = 0, 0

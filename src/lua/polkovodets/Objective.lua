@@ -28,7 +28,7 @@ function Objective.create()
   return setmetatable(o, Objective)
 end
 
-function Objective:initialize(data, nation_for, map, renderer)
+function Objective:initialize(data, nation_for, map, renderer, hex_geometry)
 
   local nation_id = assert(data.nation)
   local x = assert(data.x)
@@ -39,15 +39,18 @@ function Objective:initialize(data, nation_for, map, renderer)
   -- all OK, set members
   self.nation = nation
   self.renderer = renderer
+  self.hex_geometry = hex_geometry
   tile.data.objective = self
 end
 
 function Objective:bind_ctx(context)
+  local hex_geometry = self.hex_geometry
+
   local nation = self.nation
   local nation_flag_width = nation.flag.w
   local nation_flag_height = nation.flag.h
-  local hex_w = context.tile_geometry.w
-  local hex_h = context.tile_geometry.h
+  local hex_w = hex_geometry.width
+  local hex_h = hex_geometry.height
   local x = context.tile.virtual.x + context.screen.offset[1]
   local y = context.tile.virtual.y + context.screen.offset[2]
   local flag_x = x + math.modf((hex_w - nation_flag_width) / 2)

@@ -22,22 +22,20 @@ local engine = Engine.create(gear, "en")
 SampleData.generate_test_data(gear)
 SampleData.generate_terrain(gear)
 
-gear:set("data/map", {
+local map_data = {
+  path   = "dymmy",
   width  = 10,
   height = 10,
-})
+  tiles_data = {},
+  tile_names = {}
+}
 
-gear:set("helper/map/tiles_generator", function(terrain, x, y)
-  local tile_data = {
-    x            = x,
-    y            = y,
-    name         = 'dummy',                -- does not matter
-    image_idx    = 1,                      -- does not matter
-    terrain_name = 'dummy-name',           -- does not matter
-    terrain_type = terrain:get_type('c'),  -- clear
-  }
-  return Tile.create(engine, terrain, tile_data)
-end)
+for _ = 1, (10 * 100) do
+  table.insert(map_data.tiles_data, "c1")
+  table.insert(map_data.tile_names, "c1")
+end
+gear:set("data/map", map_data)
+
 
 local map = gear:get("map")
 ok(map)

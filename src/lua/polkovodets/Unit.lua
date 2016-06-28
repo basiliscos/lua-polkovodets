@@ -126,10 +126,11 @@ function Unit:bind_ctx(context)
   local renderer = engine.gear:get("renderer")
   local theme = engine.gear:get("theme")
   local map = engine.gear:get("map")
+  local hex_geometry = engine.gear:get("hex_geometry")
 
-  local hex_w = context.tile_geometry.w
-  local hex_h = context.tile_geometry.h
-  local hex_x_offset = context.tile_geometry.x_offset
+  local hex_w = hex_geometry.width
+  local hex_h = hex_geometry.height
+  local hex_x_offset = hex_geometry.x_offset
 
   local magnet_to = context.unit[self.id].magnet_to or 'center'
   local size = context.unit[self.id].size

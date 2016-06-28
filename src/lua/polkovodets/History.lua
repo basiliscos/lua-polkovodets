@@ -48,10 +48,11 @@ end
 
 function _Record:bind_ctx(context)
   local theme = self.engine.gear:get("theme")
-  local hex_w = context.tile_geometry.w
-  local hex_h = context.tile_geometry.h
-  local hex_x_offset = context.tile_geometry.x_offset
-  local hex_y_offset = context.tile_geometry.y_offset
+  local hex_geometry = self.engine.gear:get("theme")
+  local hex_w = hex_geometry.width
+  local hex_h = hex_geometry.height
+  local hex_x_offset = hex_geometry.x_offset
+  local hex_y_offset = hex_geometry.y_offset
 
   local sdl_renderer = assert(context.renderer.sdl_renderer)
   local draw_fn

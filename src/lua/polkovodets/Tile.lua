@@ -24,7 +24,7 @@ local SDL	= require "SDL"
 local _ = require ("moses")
 local inspect = require('inspect')
 
-function Tile.create(engine, terrain, data)
+function Tile.create(engine, hex_geometry, data)
   assert(data.image_idx)
   assert(data.x)
   assert(data.y)
@@ -41,9 +41,9 @@ function Tile.create(engine, terrain, data)
   data.tile_x = tile_x
   data.tile_y = tile_y
 
-  local virt_x = (data.x - 1) * terrain.hex_x_offset
-  local virt_y = ((data.y - 1) * terrain.hex_height)
-    + ( (data.x % 2 == 0) and terrain.hex_y_offset or 0)
+  local virt_x = (data.x - 1) * hex_geometry.x_offset
+  local virt_y = ((data.y - 1) * hex_geometry.height)
+    + ( (data.x % 2 == 0) and hex_geometry.y_offset or 0)
 
   local o = {
     id      = Tile.uniq_id(data.x, data.y),
@@ -61,7 +61,8 @@ function Tile.create(engine, terrain, data)
       fn          = nil,
       mouse_click = nil,
       objects     = {},
-    }
+    },
+    hex_geometry = hex_geometry,
   }
   setmetatable(o, Tile)
   return o
@@ -102,7 +103,7 @@ function Tile:bind_ctx(context)
   local y = self.virtual.y + context.screen.offset[2]
   -- print("drawing " .. self.id .. " at (" .. x .. ":" .. y .. ")")
 
-  local engine = self.engine
+  local engine  = self.engine
   local terrain = engine.gear:get("terrain")
   local map     = engine.gear:get("map")
   local weather = engine:current_weather()
@@ -110,8 +111,8 @@ function Tile:bind_ctx(context)
   -- print(inspect(weather))
   -- print(inspect(self.data.terrain_type.image))
 
-  local hex_h = terrain.hex_height
-  local hex_w = terrain.hex_width
+  local hex_h = self.hex_geometry.height
+  local hex_w = self.hex_geometry.width
 
   local dst = {x = x, y = y, w = hex_w, h = hex_h}
   local grid_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}

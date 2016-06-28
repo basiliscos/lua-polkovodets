@@ -74,8 +74,9 @@ local terrain_types = {
   }
 }
 
+gear:set("data/hex_geometry", hex_geometry)
+
 gear:set("data/terrain", {
-  hex_geometry  = hex_geometry,
   weather_types = weather_types,
   terrain_types = terrain_types,
   icons         = icon_for

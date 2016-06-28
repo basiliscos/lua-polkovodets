@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local _ = require ("moses")
 local inspect = require('inspect')
 
-local Tile = require 'polkovodets.Tile'
 local Parser = require 'polkovodets.Parser'
 
 local DataLoader = {}
@@ -74,30 +73,12 @@ function DataLoader.load(gear, scenario_path)
   local tile_names = assert(map_parser:get_list_value('names'), map_path .. " don't have names of tiles")
 
   gear:set("data/map", {
+    path   = map_path,
     width  = map_w,
     height = map_h,
+    tiles_data = tiles_data,
+    tile_names = tile_names,
   })
-
-  gear:set("helper/map/tiles_generator", function(terrain, x, y)
-    local idx = (y-1) * map_w + x
-    local tile_id = x .. ":" .. y
-    local datum = assert(tiles_data[idx], map_path .. " don't have data for tile " .. tile_id)
-    local terrain_name = assert(string.sub(datum,1,1), "cannot extract terrain name for tile " .. tile_id)
-    local image_idx = assert(string.sub(datum,2, -1), "cannot extract image index for tile " .. tile_id)
-    image_idx = tonumber(image_idx)
-    local name = tile_names[idx] or terrain_name
-    local terrain_type = terrain:get_type(terrain_name)
-    local tile_data = {
-      x            = x,
-      y            = y,
-      name         = name,
-      terrain_name = terrain_name,
-      image_idx    = image_idx,
-      terrain_type = terrain_type,
-    }
-    local tile = Tile.create(engine, terrain, tile_data)
-    return tile
-  end)
 
   --[[ load landscape ]]
 
@@ -110,6 +91,13 @@ function DataLoader.load(gear, scenario_path)
   assert(hex_geometry.height, landscape_path .. " hex field don't have height")
   assert(hex_geometry.x_offset, landscape_path .. " hex field don't have x_offset")
   assert(hex_geometry.y_offset, landscape_path .. " hex field don't have y_offset")
+
+  gear:set("data/hex_geometry", {
+    width    = tonumber(hex_geometry.width),
+    height   = tonumber(hex_geometry.height),
+    x_offset = tonumber(hex_geometry.x_offset),
+    y_offset = tonumber(hex_geometry.y_offset),
+  })
 
   local landscape_icon_for = assert(landscape_parser:get_value('image'), landscape_path .. " don't have image field")
 
@@ -157,12 +145,6 @@ function DataLoader.load(gear, scenario_path)
   assert(#weather_types > 0, weather_path .. " should specify at least one weather")
 
   gear:set("data/terrain", {
-    hex_geometry  = {
-      width    = tonumber(hex_geometry.width),
-      height   = tonumber(hex_geometry.height),
-      x_offset = tonumber(hex_geometry.x_offset),
-      y_offset = tonumber(hex_geometry.y_offset),
-    },
     icons         = {
       fog         = assert(landscape_icon_for.fog, landscape_path .. " /image don't have fog image"),
       frame       = assert(landscape_icon_for.frame, landscape_path .. " /image don't have frame image"),
