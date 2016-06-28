@@ -20,13 +20,11 @@ local _ = require ("moses")
 local inspect = require('inspect')
 
 local SDL = require "SDL"
-local Widget = require 'polkovodets.gui.Widget'
 local Image = require 'polkovodets.utils.Image'
 local Region = require 'polkovodets.utils.Region'
 
 local StrategicalMapWindow = {}
 StrategicalMapWindow.__index = StrategicalMapWindow
-setmetatable(StrategicalMapWindow, Widget)
 
 local FONT_SIZE = 12
 local AVAILABLE_COLOR = 0xAAAAAA
@@ -34,18 +32,22 @@ local HILIGHT_COLOR = 0xFFFFFF
 
 
 function StrategicalMapWindow.create(engine)
-  local o = Widget.create(engine)
-  setmetatable(o, StrategicalMapWindow)
-  o.drawing.content_fn = nil
-  o.content = {}
-  o.record = data
   local theme = engine.gear:get("theme")
-
-  o.text = {
-    font  = theme:get_font('default', FONT_SIZE),
+  local o = {
+    engine           = engine,
+    properties       = {
+      floating = false,
+    },
+    drawing          = {
+      fn       = nil,
+      objects  =  {},
+      position = {0, 0}
+    },
+    text = {
+      font  = theme:get_font('default', FONT_SIZE),
+    }
   }
-  o.drawing.position = {0, 0}
-
+  setmetatable(o, StrategicalMapWindow)
   return o
 end
 
@@ -146,6 +148,7 @@ function StrategicalMapWindow:_construct_gui()
     scale = scale,
     scaled_geometry = scaled_geometry,
     content_size = {w = w, h = h},
+    frame_size = {w = window_w, h = window_h},
     tile_positions = tile_positions,
   }
   return gui
@@ -164,22 +167,16 @@ function StrategicalMapWindow:_on_ui_update(show)
     local terrain = engine.gear:get("terrain")
 
     local x, y = table.unpack(self.drawing.position)
-    local content_x, content_y = x + self.contentless_size.dx, y + self.contentless_size.dy
+
+    local screen_w, screen_h = gui.frame_size.w, gui.frame_size.h
     local content_w, content_h = gui.content_size.w, gui.content_size.h
+    local content_x, content_y = math.modf(x + screen_w /2 - content_w/2), math.modf(y + screen_h /2 - content_h/2)
 
-    local window_region = Region.create(x, y, content_x + content_w + self.contentless_size.dx, content_y + content_h + self.contentless_size.dy)
-
-    -- pre-render map in memory, just copy it during rendering cycle
+    -- pre-render textures in memory, just copy it during rendering cycle
+    -- draw map texture
     local format = theme.window.background.texture:query()
     local map_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, content_w, content_h))
-
     assert(sdl_renderer:setTarget(map_texture))
-
-    -- copy background
-    assert(sdl_renderer:copy(theme.window.background.texture, nil,
-      {x = content_x, y = content_y, w = content_w, h = content_h}
-    ))
-
     local fog = terrain:get_icon('fog')
     -- copy terrain with fog
     for i = 1, map.width do
@@ -202,27 +199,41 @@ function StrategicalMapWindow:_on_ui_update(show)
         end
       end
     end
+
+
+    -- draw screen texture
+    local screen_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, screen_w, screen_h))
+    assert(sdl_renderer:setTarget(screen_texture))
+    -- copy background
+    assert(sdl_renderer:copy(theme.window.background.texture, nil,
+      {x = x, y = y, w = screen_w, h = screen_h}
+    ))
+    -- copy map texture into the center of the screen
+    assert(sdl_renderer:copy(map_texture, nil,
+      { x = content_x,  y = content_y,  w = content_w,  h = content_h,
+    }))
     assert(sdl_renderer:setTarget(nil))
-    local map_dst = {x = content_x, y = content_y, w = content_w, h = content_h}
+
+    local map_region = Region.create(x, y, content_x, content_y)
+
+    local screen_dst = {x = x, y = y, w = screen_w, h = screen_h}
 
     -- actual draw function is rather simple
-    self.drawing.content_fn = function()
-      assert(sdl_renderer:copy(map_texture, nil, map_dst))
-      Widget.draw(self)
+    self.drawing.fn = function()
+      assert(sdl_renderer:copy(screen_texture, nil, screen_dst))
     end
-    Widget.update_drawer(self, x, y, content_w, content_h)
 
     if (not handlers_bound) then
       self.handlers_bound = true
 
       local mouse_move = function(event)
         engine.state:set_mouse_hint('')
-        if (window_region:is_over(event.x, event.y)) then
+        if (map_region:is_over(event.x, event.y)) then
         end
         return true -- stop further event propagation
       end
       local mouse_click = function(event)
-        if (window_region:is_over(event.x, event.y)) then
+        if (map_region:is_over(event.x, event.y)) then
         else
           engine.interface:remove_window(self)
         end
@@ -232,16 +243,16 @@ function StrategicalMapWindow:_on_ui_update(show)
       context.events_source.add_handler('mouse_move', mouse_move)
       context.events_source.add_handler('mouse_click', mouse_click)
 
-      self.content.mouse_move = mouse_move
-      self.content.mouse_click = mouse_click
+      self.drawing.mouse_move = mouse_move
+      self.drawing.mouse_click = mouse_click
     end
   elseif(handlers_bound) then -- unbind everything
     self.handlers_bound = false
-    context.events_source.remove_handler('mouse_click', self.content.mouse_click)
-    context.events_source.remove_handler('mouse_move', self.content.mouse_move)
-    self.content.mouse_click = nil
-    self.content.mouse_move = nil
-    self.drawing.content_fn = function() end
+    context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
+    context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
+    self.drawing.mouse_click = nil
+    self.drawing.mouse_move = nil
+    self.drawing.fn = function() end
   end
 end
 
@@ -258,12 +269,12 @@ function StrategicalMapWindow:bind_ctx(context)
 
   engine.reactor:subscribe('ui.update', ui_update_listener)
 
-  local w, h = gui.content_size.w + self.contentless_size.w, gui.content_size.h + self.contentless_size.h
-  return {w, h}
+  return {gui.content_size.w, gui.content_size.h}
 end
 
 function StrategicalMapWindow:set_position(x, y)
-  self.drawing.position = {x, y}
+  -- completely draw over all other objects (map), i.e. ignore this settings
+  -- self.drawing.position = {x, y}
 end
 
 function StrategicalMapWindow:unbind_ctx(context)
@@ -274,7 +285,7 @@ function StrategicalMapWindow:unbind_ctx(context)
 end
 
 function StrategicalMapWindow:draw()
-  self.drawing.content_fn()
+  self.drawing.fn()
 end
 
 
