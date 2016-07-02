@@ -25,7 +25,7 @@ local inspect = require('inspect')
 local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 
 
-local SCROLL_TOLERANCE = 5
+local SCROLL_TOLERANCE = 10
 
 function Map.create()
    local m = {
@@ -590,20 +590,19 @@ function Map:bind_ctx(context)
 
   local idle = function(event)
     if (interface:opened_window_count() == 0) then
-      local scroll_dy, scroll_dx = 0, 0
       local direction
       local x, y = event.x, event.y
       local map_x, map_y = self.gui.map_x, self.gui.map_y
-      if ((y < SCROLL_TOLERANCE or scroll_dy > 0) and map_y > 0) then
+      if ((y < SCROLL_TOLERANCE) and map_y > 0) then
         self.gui.map_y = self.gui.map_y - 1
         direction = "up"
-      elseif (((y > window_h - SCROLL_TOLERANCE) or scroll_dy < 0) and map_y < map_h - map_sh) then
+      elseif ((y > window_h - SCROLL_TOLERANCE) and map_y < map_h - map_sh) then
         self.gui.map_y = self.gui.map_y + 1
         direction = "down"
-      elseif ((x < SCROLL_TOLERANCE or scroll_dx < 0)  and map_x > 0) then
+      elseif ((x < SCROLL_TOLERANCE)  and map_x > 0) then
         self.gui.map_x = self.gui.map_x - 1
         direction = "left"
-      elseif (((x > window_w - SCROLL_TOLERANCE) or scroll_dx > 0) and map_x < map_w - map_sw) then
+      elseif ((x > window_w - SCROLL_TOLERANCE) and map_x < map_w - map_sw) then
         self.gui.map_x = self.gui.map_x + 1
         direction = "right"
       end
