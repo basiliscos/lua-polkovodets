@@ -30,6 +30,9 @@ local FONT_SIZE = 12
 local AVAILABLE_COLOR = 0xAAAAAA
 local HILIGHT_COLOR = 0xFFFFFF
 
+local SCROLL_TOLERANCE = 10
+-- how many tiles are shifted on scroll
+local SCROLL_DELTA = 2
 
 function StrategicalMapWindow.create(engine)
   local theme = engine.gear:get("theme")
@@ -40,11 +43,17 @@ function StrategicalMapWindow.create(engine)
     },
     drawing          = {
       fn       = nil,
+      idle     = nil,
       objects  =  {},
       position = {0, 0}
     },
     text = {
       font  = theme:get_font('default', FONT_SIZE),
+    },
+    -- in hex coordinates
+    frame_pos = {
+      x = 1,
+      y = 1,
     }
   }
   setmetatable(o, StrategicalMapWindow)
@@ -72,7 +81,6 @@ function StrategicalMapWindow:_construct_gui()
 
   local scale = hex_geometry.max_scale
   local w, h = math.modf(get_sclaled_width(scale)), math.modf(get_sclaled_height(scale))
-  print(string.format("w = %d, h = %d, scale = %d", w, h, scale))
 
   local scaled_geometry = {
     w        = hex_geometry.width / scale,
@@ -142,7 +150,7 @@ function StrategicalMapWindow:_construct_gui()
     scale = scale,
     scaled_geometry = scaled_geometry,
     content_size = {w = w, h = h},
-    frame_size = {w = window_w, h = window_h},
+    screen_size = {w = window_w, h = window_h},
     tile_positions = tile_positions,
   }
   return gui
@@ -159,12 +167,36 @@ function StrategicalMapWindow:_on_ui_update(show)
     local gui = self.drawing.gui
     local map = engine.gear:get("map")
     local terrain = engine.gear:get("terrain")
+    local scaled_geometry = gui.scaled_geometry
+    local frame_pos = self.frame_pos
 
     local x, y = table.unpack(self.drawing.position)
 
-    local screen_w, screen_h = gui.frame_size.w, gui.frame_size.h
+    local screen_w, screen_h = gui.screen_size.w, gui.screen_size.h
+    -- print(string.format("screen_w = %d, screen_h = %d", screen_w, screen_h))
     local content_w, content_h = gui.content_size.w, gui.content_size.h
-    local content_x, content_y = math.modf(x + screen_w /2 - content_w/2), math.modf(y + screen_h /2 - content_h/2)
+
+    local frame_w, frame_h = math.min(screen_w, content_w), math.min(screen_h, content_h)
+    -- print(string.format("frame_w = %d, frame_h = %d", frame_w, frame_h))
+    local frame_dx = math.min(math.modf((screen_w - frame_w)/2), 0)
+    local frame_dy = math.min(math.modf((screen_h - frame_h)/2), 0)
+
+    -- frame w and h in scaled tiles
+    local frame = {
+      w = math.floor( (frame_w - scaled_geometry.w) / scaled_geometry.x_offset ) - 1,
+      h = math.floor( (frame_h - (scaled_geometry.h + scaled_geometry.y_offset)) / gui.scaled_geometry.h ) - 1,
+    }
+
+    -- print(string.format("drawing strategical map [%d:%d]:[%d:%d] ", self.frame_pos.x, self.frame_pos.y, frame.w, frame.h))
+
+    local content_x, content_y = x + frame_dx, y + frame_dy
+    -- put map to center of screen
+    if (frame_w < screen_w) then
+      content_x = content_x + math.modf(screen_w /2 - content_w/2)
+    end
+    if (frame_h < screen_h) then
+      content_x = content_x + math.modf(screen_h /2 - content_h/2)
+    end
 
     -- pre-render textures in memory, just copy it during rendering cycle
     -- draw map texture
@@ -173,27 +205,47 @@ function StrategicalMapWindow:_on_ui_update(show)
     assert(sdl_renderer:setTarget(map_texture))
     local fog = terrain:get_icon('fog')
     -- copy terrain with fog
-    for i = 1, map.width do
-      for j = 1, map.height do
+    local frame_x_max, frame_y_max = frame.w + frame_pos.x - 1, frame.h + frame_pos.y - 1
+    -- print(string.format("visible strategic map frame = [%d %d] [%d %d]", frame_pos.x, frame_pos.y, frame_x_max, frame_y_max))
+    -- print(string.format("content_x, content_y = [%d %d]", content_x, content_y))
+
+    -- shifted description contains the right coordinates (destination boxes)
+    local shift_tile = map.tiles[frame_pos.x][frame_pos.y]
+    local first_tile = map.tiles[1][1]
+    local shift_x = gui.tile_positions[first_tile.id].dst.x - gui.tile_positions[shift_tile.id].dst.x
+    local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y
+
+    for i = frame_pos.x, frame_x_max do
+      for j = frame_pos.y, frame_y_max do
         local tile = map.tiles[i][j]
 
         -- terrain
         local description = gui.tile_positions[tile.id]
-        assert(sdl_renderer:copy(description.image.texture, nil, description.dst))
+        local dst = {
+          x = description.dst.x + shift_x,
+          y = description.dst.y + shift_y,
+          w = description.dst.w,
+          h = description.dst.h,
+        }
+        assert(sdl_renderer:copy(description.image.texture, nil, dst))
 
         local spotting = map.united_spotting.map[tile.id]
         if (not spotting) then
           -- fog of war
-          assert(sdl_renderer:copy(fog.texture, nil, description.dst))
+          assert(sdl_renderer:copy(fog.texture, nil, dst))
         elseif (description.flag_data) then
           -- unit flag, scaled up to hex
-          local dst = description.flag_data.dst
+          local dst = {
+            x = description.flag_data.dst.x +  shift_x,
+            y = description.flag_data.dst.y +  shift_y,
+            w = description.flag_data.dst.w,
+            h = description.flag_data.dst.h,
+          }
           local image = description.flag_data.image
           assert(sdl_renderer:copy(image.texture, nil, dst))
         end
       end
     end
-
 
     -- draw screen texture
     local screen_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, screen_w, screen_h))
@@ -208,7 +260,7 @@ function StrategicalMapWindow:_on_ui_update(show)
     }))
     assert(sdl_renderer:setTarget(nil))
 
-    local map_region = Region.create(x, y, content_x, content_y)
+    local map_region = Region.create(content_x, content_y, content_x + frame_w, content_y + frame_h)
 
     local screen_dst = {x = x, y = y, w = screen_w, h = screen_h}
 
@@ -227,23 +279,54 @@ function StrategicalMapWindow:_on_ui_update(show)
         return true -- stop further event propagation
       end
       local mouse_click = function(event)
+        --[[
         if (map_region:is_over(event.x, event.y)) then
-        else
-          engine.interface:remove_window(self)
         end
-        return true -- stop further event propagation
+        ]]
+        engine.interface:remove_window(self)
+         -- stop further event propagation
+        return true
       end
 
+      local idle = function(event)
+        local x, y = event.x, event.y
+        local refresh = false
+        local map_x, map_y = frame_pos.x, frame_pos.y
+        if ((math.abs(map_region.y_min - y) < SCROLL_TOLERANCE) and map_y > SCROLL_DELTA) then
+          frame_pos.y = frame_pos.y - SCROLL_DELTA
+          refresh = true
+        elseif ((math.abs(map_region.y_max - y) < SCROLL_TOLERANCE) and ( (map_y + frame.h + SCROLL_DELTA) < map.height)) then
+          frame_pos.y = frame_pos.y + SCROLL_DELTA
+          refresh = true
+        elseif ((math.abs(map_region.x_min - x) < SCROLL_TOLERANCE) and map_x > SCROLL_DELTA) then
+          frame_pos.x = frame_pos.x - SCROLL_DELTA
+          refresh = true
+        elseif ((math.abs(map_region.x_max - x) < SCROLL_TOLERANCE) and ( (map_x + frame.w + SCROLL_DELTA) < map.width)) then
+          frame_pos.x = frame_pos.x + SCROLL_DELTA
+          refresh = true
+        end
+
+        if (refresh) then
+          -- print("frame_pos = " .. inspect(frame_pos))
+          self:_on_ui_update(true)
+        end
+        return true
+      end
+
+      context.events_source.add_handler('idle', idle)
       context.events_source.add_handler('mouse_move', mouse_move)
       context.events_source.add_handler('mouse_click', mouse_click)
 
+      self.drawing.idle = idle
       self.drawing.mouse_move = mouse_move
       self.drawing.mouse_click = mouse_click
     end
   elseif(handlers_bound) then -- unbind everything
     self.handlers_bound = false
+    context.events_source.remove_handler('idle', self.drawing.idle)
     context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
     context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
+    self.drawing.idle = nil
     self.drawing.mouse_click = nil
     self.drawing.mouse_move = nil
     self.drawing.fn = function() end
