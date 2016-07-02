@@ -48,7 +48,7 @@ end
 
 function _Record:bind_ctx(context)
   local theme = self.engine.gear:get("theme")
-  local hex_geometry = self.engine.gear:get("theme")
+  local hex_geometry = self.engine.gear:get("hex_geometry")
   local hex_w = hex_geometry.width
   local hex_h = hex_geometry.height
   local hex_x_offset = hex_geometry.x_offset

@@ -42,7 +42,7 @@ function Unit:initialize(engine, renderer, map, unit_data, staff, unit_definitio
   assert(unit_data.y, "y-coordinate isn't defined for unit " .. id)
   local x = tonumber(unit_data.x)
   local y = tonumber(unit_data.y)
-  local tile = assert(map.tiles[x + 1][y + 1])
+  local tile = assert(map.tiles[x][y])
 
   local possible_efficiencies = {'high', 'avg', 'low'}
 
