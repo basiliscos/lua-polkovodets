@@ -50,11 +50,26 @@ function StrategicalMapWindow.create(engine)
     text = {
       font  = theme:get_font('default', FONT_SIZE),
     },
-    -- in hex coordinates
-    frame_pos = {
-      x = 1,
-      y = 1,
-    }
+    frame = {
+      -- in hex coordinates
+      hex_box = {
+        x = 1,
+        y = 1,
+        w = 0, -- be calculated later
+        h = 0, -- be calculated later
+      },
+      -- in pixels
+      dst = { -- be calculated later
+        x = 0,
+        y = 0,
+        w = 0,
+        h = 0
+      },
+      screen = {
+        w = 0,
+        h = 0,
+      }
+    },
   }
   setmetatable(o, StrategicalMapWindow)
   return o
@@ -62,7 +77,6 @@ end
 
 function StrategicalMapWindow:_construct_gui()
   local engine = self.engine
-  local renderer = engine.gear:get("renderer")
   local map = engine.gear:get("map")
   local terrain = engine.gear:get("terrain")
   local hex_geometry = engine.gear:get("hex_geometry")
@@ -76,8 +90,6 @@ function StrategicalMapWindow:_construct_gui()
   local get_sclaled_height = function(scale)
     return map.height * hex_geometry.height / scale
   end
-
-  local window_w, window_h = renderer:get_size()
 
   local scale = hex_geometry.max_scale
   local w, h = math.modf(get_sclaled_width(scale)), math.modf(get_sclaled_height(scale))
@@ -150,10 +162,24 @@ function StrategicalMapWindow:_construct_gui()
     scale = scale,
     scaled_geometry = scaled_geometry,
     content_size = {w = w, h = h},
-    screen_size = {w = window_w, h = window_h},
     tile_positions = tile_positions,
   }
   return gui
+end
+
+function StrategicalMapWindow:_map_size(x_min, y_min, x_max, y_max)
+  local gui = self.drawing.gui
+  local scaled_geometry = gui.scaled_geometry
+
+  local dx = x_max - x_min
+  local dy = y_max - y_min
+  assert(dy >= 2)
+
+  local content_w = scaled_geometry.x_offset * dx + scaled_geometry.w
+  local content_h =  scaled_geometry.h * dy
+
+  -- print(string.format("map size for (%d, %d, %d, %d) -> (%d, %d)", x_min, y_min, x_max, y_max, content_w, content_h))
+  return content_w, content_h
 end
 
 function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
@@ -165,14 +191,9 @@ function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
   local map = engine.gear:get("map")
   local terrain = engine.gear:get("terrain")
 
-  print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
+  -- print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
 
-  local dx = x_max - x_min
-  local dy = y_max - y_min
-  assert(dy >= 2)
-
-  local content_w = scaled_geometry.x_offset * dx + scaled_geometry.w
-  local content_h =  scaled_geometry.h * dy
+  local content_w, content_h =  self:_map_size(x_min, y_min, x_max, y_max)
 
   local format = theme.window.background.texture:query()
   local map_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, content_w, content_h))
@@ -217,7 +238,45 @@ function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
     end
   end
 
-  return map_texture, content_w, content_h
+  return map_texture
+end
+
+function StrategicalMapWindow:_update_frame()
+  local frame = self.frame
+  local gui = self.drawing.gui
+  local scaled_geometry = gui.scaled_geometry
+  local renderer = self.engine.gear:get("renderer")
+
+  local window_w, window_h = renderer:get_size()
+
+  local content_w, content_h = gui.content_size.w, gui.content_size.h
+  local frame_w, frame_h = math.min(window_w, content_w), math.min(window_h, content_h)
+
+  local w = math.floor( (frame_w - scaled_geometry.w) / scaled_geometry.x_offset ) - 1
+  local h = math.floor( (frame_h - (scaled_geometry.h + scaled_geometry.y_offset)) / gui.scaled_geometry.h ) - 1
+
+  local frame_x_max, frame_y_max = w + frame.hex_box.x - 1, h + frame.hex_box.y - 1
+
+  -- print(string.format("frame h, w = %d:%d", w, h))
+  local map_w, map_h = self:_map_size(frame.hex_box.x, frame.hex_box.y, frame_x_max, frame_y_max)
+  local frame_dx = math.modf((window_w - map_w)/2)
+  local frame_dy = math.modf((window_h - map_h)/2)
+
+  -- print(string.format("map_w, map_h = %d:%d, window_w, window_h = %d:%d", map_w, map_h, window_w, window_h))
+  -- print(string.format("frame_dx, frame_dy = %d:%d", frame_dx, frame_dy))
+
+  -- x, y are undeated on scroll
+  frame.hex_box.w = w
+  frame.hex_box.h = h
+
+  frame.dst.x = frame_dx
+  frame.dst.y = frame_dy
+  frame.dst.w = map_w
+  frame.dst.h = map_h
+
+  frame.screen.w = window_w
+  frame.screen.h = window_h
+  -- print("frame = " .. inspect(frame))
 end
 
 function StrategicalMapWindow:_on_ui_update(show)
@@ -232,62 +291,37 @@ function StrategicalMapWindow:_on_ui_update(show)
     local map = engine.gear:get("map")
     local terrain = engine.gear:get("terrain")
     local scaled_geometry = gui.scaled_geometry
-    local frame_pos = self.frame_pos
+    local frame = self.frame
 
     local x, y = table.unpack(self.drawing.position)
 
-    local screen_w, screen_h = gui.screen_size.w, gui.screen_size.h
-    -- print(string.format("screen_w = %d, screen_h = %d", screen_w, screen_h))
-    local content_w, content_h = gui.content_size.w, gui.content_size.h
+    local hex_box = frame.hex_box
+    local frame_x_max, frame_y_max = hex_box.x + hex_box.w - 1, hex_box.y + hex_box.h - 1
 
-    local frame_w, frame_h = math.min(screen_w, content_w), math.min(screen_h, content_h)
-    -- print(string.format("frame_w = %d, frame_h = %d", frame_w, frame_h))
-
-    -- frame w and h in scaled tiles
-    local frame = {
-      w = math.floor( (frame_w - scaled_geometry.w) / scaled_geometry.x_offset ) - 1,
-      h = math.floor( (frame_h - (scaled_geometry.h + scaled_geometry.y_offset)) / gui.scaled_geometry.h ) - 1,
-    }
-
-    -- print(string.format("drawing strategical map [%d:%d]:[%d:%d] ", self.frame_pos.x, self.frame_pos.y, frame.w, frame.h))
-
-    -- pre-render textures in memory, just copy it during rendering cycle
-    -- draw map texture
-    local format = theme.window.background.texture:query()
-
-    local frame_x_max, frame_y_max = frame.w + frame_pos.x - 1, frame.h + frame_pos.y - 1
-
-    local map_texture, map_w, map_h = self:_generate_map_texture(frame_pos.x, frame_pos.y, frame_x_max, frame_y_max)
-
-    local frame_dx = math.modf((screen_w - map_w)/2)
-    local frame_dy = math.modf((screen_h - map_h)/2)
-
-    local content_x, content_y = x + frame_dx, y + frame_dy
-
-    print(string.format("content_x, content_y = [%d %d]", content_x, content_y))
+    local map_texture, map_w, map_h = self:_generate_map_texture(hex_box.x, hex_box.y, frame_x_max, frame_y_max)
 
     -- draw screen texture
-    local screen_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, screen_w, screen_h))
+    local format = theme.window.background.texture:query()
+    local screen_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, frame.screen.w, frame.screen.h))
     assert(sdl_renderer:setTarget(screen_texture))
     -- copy background
     assert(sdl_renderer:copy(theme.window.background.texture, nil,
-      {x = x, y = y, w = screen_w, h = screen_h}
+      {x = x, y = y, w = frame.screen.w, h = frame.screen.h}
     ))
     -- copy map texture into the center of the screen
-    print(string.format("copying map texture [%d x %d] to screen [%d x %d]", map_w, map_h, screen_w, screen_h))
-    frame_dx = math.min(math.modf((screen_w - frame_w)/2), 0)
-    local frame_dy = math.min(math.modf((screen_h - frame_h)/2), 0)
+    -- print(string.format("copying map texture [%d x %d] to screen [%d x %d]", map_w, map_h, screen_w, screen_h))
 
-
+    local content_x, content_y = x + frame.dst.x, y + frame.dst.y
+    -- print(string.format("content_x, content_y = %d, %d", content_x, content_y))
     assert(sdl_renderer:copy(map_texture, nil,
-      { x = content_x,  y = content_y, w = map_w, h = map_h }
+      { x = content_x, y = content_y, w = frame.dst.w, h = frame.dst.h }
     ))
     assert(sdl_renderer:setTarget(nil))
 
-    local map_region = Region.create(content_x, content_y, content_x + map_w, content_y + map_h)
+    local map_region = Region.create(content_x, content_y, content_x + frame.dst.w, content_y + frame.dst.h)
     -- print(inspect(map_region))
 
-    local screen_dst = {x = x, y = y, w = screen_w, h = screen_h}
+    local screen_dst = {x = x, y = y, w = frame.screen.w, h = frame.screen.h}
 
     -- actual draw function is rather simple
     self.drawing.fn = function()
@@ -316,23 +350,24 @@ function StrategicalMapWindow:_on_ui_update(show)
       local idle = function(event)
         local x, y = event.x, event.y
         local refresh = false
-        local map_x, map_y = frame_pos.x, frame_pos.y
+        local map_x, map_y = frame.hex_box.x, frame.hex_box.y
         if ((math.abs(map_region.y_min - y) < SCROLL_TOLERANCE) and map_y > SCROLL_DELTA) then
-          frame_pos.y = frame_pos.y - SCROLL_DELTA
+          frame.hex_box.y = frame.hex_box.y - SCROLL_DELTA
           refresh = true
-        elseif ((math.abs(map_region.y_max - y) < SCROLL_TOLERANCE) and ( (map_y + frame.h + SCROLL_DELTA) < map.height)) then
-          frame_pos.y = frame_pos.y + SCROLL_DELTA
+        elseif ((math.abs(map_region.y_max - y) < SCROLL_TOLERANCE) and ( (map_y + frame.hex_box.h + SCROLL_DELTA) < map.height)) then
+          frame.hex_box.y = frame.hex_box.y + SCROLL_DELTA
           refresh = true
         elseif ((math.abs(map_region.x_min - x) < SCROLL_TOLERANCE) and map_x > SCROLL_DELTA) then
-          frame_pos.x = frame_pos.x - SCROLL_DELTA
+          frame.hex_box.x = frame.hex_box.x - SCROLL_DELTA
           refresh = true
-        elseif ((math.abs(map_region.x_max - x) < SCROLL_TOLERANCE) and ( (map_x + frame.w + SCROLL_DELTA) < map.width)) then
-          frame_pos.x = frame_pos.x + SCROLL_DELTA
+        elseif ((math.abs(map_region.x_max - x) < SCROLL_TOLERANCE) and ( (map_x + frame.hex_box.w + SCROLL_DELTA) < map.width)) then
+          frame.hex_box.x = frame.hex_box.x + SCROLL_DELTA
           refresh = true
         end
 
         if (refresh) then
           -- print("frame_pos = " .. inspect(frame_pos))
+          self:_update_frame()
           self:_on_ui_update(true)
         end
         return true
@@ -364,7 +399,10 @@ function StrategicalMapWindow:bind_ctx(context)
   -- remember ctx first, as it is involved in gui construction
   self.drawing.context = context
   local gui = self:_construct_gui()
-  local ui_update_listener = function() return self:_on_ui_update(true) end
+  local ui_update_listener = function()
+    self:_update_frame()
+    return self:_on_ui_update(true)
+  end
 
   self.drawing.ui_update_listener = ui_update_listener
   self.drawing.gui = gui
