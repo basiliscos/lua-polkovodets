@@ -30,7 +30,7 @@ local FONT_SIZE = 12
 local AVAILABLE_COLOR = 0xAAAAAA
 local HILIGHT_COLOR = 0xFFFFFF
 
-local SCROLL_TOLERANCE = 10
+local SCROLL_TOLERANCE = 20
 -- how many tiles are shifted on scroll
 local SCROLL_DELTA = 2
 
@@ -105,8 +105,8 @@ function StrategicalMapWindow:_construct_gui()
     for j = 1, map.height do
       local tile = map.tiles[i][j]
       local dst = {
-        x = i * x_offset,
-        y = j * tile_h + ( (i % 2 == 0) and y_offset or 0),
+        x = (i - 1) * x_offset,
+        y = (j - 1) * tile_h + ( (i % 2 == 0) and y_offset or 0),
         w = tile_w,
         h = tile_h,
       }
@@ -156,6 +156,70 @@ function StrategicalMapWindow:_construct_gui()
   return gui
 end
 
+function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
+  local engine = self.engine
+  local theme = engine.gear:get("theme")
+  local gui = self.drawing.gui
+  local scaled_geometry = gui.scaled_geometry
+  local sdl_renderer = engine.gear:get("renderer").sdl_renderer
+  local map = engine.gear:get("map")
+  local terrain = engine.gear:get("terrain")
+
+  print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
+
+  local dx = x_max - x_min
+  local dy = y_max - y_min
+  assert(dy >= 2)
+
+  local content_w = scaled_geometry.x_offset * dx + scaled_geometry.w
+  local content_h =  scaled_geometry.h * dy
+
+  local format = theme.window.background.texture:query()
+  local map_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, content_w, content_h))
+  assert(sdl_renderer:setTarget(map_texture))
+  local fog = terrain:get_icon('fog')
+
+  -- shifted description contains the right coordinates (destination boxes)
+  local shift_tile = map.tiles[x_min][y_min]
+  local first_tile = map.tiles[1][1]
+  local shift_x = gui.tile_positions[first_tile.id].dst.x - gui.tile_positions[shift_tile.id].dst.x
+  local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y
+
+  for i = x_min, x_max do
+    for j = y_min, (i % 2 == 0) and y_max - 2 or y_max do
+      local tile = map.tiles[i][j]
+
+      -- terrain
+      local description = gui.tile_positions[tile.id]
+      local dst = {
+        x = description.dst.x + shift_x,
+        y = description.dst.y + shift_y,
+        w = description.dst.w,
+        h = description.dst.h,
+      }
+      assert(sdl_renderer:copy(description.image.texture, nil, dst))
+
+      local spotting = map.united_spotting.map[tile.id]
+      if (not spotting) then
+        -- fog of war
+        assert(sdl_renderer:copy(fog.texture, nil, dst))
+      elseif (description.flag_data) then
+        -- unit flag, scaled up to hex
+        local dst = {
+          x = description.flag_data.dst.x + shift_x,
+          y = description.flag_data.dst.y + shift_y,
+          w = description.flag_data.dst.w,
+          h = description.flag_data.dst.h,
+        }
+        local image = description.flag_data.image
+        assert(sdl_renderer:copy(image.texture, nil, dst))
+      end
+    end
+  end
+
+  return map_texture, content_w, content_h
+end
+
 function StrategicalMapWindow:_on_ui_update(show)
   local engine = self.engine
   local context = self.drawing.context
@@ -178,8 +242,6 @@ function StrategicalMapWindow:_on_ui_update(show)
 
     local frame_w, frame_h = math.min(screen_w, content_w), math.min(screen_h, content_h)
     -- print(string.format("frame_w = %d, frame_h = %d", frame_w, frame_h))
-    local frame_dx = math.min(math.modf((screen_w - frame_w)/2), 0)
-    local frame_dy = math.min(math.modf((screen_h - frame_h)/2), 0)
 
     -- frame w and h in scaled tiles
     local frame = {
@@ -189,63 +251,20 @@ function StrategicalMapWindow:_on_ui_update(show)
 
     -- print(string.format("drawing strategical map [%d:%d]:[%d:%d] ", self.frame_pos.x, self.frame_pos.y, frame.w, frame.h))
 
-    local content_x, content_y = x + frame_dx, y + frame_dy
-    -- put map to center of screen
-    if (frame_w < screen_w) then
-      content_x = content_x + math.modf(screen_w /2 - content_w/2)
-    end
-    if (frame_h < screen_h) then
-      content_x = content_x + math.modf(screen_h /2 - content_h/2)
-    end
-
     -- pre-render textures in memory, just copy it during rendering cycle
     -- draw map texture
     local format = theme.window.background.texture:query()
-    local map_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, content_w, content_h))
-    assert(sdl_renderer:setTarget(map_texture))
-    local fog = terrain:get_icon('fog')
-    -- copy terrain with fog
+
     local frame_x_max, frame_y_max = frame.w + frame_pos.x - 1, frame.h + frame_pos.y - 1
-    -- print(string.format("visible strategic map frame = [%d %d] [%d %d]", frame_pos.x, frame_pos.y, frame_x_max, frame_y_max))
-    -- print(string.format("content_x, content_y = [%d %d]", content_x, content_y))
 
-    -- shifted description contains the right coordinates (destination boxes)
-    local shift_tile = map.tiles[frame_pos.x][frame_pos.y]
-    local first_tile = map.tiles[1][1]
-    local shift_x = gui.tile_positions[first_tile.id].dst.x - gui.tile_positions[shift_tile.id].dst.x
-    local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y
+    local map_texture, map_w, map_h = self:_generate_map_texture(frame_pos.x, frame_pos.y, frame_x_max, frame_y_max)
 
-    for i = frame_pos.x, frame_x_max do
-      for j = frame_pos.y, frame_y_max do
-        local tile = map.tiles[i][j]
+    local frame_dx = math.modf((screen_w - map_w)/2)
+    local frame_dy = math.modf((screen_h - map_h)/2)
 
-        -- terrain
-        local description = gui.tile_positions[tile.id]
-        local dst = {
-          x = description.dst.x + shift_x,
-          y = description.dst.y + shift_y,
-          w = description.dst.w,
-          h = description.dst.h,
-        }
-        assert(sdl_renderer:copy(description.image.texture, nil, dst))
+    local content_x, content_y = x + frame_dx, y + frame_dy
 
-        local spotting = map.united_spotting.map[tile.id]
-        if (not spotting) then
-          -- fog of war
-          assert(sdl_renderer:copy(fog.texture, nil, dst))
-        elseif (description.flag_data) then
-          -- unit flag, scaled up to hex
-          local dst = {
-            x = description.flag_data.dst.x +  shift_x,
-            y = description.flag_data.dst.y +  shift_y,
-            w = description.flag_data.dst.w,
-            h = description.flag_data.dst.h,
-          }
-          local image = description.flag_data.image
-          assert(sdl_renderer:copy(image.texture, nil, dst))
-        end
-      end
-    end
+    print(string.format("content_x, content_y = [%d %d]", content_x, content_y))
 
     -- draw screen texture
     local screen_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, screen_w, screen_h))
@@ -255,12 +274,18 @@ function StrategicalMapWindow:_on_ui_update(show)
       {x = x, y = y, w = screen_w, h = screen_h}
     ))
     -- copy map texture into the center of the screen
+    print(string.format("copying map texture [%d x %d] to screen [%d x %d]", map_w, map_h, screen_w, screen_h))
+    frame_dx = math.min(math.modf((screen_w - frame_w)/2), 0)
+    local frame_dy = math.min(math.modf((screen_h - frame_h)/2), 0)
+
+
     assert(sdl_renderer:copy(map_texture, nil,
-      { x = content_x,  y = content_y,  w = content_w,  h = content_h,
-    }))
+      { x = content_x,  y = content_y, w = map_w, h = map_h }
+    ))
     assert(sdl_renderer:setTarget(nil))
 
-    local map_region = Region.create(content_x, content_y, content_x + frame_w, content_y + frame_h)
+    local map_region = Region.create(content_x, content_y, content_x + map_w, content_y + map_h)
+    -- print(inspect(map_region))
 
     local screen_dst = {x = x, y = y, w = screen_w, h = screen_h}
 
