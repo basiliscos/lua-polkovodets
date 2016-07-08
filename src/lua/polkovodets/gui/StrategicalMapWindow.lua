@@ -58,6 +58,7 @@ function StrategicalMapWindow.create(engine)
         w = 0, -- be calculated later
         h = 0, -- be calculated later
       },
+      prev_box = nil,
       -- in pixels
       dst = { -- be calculated later
         x = 0,
@@ -68,7 +69,8 @@ function StrategicalMapWindow.create(engine)
       screen = {
         w = 0,
         h = 0,
-      }
+      },
+      texture = nil,
     },
   }
   setmetatable(o, StrategicalMapWindow)
@@ -191,7 +193,7 @@ function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
   local map = engine.gear:get("map")
   local terrain = engine.gear:get("terrain")
 
-  -- print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
+  print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
 
   local content_w, content_h =  self:_map_size(x_min, y_min, x_max, y_max)
 
@@ -207,7 +209,8 @@ function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
   local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y
 
   for i = x_min, x_max do
-    for j = y_min, (i % 2 == 0) and y_max - 2 or y_max do
+    -- for j = y_min, (i % 2 == 0) and y_max - 2 or y_max do
+    for j = y_min, y_max do
       local tile = map.tiles[i][j]
 
       -- terrain
@@ -241,11 +244,13 @@ function StrategicalMapWindow:_generate_map_texture(x_min, y_min, x_max, y_max)
   return map_texture
 end
 
-function StrategicalMapWindow:_update_frame()
+function StrategicalMapWindow:_update_frame(hx, hy)
   local frame = self.frame
   local gui = self.drawing.gui
   local scaled_geometry = gui.scaled_geometry
   local renderer = self.engine.gear:get("renderer")
+
+  frame.prev_box = _.clone(frame.hex_box)
 
   local window_w, window_h = renderer:get_size()
 
@@ -255,10 +260,10 @@ function StrategicalMapWindow:_update_frame()
   local w = math.floor( (frame_w - scaled_geometry.w) / scaled_geometry.x_offset ) - 1
   local h = math.floor( (frame_h - (scaled_geometry.h + scaled_geometry.y_offset)) / gui.scaled_geometry.h ) - 1
 
-  local frame_x_max, frame_y_max = w + frame.hex_box.x - 1, h + frame.hex_box.y - 1
+  local frame_x_max, frame_y_max = w + hx - 1, h + hy - 1
 
   -- print(string.format("frame h, w = %d:%d", w, h))
-  local map_w, map_h = self:_map_size(frame.hex_box.x, frame.hex_box.y, frame_x_max, frame_y_max)
+  local map_w, map_h = self:_map_size(hx, hy, frame_x_max, frame_y_max)
   local frame_dx = math.modf((window_w - map_w)/2)
   local frame_dy = math.modf((window_h - map_h)/2)
 
@@ -266,6 +271,8 @@ function StrategicalMapWindow:_update_frame()
   -- print(string.format("frame_dx, frame_dy = %d:%d", frame_dx, frame_dy))
 
   -- x, y are undeated on scroll
+  frame.hex_box.x = hx
+  frame.hex_box.y = hy
   frame.hex_box.w = w
   frame.hex_box.h = h
 
@@ -277,6 +284,104 @@ function StrategicalMapWindow:_update_frame()
   frame.screen.w = window_w
   frame.screen.h = window_h
   -- print("frame = " .. inspect(frame))
+  print("updated frame. old " .. inspect(frame.prev_box) .. ", new : " .. inspect(frame.hex_box))
+end
+
+-- if frame didn't updated, returns the current texture
+-- otherwise, it generates a new sub-texture(s) and merges it
+-- with the previous
+function StrategicalMapWindow:_get_texture()
+  local frame = self.frame
+  local hex_box = frame.hex_box
+  local prev_box = frame.prev_box
+  local x2, y2 = hex_box.x + hex_box.w - 1, hex_box.y + hex_box.h - 1
+
+  local dx = hex_box.x - prev_box.x
+  local dy = hex_box.y - prev_box.y
+  local dw = hex_box.w - prev_box.w
+  local dh = hex_box.h - prev_box.h
+
+  if ((dx == 0) and (dy == 0) and (dw == 0) and (dh == 0)) then
+    -- do nothing,
+  else
+
+    -- squares
+    local s1, s2 = hex_box.w * hex_box.h, prev_box.w * prev_box.h
+
+    -- if they are NOT equals by squares, we assume that window geometry
+    -- has changed, hence, do complete redraw
+    if ((s1 ~= s2) or ((dx ~= 0) and (dy ~= 0))) then
+      frame.texture = self:_generate_map_texture(hex_box.x, hex_box.y, x2, y2)
+    else
+      -- determine intersection area
+      local gui = self.drawing.gui
+      local scaled_geometry = gui.scaled_geometry
+      local sdl_renderer = self.engine.gear:get("renderer").sdl_renderer
+      local ix1 = math.max(hex_box.x, prev_box.x)
+      local iy1 = math.max(hex_box.y, prev_box.y)
+      local ix2 = math.min(hex_box.x + hex_box.w, prev_box.x + prev_box.w) - 1
+      local iy2 = math.min(hex_box.y + hex_box.h, prev_box.y + prev_box.h) - 1
+
+      local format = frame.texture:query()
+      local new_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, frame.dst.w, frame.dst.h))
+      local iw, ih = ix2 - ix1, iy2 - iy1
+
+      local nx1 = (dx > 0) and (prev_box.x + prev_box.w) or hex_box.x
+      local ny1 = ((dy > 0) and (prev_box.y + prev_box.h) or hex_box.y)
+      dy = dy + 1
+      local nx2 = (dx == 0) and x2 or (nx1 + dx)
+      local ny2 = ((dy == 0) and y2 or (ny1 + dy)) + 1
+      local nw, nh = nx2 - nx1, ny2 - ny1
+
+      print(string.format("intersected frame %d:%d %d:%d (h:w = %d:%d)", ix1, iy1, ix2, iy2, ih, iw))
+      print(string.format("new frame %d:%d %d:%d (h:w = %d:%d)", nx1, ny1, nx2, ny2, nw, nh))
+
+      local additional_patch = self:_generate_map_texture(nx1, ny1 - 2, nx2, ny2)
+
+      assert(sdl_renderer:setTarget(new_texture))
+
+      -- copy exisitng part of map
+      local old_src = {
+        x = (dx > 0) and (dx * scaled_geometry.x_offset) or 0,
+        y = (dy > 0) and ((dy-1) * scaled_geometry.h) or 0,
+        w = iw * scaled_geometry.x_offset + scaled_geometry.w,
+        h = ih * scaled_geometry.h,
+      }
+
+      local new_dst = {
+        x = (dx > 0) and 0 or (dx * scaled_geometry.x_offset),
+        y = (dy > 0) and 0 or (dy * scaled_geometry.h),
+        w = iw * scaled_geometry.x_offset + scaled_geometry.w,
+        h = ih * scaled_geometry.h,
+      }
+      -- assert(sdl_renderer:copy(frame.texture, old_src, new_dst))
+
+      -- copy new patch of map
+      assert(sdl_renderer:copy(additional_patch, {
+        x = (nx1 - 1) * scaled_geometry.x_offset,
+        y = scaled_geometry.h,
+        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
+        h = (ny2 - ny1 - 1) * scaled_geometry.h,
+      }, {
+        x = (nx1 - 1) * scaled_geometry.x_offset,
+        y = new_dst.y + new_dst.h,
+        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
+        h = (ny2 - ny1 - 1) * scaled_geometry.h,
+      }))
+
+      assert(sdl_renderer:copy(additional_patch, nil, {
+        x = (nx1 - 1) * scaled_geometry.x_offset,
+        y = new_dst.y + new_dst.h + scaled_geometry.h - 200,
+        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
+        h = (ny2 - ny1) * scaled_geometry.h,
+      }))
+
+      frame.texture = new_texture
+      assert(sdl_renderer:setTarget(nil))
+      -- error("z")
+    end
+  end
+  return frame.texture
 end
 
 function StrategicalMapWindow:_on_ui_update(show)
@@ -298,7 +403,8 @@ function StrategicalMapWindow:_on_ui_update(show)
     local hex_box = frame.hex_box
     local frame_x_max, frame_y_max = hex_box.x + hex_box.w - 1, hex_box.y + hex_box.h - 1
 
-    local map_texture, map_w, map_h = self:_generate_map_texture(hex_box.x, hex_box.y, frame_x_max, frame_y_max)
+
+    local map_texture = self:_get_texture()
 
     -- draw screen texture
     local format = theme.window.background.texture:query()
@@ -349,25 +455,26 @@ function StrategicalMapWindow:_on_ui_update(show)
 
       local idle = function(event)
         local x, y = event.x, event.y
+        local hx, hy = frame.hex_box.x, frame.hex_box.y
         local refresh = false
         local map_x, map_y = frame.hex_box.x, frame.hex_box.y
         if ((math.abs(map_region.y_min - y) < SCROLL_TOLERANCE) and map_y > SCROLL_DELTA) then
-          frame.hex_box.y = frame.hex_box.y - SCROLL_DELTA
+          hy = hy - SCROLL_DELTA
           refresh = true
         elseif ((math.abs(map_region.y_max - y) < SCROLL_TOLERANCE) and ( (map_y + frame.hex_box.h + SCROLL_DELTA) < map.height)) then
-          frame.hex_box.y = frame.hex_box.y + SCROLL_DELTA
+          hy = hy + SCROLL_DELTA
           refresh = true
         elseif ((math.abs(map_region.x_min - x) < SCROLL_TOLERANCE) and map_x > SCROLL_DELTA) then
-          frame.hex_box.x = frame.hex_box.x - SCROLL_DELTA
+          hx = hx - SCROLL_DELTA
           refresh = true
         elseif ((math.abs(map_region.x_max - x) < SCROLL_TOLERANCE) and ( (map_x + frame.hex_box.w + SCROLL_DELTA) < map.width)) then
-          frame.hex_box.x = frame.hex_box.x + SCROLL_DELTA
+          hx = hx + SCROLL_DELTA
           refresh = true
         end
 
         if (refresh) then
           -- print("frame_pos = " .. inspect(frame_pos))
-          self:_update_frame()
+          self:_update_frame(hx, hy)
           self:_on_ui_update(true)
         end
         return true
@@ -400,7 +507,7 @@ function StrategicalMapWindow:bind_ctx(context)
   self.drawing.context = context
   local gui = self:_construct_gui()
   local ui_update_listener = function()
-    self:_update_frame()
+    self:_update_frame(self.frame.hex_box.x, self.frame.hex_box.y)
     return self:_on_ui_update(true)
   end
 
