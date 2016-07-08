@@ -326,35 +326,51 @@ function StrategicalMapWindow:_get_texture()
       local new_texture = assert(sdl_renderer:createTexture(format, SDL.textureAccess.Target, frame.dst.w, frame.dst.h))
       local iw, ih = ix2 - ix1, iy2 - iy1
 
+      local d_sign = _.map({dx, dy}, function(_, value)
+        if (value > 0) then return 1
+        elseif (value < 0) then return -1
+        else return 0
+        end
+      end)
+
+      -- we add +1 to enlarge actually cut area
+      local delta = _.map({dx, dy}, function(idx, value)
+        return d_sign[idx] * (value + 1)
+      end)
+
+
+      -- here we wd do -2, because:
+      -- a) previoulsy we've added + 1 to enlarge AREA
+      -- b) we need to skip the additionally drown row
       local nx1 = (dx > 0) and (prev_box.x + prev_box.w) or hex_box.x
-      local ny1 = ((dy > 0) and (prev_box.y + prev_box.h) or hex_box.y)
-      dy = dy + 1
+      local ny1 = (delta[2] == 0) and hex_box.y or (prev_box.y + prev_box.h - 2)
       local nx2 = (dx == 0) and x2 or (nx1 + dx)
-      local ny2 = ((dy == 0) and y2 or (ny1 + dy)) + 1
+      local ny2 = (delta[2] == 0) and y2 or (ny1 + delta[2])
       local nw, nh = nx2 - nx1, ny2 - ny1
 
       print(string.format("intersected frame %d:%d %d:%d (h:w = %d:%d)", ix1, iy1, ix2, iy2, ih, iw))
       print(string.format("new frame %d:%d %d:%d (h:w = %d:%d)", nx1, ny1, nx2, ny2, nw, nh))
 
-      local additional_patch = self:_generate_map_texture(nx1, ny1 - 2, nx2, ny2)
+      local additional_patch = self:_generate_map_texture(nx1, ny1, nx2, ny2)
 
       assert(sdl_renderer:setTarget(new_texture))
 
       -- copy exisitng part of map
       local old_src = {
         x = (dx > 0) and (dx * scaled_geometry.x_offset) or 0,
-        y = (dy > 0) and ((dy-1) * scaled_geometry.h) or 0,
+        y = d_sign[2] * (delta[2] - 1) * scaled_geometry.h,
         w = iw * scaled_geometry.x_offset + scaled_geometry.w,
         h = ih * scaled_geometry.h,
       }
 
       local new_dst = {
         x = (dx > 0) and 0 or (dx * scaled_geometry.x_offset),
-        y = (dy > 0) and 0 or (dy * scaled_geometry.h),
+        y = (delta[2] > 0) and 0 or (delta[2] * scaled_geometry.h),
         w = iw * scaled_geometry.x_offset + scaled_geometry.w,
         h = ih * scaled_geometry.h,
       }
-      -- assert(sdl_renderer:copy(frame.texture, old_src, new_dst))
+      -- copy old/intersected frame
+      assert(sdl_renderer:copy(frame.texture, old_src, new_dst))
 
       -- copy new patch of map
       assert(sdl_renderer:copy(additional_patch, {
@@ -369,12 +385,15 @@ function StrategicalMapWindow:_get_texture()
         h = (ny2 - ny1 - 1) * scaled_geometry.h,
       }))
 
+      -- pure patch output. For debug only
+      --[[
       assert(sdl_renderer:copy(additional_patch, nil, {
         x = (nx1 - 1) * scaled_geometry.x_offset,
         y = new_dst.y + new_dst.h + scaled_geometry.h - 200,
         w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
-        h = (ny2 - ny1) * scaled_geometry.h,
+        h = (ny2 - ny1 + 2) * scaled_geometry.h,
       }))
+      ]]
 
       frame.texture = new_texture
       assert(sdl_renderer:setTarget(nil))
