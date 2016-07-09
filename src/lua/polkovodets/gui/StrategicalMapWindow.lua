@@ -333,19 +333,23 @@ function StrategicalMapWindow:_get_texture()
         end
       end)
 
-      -- we add +1 to enlarge actually cut area
+      -- we add +1/-1 to enlarge actually cut area
       local delta = _.map({dx, dy}, function(idx, value)
-        return d_sign[idx] * (value + 1)
+        return math.abs(d_sign[idx]) * (value + d_sign[idx])
       end)
+
+      print("delta = " .. inspect(delta))
 
 
       -- here we wd do -2, because:
       -- a) previoulsy we've added + 1 to enlarge AREA
       -- b) we need to skip the additionally drown row
-      local nx1 = (dx > 0) and (prev_box.x + prev_box.w) or hex_box.x
-      local ny1 = (delta[2] == 0) and hex_box.y or (prev_box.y + prev_box.h - 2)
-      local nx2 = (dx == 0) and x2 or (nx1 + dx)
-      local ny2 = (delta[2] == 0) and y2 or (ny1 + delta[2])
+      local nx1 = (delta[1] == 0) and hex_box.x or (prev_box.x + prev_box.w - 2)
+      local ny1 = (delta[2] == 0) and hex_box.y or ((delta[2] > 0) and (prev_box.y + prev_box.h - 2) or (math.max(hex_box.y - 1, 1)))
+
+
+      local nx2 = (delta[1] == 0) and x2 or (nx1 + delta[1])
+      local ny2 = (delta[2] == 0) and y2 or (ny1 + math.abs(delta[2]))
       local nw, nh = nx2 - nx1, ny2 - ny1
 
       print(string.format("intersected frame %d:%d %d:%d (h:w = %d:%d)", ix1, iy1, ix2, iy2, ih, iw))
@@ -357,33 +361,40 @@ function StrategicalMapWindow:_get_texture()
 
       -- copy exisitng part of map
       local old_src = {
-        x = (dx > 0) and (dx * scaled_geometry.x_offset) or 0,
+        x = d_sign[1] * (delta[1] - 1) * scaled_geometry.w,
         y = d_sign[2] * (delta[2] - 1) * scaled_geometry.h,
         w = iw * scaled_geometry.x_offset + scaled_geometry.w,
         h = ih * scaled_geometry.h,
       }
 
       local new_dst = {
-        x = (dx > 0) and 0 or (dx * scaled_geometry.x_offset),
-        y = (delta[2] > 0) and 0 or (delta[2] * scaled_geometry.h),
+        x = (delta[1] > 0) and 0 or (delta[1] * scaled_geometry.w),
+        y = (delta[2] > 0) and 0 or ((math.abs(delta[2]) + 2) * scaled_geometry.h ),
         w = iw * scaled_geometry.x_offset + scaled_geometry.w,
         h = ih * scaled_geometry.h,
       }
       -- copy old/intersected frame
       assert(sdl_renderer:copy(frame.texture, old_src, new_dst))
 
+      local patch_from = {
+        x = (nx1 - 1) * scaled_geometry.x_offset,
+        y = (delta[2] > 0) and scaled_geometry.h or 0,
+        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
+        h = (ny2 - ny1 - ( (delta[2] > 0) and 1 or 0)) * scaled_geometry.h,
+      }
+
+      local patch_to = {
+        x = (nx1 - 1) * scaled_geometry.x_offset,
+        y = (delta[2] > 0) and (new_dst.y + new_dst.h) or 0,
+        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
+        h = (ny2 - ny1 - ( (delta[2] > 0) and 1 or 0)) * scaled_geometry.h,
+      }
+      print("patch_from: " .. inspect(patch_from))
+      print("patch_to: " .. inspect(patch_to))
+
       -- copy new patch of map
-      assert(sdl_renderer:copy(additional_patch, {
-        x = (nx1 - 1) * scaled_geometry.x_offset,
-        y = scaled_geometry.h,
-        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
-        h = (ny2 - ny1 - 1) * scaled_geometry.h,
-      }, {
-        x = (nx1 - 1) * scaled_geometry.x_offset,
-        y = new_dst.y + new_dst.h,
-        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
-        h = (ny2 - ny1 - 1) * scaled_geometry.h,
-      }))
+      -- assert(sdl_renderer:copy(additional_patch, nil, nil))
+      --assert(sdl_renderer:copy(additional_patch, patch_from, patch_to))
 
       -- pure patch output. For debug only
       --[[
