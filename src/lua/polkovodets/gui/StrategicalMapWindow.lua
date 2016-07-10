@@ -379,7 +379,7 @@ function StrategicalMapWindow:_get_texture()
       local new_dst = {
         -- x = (delta[1] > 0) and 0 or (delta[1] * scaled_geometry.w),
         x = (delta[1] > 0) and 0 or (math.abs(delta[1]) * scaled_geometry.x_offset),
-        y = (delta[2] > 0) and 0 or ((math.abs(delta[2]) + 0) * scaled_geometry.h),
+        y = (delta[2] > 0) and 0 or (math.abs(delta[2]) * scaled_geometry.h),
         w = existing_w,
         h = existing_h,
       }
