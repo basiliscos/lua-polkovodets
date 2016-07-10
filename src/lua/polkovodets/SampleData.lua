@@ -308,8 +308,8 @@ function SampleData.generate_map(gear)
 
   local map_data = {
     path   = "Sample data, no path available",
-    width  = 100,
-    height = 100,
+    width  = width,
+    height = height,
     tiles_data = {},
     tile_names = {}
   }
