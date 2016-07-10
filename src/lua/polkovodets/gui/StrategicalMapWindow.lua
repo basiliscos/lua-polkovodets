@@ -350,11 +350,11 @@ function StrategicalMapWindow:_get_texture()
       -- here we wd do -2, because:
       -- a) previoulsy we've added + 1 to enlarge AREA
       -- b) we need to skip the additionally drown row
-      local nx1 = (delta[1] == 0) and hex_box.x or (prev_box.x + prev_box.w - 2)
+      local nx1 = (delta[1] == 0) and hex_box.x or ((delta[1] > 0) and (prev_box.x + prev_box.w - 2) or hex_box.x)
       local ny1 = (delta[2] == 0) and hex_box.y or ((delta[2] > 0) and (prev_box.y + prev_box.h - 2) or hex_box.y)
 
 
-      local nx2 = (delta[1] == 0) and x2 or (nx1 + delta[1])
+      local nx2 = (delta[1] == 0) and x2 or (nx1 + math.abs(delta[1]))
       local ny2 = (delta[2] == 0) and y2 or (ny1 + math.abs(delta[2]))
       local nw, nh = nx2 - nx1, ny2 - ny1
 
@@ -368,16 +368,13 @@ function StrategicalMapWindow:_get_texture()
 
       -- copy exisitng part of map
       local old_src = {
-        -- x = d_sign[1] * (delta[1] - 1) * scaled_geometry.w,
-        x = (delta[1] >= 0) and (d_sign[1] * (delta[1] - 1) * scaled_geometry.x_offset) or scaled_geometry.x_offset,
-        -- x = d_sign[1] * (delta[1] - 1) * scaled_geometry.w,
+        x = (delta[1] >= 0) and (d_sign[1] * (delta[1] - 1) * scaled_geometry.x_offset) or (scaled_geometry.x_offset),
         y = (delta[2] >= 0) and (d_sign[2] * (delta[2] - 1) * scaled_geometry.h) or scaled_geometry.h,
         w = existing_w,
         h = existing_h,
       }
 
       local new_dst = {
-        -- x = (delta[1] > 0) and 0 or (delta[1] * scaled_geometry.w),
         x = (delta[1] > 0) and 0 or (math.abs(delta[1]) * scaled_geometry.x_offset),
         y = (delta[2] > 0) and 0 or (math.abs(delta[2]) * scaled_geometry.h),
         w = existing_w,
