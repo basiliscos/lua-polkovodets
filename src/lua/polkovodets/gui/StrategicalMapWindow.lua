@@ -363,19 +363,25 @@ function StrategicalMapWindow:_get_texture()
 
       assert(sdl_renderer:setTarget(new_texture))
 
+      local existing_w = iw * scaled_geometry.x_offset + scaled_geometry.w
+      local existing_h = ih * scaled_geometry.h + ( (delta[2] == 0) and (scaled_geometry.h + scaled_geometry.y_offset) or 0)
+
       -- copy exisitng part of map
       local old_src = {
-        x = d_sign[1] * (delta[1] - 1) * scaled_geometry.w,
-        y = (delta[2] > 0) and (d_sign[2] * (delta[2] - 1) * scaled_geometry.h) or scaled_geometry.h,
-        w = iw * scaled_geometry.x_offset + scaled_geometry.w,
-        h = ih * scaled_geometry.h,
+        -- x = d_sign[1] * (delta[1] - 1) * scaled_geometry.w,
+        x = (delta[1] >= 0) and (d_sign[1] * (delta[1] - 1) * scaled_geometry.x_offset) or scaled_geometry.x_offset,
+        -- x = d_sign[1] * (delta[1] - 1) * scaled_geometry.w,
+        y = (delta[2] >= 0) and (d_sign[2] * (delta[2] - 1) * scaled_geometry.h) or scaled_geometry.h,
+        w = existing_w,
+        h = existing_h,
       }
 
       local new_dst = {
-        x = (delta[1] > 0) and 0 or (delta[1] * scaled_geometry.w),
+        -- x = (delta[1] > 0) and 0 or (delta[1] * scaled_geometry.w),
+        x = (delta[1] > 0) and 0 or (math.abs(delta[1]) * scaled_geometry.x_offset),
         y = (delta[2] > 0) and 0 or ((math.abs(delta[2]) + 0) * scaled_geometry.h),
-        w = iw * scaled_geometry.x_offset + scaled_geometry.w,
-        h = ih * scaled_geometry.h,
+        w = existing_w,
+        h = existing_h,
       }
       -- copy old/intersected frame
       assert(sdl_renderer:copy(frame.texture, old_src, new_dst))
@@ -383,25 +389,9 @@ function StrategicalMapWindow:_get_texture()
       -- visual debug
       -- assert(sdl_renderer:copy(theme.window.background.texture, nil, nil))
       self:_draw_map_texture(nx1, ny1, nx2, ny2 - 1,
-        new_dst.x,
+        (delta[1] > 0) and (new_dst.w - (scaled_geometry.w + scaled_geometry.x_offset)) or 0,
         (delta[2] > 0) and (new_dst.h - scaled_geometry.h) or 0
       )
-      --[[
-      ]]
-
-      -- copy new patch of map
-      -- assert(sdl_renderer:copy(additional_patch, nil, nil))
-      -- assert(sdl_renderer:copy(additional_patch, patch_from, patch_to))
-
-      -- pure patch output. For debug only
-      --[[
-      assert(sdl_renderer:copy(additional_patch, nil, {
-        x = (nx1 - 1) * scaled_geometry.x_offset,
-        y = new_dst.y + new_dst.h + scaled_geometry.h - 200,
-        w = (nx2 - nx1) * scaled_geometry.x_offset + scaled_geometry.w,
-        h = (ny2 - ny1 + 2) * scaled_geometry.h,
-      }))
-      ]]
 
       frame.texture = new_texture
       assert(sdl_renderer:setTarget(nil))
