@@ -388,7 +388,8 @@ function StrategicalMapWindow:_get_texture()
 
       -- visual debug
       -- assert(sdl_renderer:copy(theme.window.background.texture, nil, nil))
-      self:_draw_map_texture(nx1, ny1, nx2, ny2 - 1,
+
+      self:_draw_map_texture(nx1, ny1, nx2, ny2,
         (delta[1] > 0) and (new_dst.w - (scaled_geometry.w + scaled_geometry.x_offset)) or 0,
         (delta[2] > 0) and (new_dst.h - scaled_geometry.h) or 0
       )
