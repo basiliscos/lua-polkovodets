@@ -266,6 +266,7 @@ function StrategicalMapWindow:_update_frame(hx, hy)
   local gui = self.drawing.gui
   local scaled_geometry = gui.scaled_geometry
   local renderer = self.engine.gear:get("renderer")
+  local map = self.engine.gear:get("map")
 
   frame.prev_box = _.clone(frame.hex_box)
 
@@ -277,6 +278,9 @@ function StrategicalMapWindow:_update_frame(hx, hy)
   local w = math.floor( (frame_w - scaled_geometry.w) / scaled_geometry.x_offset ) - 1
   local h = math.floor( (frame_h - (scaled_geometry.h + scaled_geometry.y_offset)) / gui.scaled_geometry.h ) - 1
 
+  hx = (hx + w >= map.width) and math.min(1, map.width - w) or hx
+  hy = (hy + h >= map.height) and math.min(1, map.height - h) or hy
+
   local frame_x_max, frame_y_max = w + hx - 1, h + hy - 1
 
   -- print(string.format("frame h, w = %d:%d", w, h))
@@ -284,10 +288,11 @@ function StrategicalMapWindow:_update_frame(hx, hy)
   local frame_dx = math.modf((window_w - map_w)/2)
   local frame_dy = math.modf((window_h - map_h)/2)
 
+
   -- print(string.format("map_w, map_h = %d:%d, window_w, window_h = %d:%d", map_w, map_h, window_w, window_h))
   -- print(string.format("frame_dx, frame_dy = %d:%d", frame_dx, frame_dy))
 
-  -- x, y are undeated on scroll
+  -- x, y are uodated on scroll
   frame.hex_box.x = hx
   frame.hex_box.y = hy
   frame.hex_box.w = w
