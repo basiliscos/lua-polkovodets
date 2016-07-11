@@ -177,8 +177,8 @@ function StrategicalMapWindow:_map_size(x_min, y_min, x_max, y_max)
   local dy = y_max - y_min
   -- assert(dy >= 2)
 
-  local content_w = scaled_geometry.x_offset * dx + scaled_geometry.w
-  local content_h =  scaled_geometry.h * (dy + 1) + scaled_geometry.y_offset
+  local content_w = scaled_geometry.x_offset * (dx - 1) + scaled_geometry.w
+  local content_h =  scaled_geometry.h * dy + scaled_geometry.y_offset
 
   -- print(string.format("map size for (%d, %d, %d, %d) -> (%d, %d)", x_min, y_min, x_max, y_max, content_w, content_h))
   return content_w, content_h
@@ -193,7 +193,7 @@ function StrategicalMapWindow:_draw_map_texture(x_min, y_min, x_max, y_max, dx, 
   local map = engine.gear:get("map")
   local terrain = engine.gear:get("terrain")
 
-  print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
+  -- print(string.format("generating map frame [%d:%d %d:%d]", x_min, y_min, x_max, y_max))
 
   local content_w, content_h =  self:_map_size(x_min, y_min, x_max, y_max)
 
@@ -203,8 +203,8 @@ function StrategicalMapWindow:_draw_map_texture(x_min, y_min, x_max, y_max, dx, 
   -- shifted description contains the right coordinates (destination boxes)
   local shift_tile = map.tiles[x_min][y_min]
   local first_tile = map.tiles[1][1]
-  local shift_x = gui.tile_positions[first_tile.id].dst.x - gui.tile_positions[shift_tile.id].dst.x
-  local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y
+  local shift_x = gui.tile_positions[first_tile.id].dst.x - gui.tile_positions[shift_tile.id].dst.x - scaled_geometry.x_offset
+  local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y - scaled_geometry.h
 
   for i = x_min, x_max do
     -- for j = y_min, (i % 2 == 0) and y_max - 2 or y_max do
@@ -213,28 +213,47 @@ function StrategicalMapWindow:_draw_map_texture(x_min, y_min, x_max, y_max, dx, 
 
       -- terrain
       local description = gui.tile_positions[tile.id]
+
+      local h_multiplier = ((j == y_max) and (i%2 == 0)) and 0.5 or 1
+      local w_multiplier = (i == x_max) and (scaled_geometry.x_offset/scaled_geometry.w) or 1
+
       local dst = {
         x = description.dst.x + shift_x + dx,
         y = description.dst.y + shift_y + dy,
-        w = description.dst.w,
-        h = description.dst.h,
+        w = math.modf(description.dst.w * w_multiplier),
+        h = math.modf(description.dst.h * h_multiplier),
       }
-      assert(sdl_renderer:copy(description.image.texture, nil, dst))
+      local src = ((h_multiplier ~= 1) or (w_multiplier ~= 1 )) and {
+            x = 0,
+            y = 0,
+            w = math.modf(description.image.w * w_multiplier),
+            h = math.modf(description.image.h * h_multiplier),
+          }
+        or nil
+
+      assert(sdl_renderer:copy(description.image.texture, src, dst))
 
       local spotting = map.united_spotting.map[tile.id]
       if (not spotting) then
         -- fog of war
-        assert(sdl_renderer:copy(fog.texture, nil, dst))
+        assert(sdl_renderer:copy(fog.texture, src, dst))
       elseif (description.flag_data) then
         -- unit flag, scaled up to hex
         local dst = {
           x = description.flag_data.dst.x + shift_x + dx,
           y = description.flag_data.dst.y + shift_y + dy,
-          w = description.flag_data.dst.w,
-          h = description.flag_data.dst.h,
+          w = description.flag_data.dst.w * w_multiplier,
+          h = description.flag_data.dst.h * h_multiplier,
         }
         local image = description.flag_data.image
-        assert(sdl_renderer:copy(image.texture, nil, dst))
+        local src = ((h_multiplier ~= 1) or (w_multiplier ~= 1 )) and {
+            x = 0,
+            y = 0,
+            w = math.modf(image.w * w_multiplier),
+            h = math.modf(image.h * h_multiplier),
+          }
+        or nil
+        assert(sdl_renderer:copy(image.texture, src, dst))
       end
     end
   end
@@ -282,7 +301,7 @@ function StrategicalMapWindow:_update_frame(hx, hy)
   frame.screen.w = window_w
   frame.screen.h = window_h
   -- print("frame = " .. inspect(frame))
-  print("updated frame. old " .. inspect(frame.prev_box) .. ", new : " .. inspect(frame.hex_box))
+  -- print("updated frame. old " .. inspect(frame.prev_box) .. ", new : " .. inspect(frame.hex_box))
 end
 
 -- if frame didn't updated, returns the current texture
@@ -344,7 +363,7 @@ function StrategicalMapWindow:_get_texture()
         return math.abs(d_sign[idx]) * (value + d_sign[idx])
       end)
 
-      print("delta = " .. inspect(delta))
+      -- print("delta = " .. inspect(delta))
 
 
       -- here we wd do -2, because:
@@ -355,16 +374,18 @@ function StrategicalMapWindow:_get_texture()
 
 
       local nx2 = (delta[1] == 0) and x2 or (nx1 + math.abs(delta[1]))
-      local ny2 = (delta[2] == 0) and y2 or (ny1 + math.abs(delta[2]))
+      local ny2 = (delta[2] == 0) and y2 or ((ny1 + math.abs(delta[2]) - ((delta[2] > 0) and 1 or 0) ))
       local nw, nh = nx2 - nx1, ny2 - ny1
 
+      --[[
       print(string.format("intersected frame %d:%d %d:%d (h:w = %d:%d)", ix1, iy1, ix2, iy2, ih, iw))
       print(string.format("new frame %d:%d %d:%d (h:w = %d:%d)", nx1, ny1, nx2, ny2, nw, nh))
+      ]]
 
       assert(sdl_renderer:setTarget(new_texture))
 
-      local existing_w = iw * scaled_geometry.x_offset + scaled_geometry.w
-      local existing_h = ih * scaled_geometry.h + ( (delta[2] == 0) and (scaled_geometry.h + scaled_geometry.y_offset) or 0)
+      local existing_w = (iw + ((delta[1] >= 0) and 0 or -1)) * scaled_geometry.x_offset
+      local existing_h = (ih + ((delta[2] >= 0) and 0 or -1)) * scaled_geometry.h
 
       -- copy exisitng part of map
       local old_src = {
@@ -375,8 +396,8 @@ function StrategicalMapWindow:_get_texture()
       }
 
       local new_dst = {
-        x = (delta[1] > 0) and 0 or (math.abs(delta[1]) * scaled_geometry.x_offset),
-        y = (delta[2] > 0) and 0 or (math.abs(delta[2]) * scaled_geometry.h),
+        x = (delta[1] > 0) and 0 or ((math.abs(delta[1]) - 0) * scaled_geometry.x_offset),
+        y = (delta[2] > 0) and 0 or ((math.abs(delta[2]) - 0) * scaled_geometry.h),
         w = existing_w,
         h = existing_h,
       }
@@ -387,8 +408,8 @@ function StrategicalMapWindow:_get_texture()
       -- assert(sdl_renderer:copy(theme.window.background.texture, nil, nil))
 
       self:_draw_map_texture(nx1, ny1, nx2, ny2,
-        (delta[1] > 0) and (new_dst.w - (scaled_geometry.w + scaled_geometry.x_offset)) or 0,
-        (delta[2] > 0) and (new_dst.h - scaled_geometry.h) or 0
+        (delta[1] > 0) and (new_dst.w - scaled_geometry.x_offset) or 0,
+        (delta[2] > 0) and (new_dst.h) or 0
       )
 
       frame.texture = new_texture
