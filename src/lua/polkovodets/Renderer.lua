@@ -30,7 +30,7 @@ local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 local Interface = require 'polkovodets.Interface'
 local Tile = require 'polkovodets.Tile'
 
-local EVENT_DELAY = 50
+local EVENT_DELAY = 200
 
 function Renderer.create(engine, window, sdl_renderer)
   assert(ttf.init())
@@ -209,6 +209,7 @@ function Renderer:main_loop()
   local running = true
   local sdl_renderer = self.sdl_renderer
   local kind = SDL.eventWindow
+
   local fn_idle = function()
     local state, x, y = SDL.getMouseState()
     local event = { x = x,  y = y, }
@@ -216,8 +217,13 @@ function Renderer:main_loop()
     self.handlers.idle:apply(function(cb) return cb(event) end)
   end
 
+  local custom_delay = nil
+  engine.reactor:subscribe('event.delay', function(_, value) custom_delay = value end)
+
+
   while (running) do
-    local e = SDL.waitEvent(EVENT_DELAY)
+    local e = SDL.waitEvent(custom_delay or EVENT_DELAY)
+    custom_delay = nil
     if (e) then
       local t = e.type
       if t == SDL.event.Quit then

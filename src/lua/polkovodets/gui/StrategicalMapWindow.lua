@@ -517,6 +517,8 @@ function StrategicalMapWindow:_on_ui_update(show)
           -- print("frame_pos = " .. inspect(frame_pos))
           self:_update_frame(hx, hy)
           self:_on_ui_update(true)
+          -- speed up scrolling on idle
+          engine.reactor:publish("event.delay", 20)
         end
         return true
       end

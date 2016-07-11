@@ -60,7 +60,8 @@ function Engine.create(gear, language)
     'mouse-position.change',
     'map.update', 'history.update',
     'ui.update',
-    'full.refresh'
+    'full.refresh',
+    'event.delay',
   })
 
   local e = {
