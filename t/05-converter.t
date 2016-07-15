@@ -36,6 +36,7 @@ subtest("armed-forces-parse",
            local data = c:convert()
            ok(data, "got converted data")
            is(#data, 1, "1 rows in data")
+           print(inspect(data))
            is_deeply(data[1],
                      {
                         units = {
