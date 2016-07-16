@@ -106,7 +106,8 @@ function Converter:_convert_csv()
    local push_value = function(value, column)
       local cmd = structure_at[column]
 
-      -- print("value (" .. column .. ") " .. value)
+      -- print("value at column " .. column .. ": " .. value .. ", cmd = " .. cmd.command)
+
       if (column == 1 and (#value >0 or #stack == 0) ) then
          push_out()       -- push the current one (if exists)
          table.insert(stack, {}) -- start new item
@@ -166,28 +167,43 @@ function Converter:_convert_csv()
    local line, line_no = iterator()
    while (line) do
       local success, msg = pcall(function()
-        local column = 1
+
+        -- prepare values
+        local values = {}
         for value in string.gmatch(line, '[^;]*;?') do
-           --  remove the last ;
-           if (string.sub(value, -1, #value) == ';') then
-              value = string.sub(value, 1, -2)
-           end
+          --  remove the last ;
+          if (string.sub(value, -1, #value) == ';') then
+            value = string.sub(value, 1, -2)
+          end
            -- remove trailing spaces
-           value = string.gsub(value, "([^ ])[ ]+$", "%1");
-           if (column <= columns) then
-              -- print("v: " .. column .. " " .. (value or 'nil'))
-              if (string.find(value, '#', nil, true)) then -- make a list of values
-                local array = {}
-                for v in string.gmatch(value, '([^#]+)#?') do
-                  table.insert(array, v)
-                end
-                value = array
-              elseif (string.find(value, '\\')) then -- windows backslashes => unix slashes
-                 value = string.gsub(value, '\\', '/')
-              end
-              push_value(value, column)
-              column = column + 1
-           end
+          value = string.gsub(value, "([^ ])[ ]+$", "%1");
+
+          -- make a list of values
+          if (string.find(value, '#', nil, true)) then
+            local array = {}
+            for v in string.gmatch(value, '([^#]+)#?') do
+              table.insert(array, v)
+            end
+            value = array
+          -- windows backslashes => unix slashes
+          elseif (string.find(value, '\\')) then
+             value = string.gsub(value, '\\', '/')
+          end
+          -- ignore extra columns, for which headers are abscent
+          if (#values < columns) then
+            table.insert(values, value)
+          end
+        end
+        -- print(inspect(values))
+
+        -- sanity checks
+        if (#values < columns) then
+          table.insert(values, '')
+        end
+
+        -- process values
+        for idx, value in pairs(values) do
+          push_value(value, idx)
         end
       end)
       if (not success) then
@@ -195,6 +211,7 @@ function Converter:_convert_csv()
       end
       line, line_no = iterator()
    end
+   -- print("stack = " .. inspect(stack))
    -- push the current item into list of items
    push_out()
    return items
