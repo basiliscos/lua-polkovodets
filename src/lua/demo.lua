@@ -81,6 +81,7 @@ for _, name in pairs(component_names) do
 end
 
 gui_renderer:prepare_drawers()
+engine.interface:add_window('tactical_map_window')
 gui_renderer:main_loop()
 
 SDL.quit()

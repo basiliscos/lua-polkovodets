@@ -65,10 +65,9 @@ function Map.create()
   return m
 end
 
-function Map:initialize(engine, renderer, hex_geometry, terrain, map_data)
+function Map:initialize(engine, renderer, terrain, map_data)
   self.engine   = engine
   self.renderer = renderer
-  self.hex_geometry = hex_geometry
   self.terrain = terrain
   assert(map_data.width)
   assert(map_data.height)
@@ -77,13 +76,16 @@ function Map:initialize(engine, renderer, hex_geometry, terrain, map_data)
   self:_fill_tiles(terrain, map_data)
   engine.state:set_active_tile(self.tiles[1][1])
 
+  --[[
   local reactor = self.engine.reactor
+
   reactor:subscribe("full.refresh", function() self:_update_shown_map() end)
   reactor:subscribe("turn.end", function() self:_reset_spotting_map() end)
   reactor:subscribe("turn.start", function() self:_on_start_of_turn() end)
   reactor:subscribe("unit.change-spotting", function(event, unit) self:_update_spotting_map(unit) end)
 
   self:_update_shown_map()
+  ]]
 end
 
 function Map:_update_spotting_map(unit)
@@ -324,8 +326,6 @@ end
 
 function Map:_fill_tiles(terrain, map_data)
 
-  local hex_geometry = self.hex_geometry
-
   local map_w = map_data.width
   local map_h = map_data.height
   local map_path = map_data.path
@@ -356,7 +356,7 @@ function Map:_fill_tiles(terrain, map_data)
         image_idx    = image_idx,
         terrain_type = terrain_type,
       }
-      local tile = Tile.create(self.engine, hex_geometry, tile_data)
+      local tile = Tile.create(self.engine, tile_data)
       column[ y ] = tile
       tile_for[tile.id] = tile
     end
@@ -366,29 +366,6 @@ function Map:_fill_tiles(terrain, map_data)
   self.tile_for = tile_for
 end
 
-function Map:_get_event_source()
-  return {
-    add_handler    = function(event_type, tile_id, cb) return self:_add_hanlder(event_type, tile_id, cb) end,
-    remove_handler = function(event_type, tile_id, cb) return self:_remove_hanlder(event_type, tile_id, cb) end,
-  }
-end
-
-
-function Map:_add_hanlder(event_type, tile_id, cb)
-  assert(event_type and tile_id and cb)
-  local tile_to_set = assert(self.drawing.proxy[event_type])
-  local set = tile_to_set[tile_id] or OrderedHandlers.new()
-  set:insert(cb)
-  tile_to_set[tile_id] = set
-end
-
-
-function Map:_remove_hanlder(event_type, tile_id, cb)
-  assert(event_type and tile_id and cb)
-  local tile_to_set = assert(self.drawing.proxy[event_type])
-  local set = assert(tile_to_set[tile_id])
-  set:remove(cb)
-end
 
 function Map:_on_map_update()
   local engine = self.engine

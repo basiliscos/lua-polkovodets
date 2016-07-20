@@ -127,6 +127,7 @@ function Unit:bind_ctx(context)
   local theme = engine.gear:get("theme")
   local map = engine.gear:get("map")
   local hex_geometry = engine.gear:get("hex_geometry")
+  local state = engine.state
 
   local hex_w = hex_geometry.width
   local hex_h = hex_geometry.height
@@ -168,17 +169,17 @@ function Unit:bind_ctx(context)
     h = unit_flag.h,
   }
 
-  local mouse = context.state:get_mouse()
+  local mouse = state:get_mouse()
 
   -- unit state
   local size = self.definition.size
   local efficiency = self.data.efficiency
   local unit_state = theme:get_unit_state_icon(size, efficiency)
 
-  local u = context.state:get_selected_unit()
-  local active_tile = context.state:get_active_tile()
+  local u = state:get_selected_unit()
+  local active_tile = state:get_active_tile()
 
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
+  local sdl_renderer = assert(renderer.sdl_renderer)
 
   local draw_frame
   if (u and u.id == self.id) then
@@ -222,7 +223,7 @@ function Unit:bind_ctx(context)
   local update_action = function(tile_id, x, y)
     if (tile_id == self.tile.id) then
       local hint = self.name
-      self.engine.state:set_mouse_hint(hint)
+      state:set_mouse_hint(hint)
       return true
     end
   end
@@ -231,7 +232,7 @@ function Unit:bind_ctx(context)
     return update_action(event.tile_id, event.x, event.y)
   end
 
-  local active_tile = context.state:get_active_tile()
+  local active_tile = state:get_active_tile()
   update_action(active_tile.id, mouse.x, mouse.y)
 
   self.drawing.bind_tile = self.tile

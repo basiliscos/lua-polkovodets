@@ -158,10 +158,11 @@ end
 
 function Renderer:prepare_drawers()
   local engine = self.engine
+  local state = engine.state
 
   local context = {
-    renderer      = self,
-    state         = engine.state,
+    -- renderer      = self,
+    -- state         = engine.state,
     events_source = {
       add_handler    = function(event_type, cb) return self:add_handler(event_type, cb) end,
       remove_handler = function(event_type, cb) return self:remove_handler(event_type, cb) end,
@@ -170,7 +171,7 @@ function Renderer:prepare_drawers()
   local interface = Interface.create(engine)
 
   local drawers = {
-    engine.gear:get("map"),
+    -- engine.gear:get("map"),
     interface,
   }
 
@@ -181,7 +182,7 @@ function Renderer:prepare_drawers()
     _.each(drawers, function(k, v) v:unbind_ctx(context) end)
 
     local mouse_state, x, y = SDL.getMouseState()
-    context.state:set_mouse(x, y)
+    state:set_mouse(x, y)
 
     _.each(drawers, function(k, v) v:bind_ctx(context) end)
   end)

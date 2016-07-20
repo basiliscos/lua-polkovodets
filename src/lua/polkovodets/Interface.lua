@@ -28,6 +28,7 @@ require ('polkovodets.gui.BattleSelectorPopup')
 require ('polkovodets.gui.RadialMenu')
 require ('polkovodets.gui.UnitInfoWindow')
 require ('polkovodets.gui.StrategicalMapWindow')
+require ('polkovodets.gui.TacticalMapWindow')
 require ('polkovodets.gui.WeaponCasualitiesDetailsWindow')
 
 local Interface = {}
@@ -61,14 +62,16 @@ function Interface.create(engine)
 end
 
 function Interface:bind_ctx(context)
-  local theme = self.engine.gear:get("theme")
+  local engine = self.engine
+  local theme = engine.gear:get("theme")
+  local renderer = engine.gear:get("renderer")
 
   local font = theme.fonts.active_hex
   local outline_color = theme.data.active_hex.outline_color
   local color = theme.data.active_hex.color
 
-  local w, h = context.renderer.window:getSize()
-  local sdl_renderer = context.renderer.sdl_renderer
+  local w, h = renderer.window:getSize()
+  local sdl_renderer = renderer.sdl_renderer
 
   local interface_ctx = _.clone(context, true)
   interface_ctx.window = {w = w, h = h}
@@ -206,7 +209,10 @@ function Interface:draw()
 end
 
 function Interface:_layout_windows()
-  local w, h = self.context.renderer.window:getSize()
+  local engine = self.engine
+  local renderer = engine.gear:get("renderer")
+
+  local w, h = renderer.window:getSize()
   local windows = self.drawing.windows
   if (#windows > 0) then
 

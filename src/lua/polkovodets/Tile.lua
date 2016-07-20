@@ -24,13 +24,15 @@ local SDL	= require "SDL"
 local _ = require ("moses")
 local inspect = require('inspect')
 
-function Tile.create(engine, hex_geometry, data)
+function Tile.create(engine, data)
   assert(data.image_idx)
   assert(data.x)
   assert(data.y)
   assert(data.name)
   assert(data.terrain_type)
   assert(data.terrain_name)
+
+  local hex_geometry = engine.gear:get("hex_geometry")
 
   data.build_efforts = 0
 
@@ -107,7 +109,9 @@ function Tile:bind_ctx(context)
   local terrain = engine.gear:get("terrain")
   local map     = engine.gear:get("map")
   local weather = engine:current_weather()
-  local player  = engine.state:get_current_player()
+  local state   = engine.state
+  local player  = state:get_current_player()
+  local sdl_renderer = engine.gear:get("renderer").sdl_renderer
   -- print(inspect(weather))
   -- print(inspect(self.data.terrain_type.image))
 
@@ -119,7 +123,7 @@ function Tile:bind_ctx(context)
   local image = terrain:get_hex_image(self.data.terrain_type.id, weather, self.data.image_idx)
 
 
-  local landscape_only = context.state:get_landscape_only()
+  local landscape_only = state:get_landscape_only()
   local show_grid = engine.options.show_grid
 
   -- draw nation/objective flag in city, unless there is unit (then unit flag will be drawn)
@@ -174,14 +178,13 @@ function Tile:bind_ctx(context)
 
   local hex_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
 
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
   local draw_fn = function()
     -- draw terrain
     assert(sdl_renderer:copy(image.texture, hex_rectange, dst))
 
     if (not landscape_only) then
       -- hilight managed units, participants, fog of war
-      local u = context.state:get_selected_unit()
+      local u = state:get_selected_unit()
       local disable_fog = false
       if (u) then
         local movement_area = u.data.actions_map.move
@@ -197,7 +200,7 @@ function Tile:bind_ctx(context)
         local managed = terrain:get_icon('managed')
         assert(sdl_renderer:copy(managed.texture, hex_rectange, dst))
       end
-      if (context.state.participant_locations and context.state.participant_locations[self.id]) then
+      if (state.participant_locations and state.participant_locations[self.id]) then
         local participant = terrain:get_icon('participant')
         assert(sdl_renderer:copy(participant.texture, hex_rectange, dst))
       end
@@ -228,20 +231,20 @@ function Tile:bind_ctx(context)
 
         -- select unit on hext
         local unit
-        local u = self:get_any_unit(engine.state:get_active_layer())
-        if (u and u.player == engine.state:get_current_player()) then
+        local u = self:get_any_unit(state:get_active_layer())
+        if (u and u.player == state:get_current_player()) then
             u:update_actions_map()
             unit = u
         end
         -- may be deselect current unit, if clicked on empty hex
-        engine.state:set_selected_unit(unit)
+        state:set_selected_unit(unit)
       else
         local actions = self:get_possible_actions()
         if (#actions > 0) then
           local action = actions[1]
           action.callback()
           -- trigger hints / mouse actions updates
-          engine.state:set_active_tile(self)
+          state:set_active_tile(self)
        end
       end
     elseif (event.button == 'right') then
@@ -252,7 +255,7 @@ function Tile:bind_ctx(context)
 
   local mouse_move = function(event)
     if (event.tile_id == self.id) then
-      context.state:set_mouse_hint('')
+      state:set_mouse_hint('')
       return true
     end
   end

@@ -87,11 +87,11 @@ function Engine.create(gear, language)
     end
   end)
   gear:set("engine", e)
-  _fill_initial_data(gear)
+  e:_fill_initial_data(gear)
   return e
 end
 
-function _fill_initial_data(gear)
+function Engine:_fill_initial_data(gear)
 
   -- helper list to map function
   local to_map = function(map, list)
@@ -237,10 +237,10 @@ function _fill_initial_data(gear)
   })
 
   gear:declare("map", {
-    dependencies = {"data/map", "engine", "renderer", "hex_geometry", "terrain", "data/map" },
+    dependencies = {"data/map", "engine", "renderer", "terrain", "data/map" },
     constructor  = function() return Map.create() end,
-    initializer  = function(gear, instance, map_data, engine, renderer, hex_geometry, terrain, map_data)
-      instance:initialize(engine, renderer, hex_geometry, terrain, map_data)
+    initializer  = function(gear, instance, map_data, engine, renderer, terrain, map_data)
+      instance:initialize(engine, renderer, terrain, map_data)
     end,
   })
 

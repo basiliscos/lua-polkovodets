@@ -44,7 +44,6 @@ function StrategicalMapWindow.create(engine)
     drawing          = {
       fn       = nil,
       idle     = nil,
-      objects  =  {},
       position = {0, 0}
     },
     text = {

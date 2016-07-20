@@ -21,9 +21,11 @@ Objective.__index = Objective
 
 local inspect = require('inspect')
 
-function Objective.create()
+function Objective.create(engine)
+  assert(engine)
   local o = {
-    drawing = {}
+    engine = engine,
+    drawing = {},
   }
   return setmetatable(o, Objective)
 end
@@ -44,6 +46,8 @@ function Objective:initialize(data, nation_for, map, renderer, hex_geometry)
 end
 
 function Objective:bind_ctx(context)
+  local engine = self.engine
+  local sdl_renderer = self.engine.gear:get("renderer").sdl_renderer
   local hex_geometry = self.hex_geometry
 
   local nation = self.nation
@@ -57,7 +61,6 @@ function Objective:bind_ctx(context)
   local flag_y = y + math.modf((hex_h - nation_flag_height - 2))
   local dst = {x = flag_x, y = flag_y, w = nation.flag.w, h = nation.flag.h}
 
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
   self.drawing.fn = function()
     assert(sdl_renderer:copy(nation.flag.texture, nil, dst))
   end
