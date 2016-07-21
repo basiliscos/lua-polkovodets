@@ -65,13 +65,13 @@ function Interface:bind_ctx(context)
   local engine = self.engine
   local theme = engine.gear:get("theme")
   local renderer = engine.gear:get("renderer")
+  local sdl_renderer = renderer.sdl_renderer
 
   local font = theme.fonts.active_hex
   local outline_color = theme.data.active_hex.outline_color
   local color = theme.data.active_hex.color
 
   local w, h = renderer.window:getSize()
-  local sdl_renderer = renderer.sdl_renderer
 
   local interface_ctx = _.clone(context, true)
   interface_ctx.window = {w = w, h = h}
@@ -82,7 +82,7 @@ function Interface:bind_ctx(context)
     if (tile) then
       local str = string.format('%s (%d:%d)', tile.data.name, tile.data.x, tile.data.y)
       local my_label = Image.create(sdl_renderer, font:renderUtf8(str, "solid", color))
-      local w, h = context.renderer.window:getSize()
+      local w, h = renderer.window:getSize()
       local bg_texture = theme.window.background.texture
 
       local padding = 10
@@ -141,9 +141,8 @@ function Interface:bind_ctx(context)
   local mouse_hint_change_listener = function(event, hint)
     local draw_fn
     if (hint and #hint > 0) then
-      -- print("hint: " .. hint)
       local my_label = Image.create(sdl_renderer, font:renderUtf8(hint, "solid", color))
-      local w, h = context.renderer.window:getSize()
+      local w, h = renderer.window:getSize()
       local bg_texture = theme.window.background.texture
 
       local padding = 10
@@ -179,9 +178,9 @@ function Interface:bind_ctx(context)
   mouse_hint_change_listener()
 
   local draw_fn = function()
+    _.each(self.drawing.objects, function(k, v) v:draw() end)
     self.drawing.helpers.active_tile_drawer()
     self.drawing.helpers.mouse_hint_drawer()
-    _.each(self.drawing.objects, function(k, v) v:draw() end)
     self.drawing.cursor:draw()
   end
 

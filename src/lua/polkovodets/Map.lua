@@ -267,8 +267,7 @@ function Map:get_adjastent_tiles(tile, skip_tiles)
    return iterator, nil, true
 end
 
-function Map:pointer_to_tile(x,y)
-   local geometry = self.hex_geometry
+function Map:pointer_to_tile(x,y, geometry)
    local hex_h = geometry.height
    local hex_w = geometry.width
    local hex_x_offset = geometry.x_offset

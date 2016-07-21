@@ -47,8 +47,10 @@ end
 function State:get_active_tile() return self._active_tile end
 
 function State:set_mouse_hint(str)
-  self._mouse_hint = str
-  self.reactor:publish("mouse-hint.change", str)
+  if (self._mouse_hint ~= str) then
+    self._mouse_hint = str
+    self.reactor:publish("mouse-hint.change", str)
+  end
 end
 function State:get_mouse_hint() return self._mouse_hint end
 
