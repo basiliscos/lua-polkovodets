@@ -31,35 +31,11 @@ function Map.create()
    local m = {
     engine = nil,
     active_tile    = {1, 1},
-    gui = {
-      map_x = 0,
-      map_y = 0,
-      -- number of tiles drawn to screen
-      map_sw = 0,
-      map_sh = 0,
-      -- position where to draw first tile
-      map_sx = 0,
-      map_sy = 0,
-    },
     united_spotting = {
       map = {},          -- k: tile_id, v: max spot (number)
       addons = {},       -- k: tile_id, v: map of unit_ids, which participate in tile spotting
       participants = {}, -- k: unit_id, v: spotting map
     },
-    drawing = {
-      fn          = nil,
-      mouse_move  = nil,
-      idle        = nil,
-      context     = nil,
-      map_context = nil,
-      objects     = {},
-      -- k: tile_id, value: ordered set of callbacks
-      proxy       = {
-        mouse_move  = {},
-        mouse_click = {},
-      },
-      drawers_per_tile = {},
-    }
   }
   setmetatable(m, Map)
   return m
@@ -76,16 +52,12 @@ function Map:initialize(engine, renderer, terrain, map_data)
   self:_fill_tiles(terrain, map_data)
   engine.state:set_active_tile(self.tiles[1][1])
 
-  --[[
   local reactor = self.engine.reactor
 
-  reactor:subscribe("full.refresh", function() self:_update_shown_map() end)
   reactor:subscribe("turn.end", function() self:_reset_spotting_map() end)
   reactor:subscribe("turn.start", function() self:_on_start_of_turn() end)
   reactor:subscribe("unit.change-spotting", function(event, unit) self:_update_spotting_map(unit) end)
 
-  self:_update_shown_map()
-  ]]
 end
 
 function Map:_update_spotting_map(unit)
@@ -195,33 +167,6 @@ function Map:_update_units_visibility(unit)
   -- print(inspect(united_spotting))
 end
 
-
-function Map:_update_shown_map()
-  local gui = self.gui
-  gui.map_sx = -self.hex_geometry.x_offset
-  gui.map_sy = -self.hex_geometry.height
-
-  -- calculate drawn number of tiles
-  local w, h = self.renderer:get_size()
-  local step = 0
-  local ptr = gui.map_sx
-  while(ptr < w) do
-    step = step + 1
-    ptr = ptr + self.hex_geometry.x_offset
-  end
-  gui.map_sw = step
-
-  step = 0
-  ptr = gui.map_sy
-  while(ptr < h) do
-    step = step + 1
-    ptr = ptr + self.hex_geometry.height
-  end
-  gui.map_sh = step
-  print(string.format("visible hex frame: (%d, %d, %d, %d)", gui.map_x, gui.map_y, gui.map_x + gui.map_sw, gui.map_y + self.gui.map_sh))
-  self.engine.reactor:publish("map.update")
-end
-
 function Map:get_adjastent_tiles(tile, skip_tiles)
    local visited_tiles = skip_tiles or {}
    local x, y = tile.data.x, tile.data.y
@@ -267,14 +212,14 @@ function Map:get_adjastent_tiles(tile, skip_tiles)
    return iterator, nil, true
 end
 
-function Map:pointer_to_tile(x,y, geometry)
+function Map:pointer_to_tile(x,y, geometry, map_dx, map_dy)
    local hex_h = geometry.height
    local hex_w = geometry.width
    local hex_x_offset = geometry.x_offset
    local hex_y_offset = geometry.y_offset
 
    local hex_x_delta = hex_w - hex_x_offset
-   local tile_x_delta = self.gui.map_x
+   local tile_x_delta = map_dx
 
    local left_col = (math.modf((x - hex_x_delta) / hex_x_offset) + 1) + (tile_x_delta % 2)
    local right_col = left_col + 1
@@ -314,7 +259,7 @@ function Map:pointer_to_tile(x,y, geometry)
    local active_tile = adj_tiles[nearest_idx]
    -- print("active_tile = " .. inspect(active_tile))
    local tx = active_tile[1] + ((tile_x_delta % 2 == 0) and 1 or 0 ) + tile_x_delta
-   local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + self.gui.map_y
+   local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + map_dy
 
    if (tx > 0 and tx <= self.width and ty > 0 and ty <= self.height) then
       return {tx, ty}
@@ -612,30 +557,6 @@ function Map:bind_ctx(context)
   engine.reactor:publish("map.update")
   -- self.drawing.fn is initialized indirectly via map.update handler
 end
-
-function Map:unbind_ctx(context)
-  local map_ctx = _.clone(context, true)
-  map_ctx.events_source = self:_get_event_source()
-  _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_ctx) end)
-
-  self.engine.reactor:unsubscribe("map.update", self.drawing.map_update_listener)
-
-  context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
-  context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
-  context.events_source.remove_handler('idle', self.drawing.idle)
-
-  self.drawing.fn = nil
-  self.drawing.idle = nil
-  self.drawing.mouse_move = nil
-  self.drawing.objects = {}
-  self.drawing.context = nil
-end
-
-function Map:draw()
-  assert(self.drawing.fn)
-  self.drawing.fn()
-end
-
 
 function Map:lookup_tile(id)
   local tile = assert(self.tile_for[id])
