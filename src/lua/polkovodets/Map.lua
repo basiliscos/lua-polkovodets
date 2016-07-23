@@ -26,6 +26,7 @@ local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 
 
 local SCROLL_TOLERANCE = 10
+local SCROLL_DELTA = 2
 
 function Map.create()
    local m = {
