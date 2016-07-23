@@ -75,6 +75,7 @@ engine:end_turn()
 local gui_renderer = gear:get("renderer")
 
 gui_renderer:prepare_drawers()
+engine.interface:add_window('tactical_map_window')
 gui_renderer:main_loop()
 
 SDL.quit()

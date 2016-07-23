@@ -319,7 +319,7 @@ function TacticalMapWindow:_on_ui_update()
     local map_region = Region.create(0, 0, gui.content_size.w, gui.content_size.h)
 
     local mouse_move = function(event)
-      local new_tile = map:pointer_to_tile(event.x, event.y, self.hex_geometry, 0 --[[ gui.map.x ]], 0 --[[ gui.map_y ]])
+      local new_tile = map:pointer_to_tile(event.x, event.y, self.hex_geometry, frame.hex_box.x - 1,  frame.hex_box.y - 1)
       if (not new_tile) then return end
       local tile_new = map.tiles[new_tile[1]][new_tile[2]]
       event.tile_id = tile_new.id
@@ -390,7 +390,7 @@ function TacticalMapWindow:_on_ui_update()
     end
 
     local mouse_click = function(event)
-      local tile_coord = map:pointer_to_tile(event.x, event.y, self.hex_geometry, 0 --[[ gui.map.x ]], 0 --[[ gui.map_y ]])
+      local tile_coord = map:pointer_to_tile(event.x, event.y, self.hex_geometry, frame.hex_box.x - 1,  frame.hex_box.y - 1)
       -- tile coord might be nil, if the shown area is greater than map
       -- i.e. the click has been performed outside of the map
       if (tile_coord) then
