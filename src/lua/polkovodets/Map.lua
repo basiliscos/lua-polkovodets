@@ -22,16 +22,11 @@ Map.__index = Map
 local _ = require ("moses")
 local Tile = require 'polkovodets.Tile'
 local inspect = require('inspect')
-local OrderedHandlers = require 'polkovodets.utils.OrderedHandlers'
 
-
-local SCROLL_TOLERANCE = 10
-local SCROLL_DELTA = 2
 
 function Map.create()
    local m = {
     engine = nil,
-    active_tile    = {1, 1},
     united_spotting = {
       map = {},          -- k: tile_id, v: max spot (number)
       addons = {},       -- k: tile_id, v: map of unit_ids, which participate in tile spotting
@@ -256,14 +251,13 @@ function Map:pointer_to_tile(x,y, geometry, map_dx, map_dy)
          nearest_distance = d
       end
    end
-   local active_tile = adj_tiles[nearest_idx]
-   -- print("active_tile = " .. inspect(active_tile))
-   local tx = active_tile[1] + ((tile_x_delta % 2 == 0) and 1 or 0 ) + tile_x_delta
-   local ty = active_tile[2] + ((tx % 2 == 1) and 1 or 0) + map_dy
+   local my_tile = adj_tiles[nearest_idx]
+   local tx = my_tile[1] + ((tile_x_delta % 2 == 0) and 1 or 0 ) + tile_x_delta
+   local ty = my_tile[2] + ((tx % 2 == 1) and 1 or 0) + map_dy
 
    if (tx > 0 and tx <= self.width and ty > 0 and ty <= self.height) then
       return {tx, ty}
-      -- print(string.format("active tile = %d:%d", tx, ty))
+      -- print(string.format("my_tile = %d:%d", tx, ty))
    end
 end
 
@@ -308,144 +302,6 @@ function Map:_fill_tiles(terrain, map_data)
   end
   self.tiles = tiles
   self.tile_for = tile_for
-end
-
-
-function Map:_on_map_update()
-  local engine = self.engine
-  local hex_geometry = self.hex_geometry
-  local context = self.drawing.context
-
-  local start_map_x = self.gui.map_x
-  local start_map_y = self.gui.map_y
-
-  local map_sw = (self.gui.map_sw > self.width) and self.width or self.gui.map_sw
-  local map_sh = (self.gui.map_sh > self.height) and self.height or self.gui.map_sh
-
-  local visible_area_iterator = function(callback)
-    for i = 1,map_sw do
-      local tx = i + start_map_x
-      for j = 1,map_sh do
-        local ty = j + start_map_y
-        if (tx <= self.width and ty <= self.height) then
-          local tile = assert(self.tiles[tx][ty], string.format("tile [%d:%d] not found", tx, ty))
-          callback(tile)
-        end
-      end
-    end
-  end
-
-  local tile_visibility_test = function(tile)
-    local x, y = tile.data.x, tile.data.y
-    local result
-      =   (x >= start_map_x and x <= map_sw)
-      and (y >= start_map_y and y <= map_sh)
-    return result
-  end
-
-  local map_context = _.clone(context, true)
-  map_context.map = self
-  map_context.tile_visibility_test = tile_visibility_test
-  map_context.screen = {
-    offset = {
-      self.gui.map_sx - (self.gui.map_x * hex_geometry.x_offset),
-      self.gui.map_sy - (self.gui.map_y * hex_geometry.height),
-    }
-  }
-  local active_layer = engine.state:get_active_layer()
-  map_context.active_layer = active_layer
-  map_context.events_source = self:_get_event_source()
-
-  _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_context) end)
-
-  local u = context.state:get_selected_unit()
-
-  local active_x, active_y = table.unpack(self.active_tile)
-  local active_tile = self.tiles[active_x][active_y]
-  local hilight_unit = u or (active_tile and active_tile:get_unit(active_layer))
-  map_context.subordinated = {}
-  if (hilight_unit) then
-    for idx, subordinated_unit in pairs(hilight_unit:get_subordinated(true)) do
-      local tile = subordinated_unit.tile
-      -- tile could be nil if unit is attached to some other
-      if (tile) then
-        map_context.subordinated[tile.id] = true
-      end
-    end
-  end
-
-  local my_unit_movements = function(k, v)
-    if (u and v.action == 'unit/move') then
-      local unit_id = v.context.unit_id
-      return (unit_id and unit_id == u.id)
-    end
-  end
-  local battles_cache = {}
-  local battles = function(k, v)
-    if ((v.action == 'battle') and (not battles_cache[v.context.tile])) then
-      local tile_id = v.context.tile
-      battles_cache[tile_id] = true
-      local tile = self:lookup_tile(tile_id)
-      assert(tile)
-      return true
-    end
-  end
-
-  local opponent_movements = function(k, v)
-    if (v.action == 'unit/move') then
-      local unit_id = v.context.unit_id
-      local unit = engine:get_unit(unit_id)
-      local show = unit.player ~= engine.state:get_current_player()
-      return show
-    end
-  end
-
-  local actual_records = context.state:get_actual_records()
-
-  -- battles are always shown
-  local shown_records = {}
-
-  if (not context.state:get_landscape_only()) then
-    shown_records = _.select(actual_records, battles)
-    if (u) then
-      shown_records = _.append(shown_records, _.select(actual_records, my_unit_movements))
-    end
-
-    if (engine.state:get_recent_history()) then
-      shown_records = _.append(shown_records, _.select(actual_records, opponent_movements))
-    end
-    -- print("shown records " .. #shown_records)
-  end
-
-  -- propagete drawing context
-  local drawers = {}
-  local drawers_per_tile = {} -- k: tile_id, v: list of drawers
-  local add_drawer = function(tile_id, drawer)
-    table.insert(drawers, drawer)
-    if (tile_id) then
-      local existing_tile_drawers = drawers_per_tile[tile_id] or {}
-      table.insert(existing_tile_drawers, drawer)
-      drawers_per_tile[tile_id] = existing_tile_drawers
-    end
-  end
-  -- self:bind_ctx(context)
-  visible_area_iterator(function(tile) add_drawer(tile.id, tile) end)
-  _.each(shown_records, function(k, v)
-    local tile_id = (v.action == 'battle') and v.context.tile
-    add_drawer(tile_id, v)
-  end)
-
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
-  local draw_fn = function()
-    _.each(drawers, function(k, v) v:draw() end)
-  end
-
-  _.each(drawers, function(k, v) v:bind_ctx(map_context) end)
-
-  self.drawing.map_context = map_context
-  self.drawing.objects = drawers
-  self.drawing.drawers_per_tile = drawers_per_tile
-  self.drawing.fn = draw_fn
 end
 
 function Map:lookup_tile(id)
