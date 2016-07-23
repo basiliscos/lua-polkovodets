@@ -47,22 +47,26 @@ function _Record.create(engine, player, turn_no, action, context, success, resul
 end
 
 function _Record:bind_ctx(context)
-  local theme = self.engine.gear:get("theme")
-  local hex_geometry = self.engine.gear:get("hex_geometry")
+  local engine = self.engine
+  local state = engine.state
+  local theme = engine.gear:get("theme")
+  local hex_geometry = engine.gear:get("hex_geometry")
+  local sdl_renderer = engine.gear:get("renderer").sdl_renderer
+  local map = engine.gear:get("map")
+
   local hex_w = hex_geometry.width
   local hex_h = hex_geometry.height
   local hex_x_offset = hex_geometry.x_offset
   local hex_y_offset = hex_geometry.y_offset
 
-  local sdl_renderer = assert(context.renderer.sdl_renderer)
   local draw_fn
   local mouse_move, mouse_click
 
   local tile_id
 
   if (self.action == 'unit/move') then
-    local src_tile = context.map:lookup_tile(self.context.src_tile)
-    local dst_tile = context.map:lookup_tile(self.context.dst_tile)
+    local src_tile = map:lookup_tile(self.context.src_tile)
+    local dst_tile = map:lookup_tile(self.context.dst_tile)
     local src_coord = { src_tile.virtual.x, src_tile.virtual.y }
     local dst_coord = { dst_tile.virtual.x, dst_tile.virtual.y }
     if (src_coord and dst_coord) then
@@ -105,7 +109,7 @@ function _Record:bind_ctx(context)
     end
   elseif (self.action == 'battle') then
     tile_id = self.context.tile
-    local tile = context.map:lookup_tile(tile_id)
+    local tile = map:lookup_tile(tile_id)
 
     local battle_icon = theme.history.battle
     local icon_x = tile.virtual.x + context.screen.offset[1] + hex_x_offset - battle_icon.w
@@ -124,12 +128,12 @@ function _Record:bind_ctx(context)
       local updated
       if (over_tile_id == tile_id) then
         local now_over_battle_icon = icon_region:is_over(x, y)
-        local participant_locations = context.state.participant_locations or {}
+        local participant_locations = state.participant_locations or {}
         if (now_over_battle_icon ~= over_icon) then
           participant_locations = {}
           over_icon = now_over_battle_icon
           if (over_icon) then
-            battles_on_tile = _.select(context.renderer.engine.history:get_actual_records(),
+            battles_on_tile = _.select(engine.history:get_actual_records(),
               function(k, v)
                 return (v.action == 'battle') and (v.context.tile == tile_id)
               end)
@@ -139,7 +143,7 @@ function _Record:bind_ctx(context)
               _.each(v.context.p_units, function(i, unit_data) participants[unit_data.unit_id] = true end)
             end)
             _.each(_.keys(participants), function(k, v)
-              local unit = context.renderer.engine:get_unit(v)
+              local unit = engine:get_unit(v)
               if (unit.tile) then
                 participant_locations[unit.tile.id] = unit.id
               end
@@ -147,19 +151,19 @@ function _Record:bind_ctx(context)
             -- print("participants tile " .. inspect(participant_locations))
           end
           updated = true
-          local tile = context.map:lookup_tile(tile_id)
-          local hint = context.renderer.engine:translate(
+          local tile = map:lookup_tile(tile_id)
+          local hint = engine:translate(
             'map.battle-on-tile', {count = battles_count, tile = tile.data.x .. ":" .. tile.data.y}
           )
-          context.state:set_mouse_hint(hint)
-          context.state.participant_locations = participant_locations
+          state:set_mouse_hint(hint)
+          state.participant_locations = participant_locations
         end
       end
       return updated
     end
 
-    local mouse = context.state:get_mouse()
-    local active_tile = context.state:get_active_tile()
+    local mouse = state:get_mouse()
+    local active_tile = state:get_active_tile()
     update_participants(mouse.x, mouse.y, active_tile.id)
 
     local icon = over_icon and theme.history.battle_hilight or theme.history.battle
@@ -179,7 +183,7 @@ function _Record:bind_ctx(context)
 
     mouse_move = function(event)
       if (update_participants(event.x, event.y, event.tile_id)) then
-        context.renderer.engine.reactor:publish("map.update")
+        engine.reactor:publish("map.update")
       end
       return icon_region:is_over(event.x, event.y)
     end
@@ -187,9 +191,9 @@ function _Record:bind_ctx(context)
     mouse_click = function(event)
       if (icon_region:is_over(event.x, event.y)) then
         if (#battles_on_tile == 1) then
-          context.renderer.engine.interface:add_window('battle_details_window', self)
+          engine.interface:add_window('battle_details_window', self)
         else
-          context.renderer.engine.interface:add_window('battle_selector_popup', {
+          engine.interface:add_window('battle_selector_popup', {
             history_records = battles_on_tile,
             position        = {
               x = event.x,
@@ -224,10 +228,11 @@ end
 
 function _Record:unbind_ctx(context)
   self.drawing.fn = nil
+  local state = self.engine.state
   if (self.drawing.mouse_move) then
     -- reset hilighting participants battle, as we leave the tile
     -- and, hence, the battle icon
-    context.state.participant_locations = {}
+    state.participant_locations = {}
     context.events_source.remove_handler('mouse_move', self.drawing.tile_id, self.drawing.mouse_move)
     self.drawing.mouse_move = nil
   end

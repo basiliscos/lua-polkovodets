@@ -480,6 +480,7 @@ function StrategicalMapWindow:_on_ui_update(show)
       local mouse_move = function(event)
         engine.state:set_mouse_hint('')
         if (map_region:is_over(event.x, event.y)) then
+          engine.reactor:publish("event.delay", 20)
         end
         return true -- stop further event propagation
       end

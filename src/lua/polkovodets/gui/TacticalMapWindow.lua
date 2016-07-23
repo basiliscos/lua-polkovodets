@@ -100,7 +100,7 @@ function TacticalMapWindow:_update_frame(hx, hy)
   frame.hex_box.y = hy
   frame.hex_box.w = w
   frame.hex_box.h = h
-  print(string.format("frame x, y, h, w = %d:%d %d:%d", hx, hy, w, h))
+  -- print(string.format("frame x, y, h, w = %d:%d %d:%d", hx, hy, w, h))
 end
 
 
@@ -315,6 +315,8 @@ function TacticalMapWindow:_on_ui_update()
       assert(sdl_renderer:copy(texture, nil, nil))
     end
 
+    local map_region = Region.create(0, 0, gui.content_size.w, gui.content_size.h)
+
     local mouse_move = function(event)
       local new_tile = map:pointer_to_tile(event.x, event.y, self.hex_geometry, 0 --[[ gui.map.x ]], 0 --[[ gui.map_y ]])
       if (not new_tile) then return end
@@ -349,9 +351,8 @@ function TacticalMapWindow:_on_ui_update()
       if (ordered_handlers) then
         ordered_handlers:apply(function(cb) return cb(event) end)
       end
+      engine.reactor:publish("event.delay", 50)
     end
-
-    local map_region = Region.create(0, 0, gui.content_size.w, gui.content_size.h)
 
     local idle = function(event)
       if (interface:opened_window_count() == 1) then
@@ -361,7 +362,7 @@ function TacticalMapWindow:_on_ui_update()
         local refresh = false
         local map_x, map_y = frame.hex_box.x, frame.hex_box.y
 
-        print(string.format("y_max = %d, y = %d, map_y = %d, hexbox.h = %d", map_region.y_max, y, map_y, frame.hex_box.h))
+        -- print(string.format("y_max = %d, y = %d, map_y = %d, hexbox.h = %d", map_region.y_max, y, map_y, frame.hex_box.h))
 
         if ((math.abs(map_region.y_min - y) < SCROLL_TOLERANCE) and map_y > SCROLL_DELTA) then
           hy = hy - SCROLL_DELTA
@@ -388,11 +389,28 @@ function TacticalMapWindow:_on_ui_update()
       end
     end
 
+    local mouse_click = function(event)
+      local tile_coord = map:pointer_to_tile(event.x, event.y, self.hex_geometry, 0 --[[ gui.map.x ]], 0 --[[ gui.map_y ]])
+      -- tile coord might be nil, if the shown area is greater than map
+      -- i.e. the click has been performed outside of the map
+      if (tile_coord) then
+        local tile = map.tiles[tile_coord[1]][tile_coord[2]]
+        event.tile_id = tile.id
+        local ordered_handlers = self.drawing.proxy.mouse_click[tile.id]
+        if (ordered_handlers) then
+          ordered_handlers:apply(function(cb) return cb(event) end)
+        end
+      end
+    end
+
+
     self.drawing.mouse_move = mouse_move
+    self.drawing.mouse_click = mouse_click
     self.drawing.idle = idle
 
     context.events_source.add_handler('idle', idle)
     context.events_source.add_handler('mouse_move', mouse_move)
+    context.events_source.add_handler('mouse_click', mouse_click)
   end
 end
 
@@ -408,10 +426,17 @@ function TacticalMapWindow:bind_ctx(context)
     return self:_on_ui_update()
   end
 
+  local map_update_listener = function()
+    print("map.update")
+    return self:_on_map_update()
+  end
+
   self.drawing.ui_update_listener = ui_update_listener
+  self.drawing.map_update_listener = map_update_listener
   self.drawing.gui = gui
 
   engine.reactor:subscribe('ui.update', ui_update_listener)
+  engine.reactor:subscribe('map.update', map_update_listener)
 
   return {gui.content_size.w, gui.content_size.h}
 end
@@ -427,11 +452,15 @@ function TacticalMapWindow:unbind_ctx()
   self.drawing.objects = {}
 
   self.engine.reactor:unsubscribe('ui.update', self.drawing.ui_update_listener)
+  self.engine.reactor:unsubscribe('map.update', self.drawing.map_update_listener)
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
+  context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
   context.events_source.remove_handler('idle', self.drawing.idle)
 
   self.drawing.ui_update_listener = nil
+  self.drawing.map_update_listener = nil
   self.drawing.mouse_move = nil
+  self.drawing.mouse_click = nil
   self.drawing.idle = nil
   self.drawing.context = nil
 
