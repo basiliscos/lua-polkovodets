@@ -38,16 +38,12 @@ gear:set("data/map", map_data)
 
 
 local map = gear:get("map")
+local hex_geometry = gear:get("hex_geometry")
 ok(map)
 
 ok(map.tiles[1][1])
 ok(map.tiles[10][10])
 ok(map:lookup_tile(map.tiles[1][1].id))
-
-is(map.gui.map_sw, 16)
-is(map.gui.map_sh, 11)
-is(map.gui.map_sx, -45)
-is(map.gui.map_sy, -50)
 
 subtest("adjascent tiles",
         function()
@@ -115,34 +111,33 @@ subtest("distances",
 subtest("screen coordinates to tiles",
   function()
     subtest("even left view-frame", function()
-      map.gui.map_x = 0
-      is_deeply(map:pointer_to_tile(32, 50), {2, 2})
-      is_deeply(map:pointer_to_tile(51, 40), {2, 2})
-      is_deeply(map:pointer_to_tile(50, 61), {2, 2})
-      is_deeply(map:pointer_to_tile(31, 75), {2, 2})
-      is_deeply(map:pointer_to_tile(31, 76), {2, 3})
-      is_deeply(map:pointer_to_tile(35, 25), {2, 1})
 
-      is_deeply(map:pointer_to_tile(62, 65), {3, 3})
-      is_deeply(map:pointer_to_tile(58, 74), {3, 3})
-      is_deeply(map:pointer_to_tile(64, 95), {3, 3})
-      is_deeply(map:pointer_to_tile(62, 65), {3, 3})
-      is_deeply(map:pointer_to_tile(77, 80), {3, 3})
-      is_deeply(map:pointer_to_tile(96, 90), {3, 3})
-      is_deeply(map:pointer_to_tile(97, 63), {3, 3})
-      is_deeply(map:pointer_to_tile(79, 51), {3, 3})
-      is_deeply(map:pointer_to_tile(62, 65), {3, 3})
+      is_deeply(map:pointer_to_tile(32, 50, hex_geometry, 0, 0), {2, 2})
+      is_deeply(map:pointer_to_tile(51, 40, hex_geometry, 0, 0), {2, 2})
+      is_deeply(map:pointer_to_tile(50, 61, hex_geometry, 0, 0), {2, 2})
+      is_deeply(map:pointer_to_tile(31, 75, hex_geometry, 0, 0), {2, 2})
+      is_deeply(map:pointer_to_tile(31, 76, hex_geometry, 0, 0), {2, 3})
+      is_deeply(map:pointer_to_tile(35, 25, hex_geometry, 0, 0), {2, 1})
 
-      is_deeply(map:pointer_to_tile(76, 101), {3, 4})
-      is_deeply(map:pointer_to_tile(102, 87), {4, 3})
-      is_deeply(map:pointer_to_tile(102, 57), {4, 2})
-      is_deeply(map:pointer_to_tile(86, 48), {3, 2})
+      is_deeply(map:pointer_to_tile(62, 65, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(58, 74, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(64, 95, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(62, 65, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(77, 80, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(96, 90, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(97, 63, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(79, 51, hex_geometry, 0, 0), {3, 3})
+      is_deeply(map:pointer_to_tile(62, 65, hex_geometry, 0, 0), {3, 3})
+
+      is_deeply(map:pointer_to_tile(76, 101, hex_geometry, 0, 0), {3, 4})
+      is_deeply(map:pointer_to_tile(102, 87, hex_geometry, 0, 0), {4, 3})
+      is_deeply(map:pointer_to_tile(102, 57, hex_geometry, 0, 0), {4, 2})
+      is_deeply(map:pointer_to_tile(86, 48, hex_geometry, 0, 0), {3, 2})
     end)
 
     subtest("odd left view-frame", function()
-      map.gui.map_x = 1
-      is_deeply(map:pointer_to_tile(120,71), {5, 3})
-      is_deeply(map:pointer_to_tile(117,87), {5, 3})
+      is_deeply(map:pointer_to_tile(120,71, hex_geometry, 1, 0), {5, 3})
+      is_deeply(map:pointer_to_tile(117,87, hex_geometry, 1, 0), {5, 3})
      end)
   end
 )
