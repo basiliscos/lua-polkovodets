@@ -263,6 +263,7 @@ end
 
 
 function Map:_fill_tiles(terrain, map_data)
+  local engine = self.engine
 
   local map_w = map_data.width
   local map_h = map_data.height
@@ -271,6 +272,13 @@ function Map:_fill_tiles(terrain, map_data)
   local tiles_data = map_data.tiles_data
   local tile_names = map_data.tile_names
 
+  local terrain_names_cache = {}
+  local get_terrain_name = function(terrain_id)
+    if (not terrain_names_cache[terrain_id]) then
+      terrain_names_cache[terrain_id] = engine:translate('db.terrain.' .. terrain_id)
+    end
+    return terrain_names_cache[terrain_id];
+  end
 
   -- 2 dimentional array, [x:y]
   local tiles = {}
@@ -281,16 +289,16 @@ function Map:_fill_tiles(terrain, map_data)
       local idx = (y-1) * map_w + x
       local tile_id = x .. ":" .. y
       local datum = assert(tiles_data[idx], map_path .. " don't have data for tile " .. tile_id)
-      local terrain_name = assert(string.sub(datum,1,1), "cannot extract terrain name for tile " .. tile_id)
+      local terrain_id = assert(string.sub(datum,1,1), "cannot extract terrain id for tile " .. tile_id)
       local image_idx = assert(string.sub(datum,2, -1), "cannot extract image index for tile " .. tile_id)
       image_idx = tonumber(image_idx)
-      local name = tile_names[idx] or terrain_name
-      local terrain_type = terrain:get_type(terrain_name)
+      local name = tile_names[idx] or get_terrain_name(terrain_id)
+      local terrain_type = terrain:get_type(terrain_id)
       local tile_data = {
         x            = x,
         y            = y,
         name         = name,
-        terrain_name = terrain_name,
+        terrain_id   = terrain_id,
         image_idx    = image_idx,
         terrain_type = terrain_type,
       }

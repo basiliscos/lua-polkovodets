@@ -327,7 +327,6 @@ function SampleData.generate_map(gear)
 
       local datum = t_type .. image_idx
       table.insert(map_data.tiles_data, datum)
-      table.insert(map_data.tile_names, 'dummy/' .. t_type)
     end
   end
 

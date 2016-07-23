@@ -30,7 +30,7 @@ function Tile.create(engine, data)
   assert(data.y)
   assert(data.name)
   assert(data.terrain_type)
-  assert(data.terrain_name)
+  assert(data.terrain_id)
 
   local hex_geometry = engine.gear:get("hex_geometry")
 
