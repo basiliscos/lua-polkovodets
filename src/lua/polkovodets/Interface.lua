@@ -77,7 +77,7 @@ function Interface:bind_ctx(context)
   interface_ctx.window = {w = w, h = h}
   interface_ctx.layout_fn = layout_fn
 
-  local active_tile_change_listener = function(event, tile)
+  local active_tile_change_listener = function(event, tile, actions)
     local draw_fn
     if (tile) then
       local str = string.format('%s (%d:%d)', tile.data.name, tile.data.x, tile.data.y)
@@ -102,11 +102,10 @@ function Interface:bind_ctx(context)
         h = my_label.h,
       }
 
-      local actions = tile:get_possible_actions()
       local action_hints_region
       local sample_icon = theme.actions.end_turn.available
       local actions_x, actions_y = margin + padding, h - (margin + padding + sample_icon.h)
-      if (#actions > 0) then
+      if (actions and #actions > 0) then
         action_hints_region = {
           x = actions_x,
           y = actions_y,

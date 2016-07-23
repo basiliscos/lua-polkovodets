@@ -51,7 +51,6 @@ function Map:initialize(engine, renderer, terrain, map_data)
   self.width  = tonumber(map_data.width)
   self.height = tonumber(map_data.height)
   self:_fill_tiles(terrain, map_data)
-  engine.state:set_active_tile(self.tiles[1][1])
 
   local reactor = self.engine.reactor
 

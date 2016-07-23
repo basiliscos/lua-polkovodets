@@ -244,7 +244,7 @@ function Tile:bind_ctx(context)
           local action = actions[1]
           action.callback()
           -- trigger hints / mouse actions updates
-          state:set_active_tile(self)
+          state:set_active_tile(self, self:get_possible_actions())
        end
       end
     elseif (event.button == 'right') then

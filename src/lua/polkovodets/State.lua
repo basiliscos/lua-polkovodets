@@ -40,9 +40,11 @@ function State.create(reactor)
   return setmetatable(o, State)
 end
 
-function State:set_active_tile(tile)
-  self._active_tile = tile
-  self.reactor:publish('map.active_tile.change', tile)
+function State:set_active_tile(tile, actions)
+  if (self._active_tile ~= tile) then
+    self._active_tile = tile
+    self.reactor:publish('map.active_tile.change', tile, actions)
+  end
 end
 function State:get_active_tile() return self._active_tile end
 

@@ -66,6 +66,7 @@ function TacticalMapWindow.create(engine)
     },
   }
   setmetatable(o, TacticalMapWindow)
+  engine.state:set_active_tile(map.tiles[1][1])
   return o
 end
 
@@ -324,7 +325,7 @@ function TacticalMapWindow:_on_ui_update()
       event.tile_id = tile_new.id
       local tile_old = state:get_active_tile()
       if (new_tile and ((tile_old.data.x ~= new_tile[1]) or (tile_old.data.y ~= new_tile[2])) ) then
-        engine.state:set_active_tile(tile_new)
+        engine.state:set_active_tile(tile_new, tile_new:get_possible_actions())
         -- print("refreshing " .. tile_old.id .. " => " .. tile_new.id)
 
         local refresh = function(tile)
@@ -380,7 +381,6 @@ function TacticalMapWindow:_on_ui_update()
 
 
         if (refresh) then
-          print("frame_pos = " .. inspect(frame_pos))
           self:_update_frame(hx, hy)
           self:_on_map_update()
           engine.reactor:publish("event.delay", 50)

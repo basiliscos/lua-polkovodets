@@ -440,6 +440,9 @@ function StrategicalMapWindow:_on_ui_update(show)
 
     local x, y = table.unpack(self.drawing.position)
 
+    -- remove action hints, as we don't need them for strategical map
+    engine.reactor:publish('map.active_tile.change', nil)
+
     local hex_box = frame.hex_box
     local frame_x_max, frame_y_max = hex_box.x + hex_box.w - 1, hex_box.y + hex_box.h - 1
 
