@@ -226,7 +226,6 @@ function Tile:bind_ctx(context)
     if (event.tile_id == self.id and event.button == 'left') then
       local mod_state = SDL.getModState()
       local simple = not (mod_state[SDL.keymod.LeftControl] or mod_state[SDL.keymod.RightControl])
-      print(simple)
       if (simple) then
 
         -- select unit on hext

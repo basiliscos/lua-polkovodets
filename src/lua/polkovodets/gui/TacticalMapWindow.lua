@@ -437,6 +437,7 @@ function TacticalMapWindow:bind_ctx(context)
 
   engine.reactor:subscribe('ui.update', ui_update_listener)
   engine.reactor:subscribe('map.update', map_update_listener)
+  engine.reactor:subscribe('unit.selected', map_update_listener)
 
   return {gui.content_size.w, gui.content_size.h}
 end
@@ -453,6 +454,7 @@ function TacticalMapWindow:unbind_ctx()
 
   self.engine.reactor:unsubscribe('ui.update', self.drawing.ui_update_listener)
   self.engine.reactor:unsubscribe('map.update', self.drawing.map_update_listener)
+  self.engine.reactor:unsubscribe('unit.selected', self.drawing.map_update_listener)
   context.events_source.remove_handler('mouse_move', self.drawing.mouse_move)
   context.events_source.remove_handler('mouse_click', self.drawing.mouse_click)
   context.events_source.remove_handler('idle', self.drawing.idle)
