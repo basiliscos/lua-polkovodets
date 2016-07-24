@@ -304,6 +304,10 @@ function SampleData.generate_map(gear)
 
   }
 
+  local hex_names = {
+    ["8:9"] = "Some city",
+  }
+
   local engine = gear:get("engine")
 
   local map_data = {
@@ -330,6 +334,7 @@ function SampleData.generate_map(gear)
     end
   end
 
+  gear:set("data/hex_names", hex_names)
   gear:set("data/map", map_data)
 end
 
