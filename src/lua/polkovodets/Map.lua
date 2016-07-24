@@ -37,7 +37,7 @@ function Map.create()
   return m
 end
 
-function Map:initialize(engine, renderer, terrain, map_data)
+function Map:initialize(engine, renderer, terrain, map_data, hex_names)
   self.engine   = engine
   self.renderer = renderer
   self.terrain = terrain
@@ -45,7 +45,7 @@ function Map:initialize(engine, renderer, terrain, map_data)
   assert(map_data.height)
   self.width  = tonumber(map_data.width)
   self.height = tonumber(map_data.height)
-  self:_fill_tiles(terrain, map_data)
+  self:_fill_tiles(terrain, map_data, hex_names)
 
   local reactor = self.engine.reactor
 
@@ -262,15 +262,13 @@ function Map:pointer_to_tile(x,y, geometry, map_dx, map_dy)
 end
 
 
-function Map:_fill_tiles(terrain, map_data)
+function Map:_fill_tiles(terrain, map_data, hex_names)
   local engine = self.engine
 
   local map_w = map_data.width
   local map_h = map_data.height
   local map_path = map_data.path
-
   local tiles_data = map_data.tiles_data
-  local tile_names = map_data.tile_names
 
   local terrain_names_cache = {}
   local get_terrain_name = function(terrain_id)
@@ -292,7 +290,7 @@ function Map:_fill_tiles(terrain, map_data)
       local terrain_id = assert(string.sub(datum,1,1), "cannot extract terrain id for tile " .. tile_id)
       local image_idx = assert(string.sub(datum,2, -1), "cannot extract image index for tile " .. tile_id)
       image_idx = tonumber(image_idx)
-      local name = tile_names[idx] or get_terrain_name(terrain_id)
+      local name = hex_names[tile_id] or get_terrain_name(terrain_id)
       local terrain_type = terrain:get_type(terrain_id)
       local tile_data = {
         x            = x,

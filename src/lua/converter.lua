@@ -43,7 +43,7 @@ local input_for = {
       'armed-forces.csv', 'battle-scheme.csv',
    },
    scenario = {
-      'players.csv', 'objectives.csv', 'army.csv', 'scenario.csv',
+      'players.csv', 'objectives.csv', 'army.csv', 'scenario.csv', 'hex-names.csv',
    },
 }
 

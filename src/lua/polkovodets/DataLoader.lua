@@ -61,6 +61,21 @@ function DataLoader.load(gear, scenario_path)
   end
   gear:set("data/nations", nations_data)
 
+
+  --[[ load hex names ]]
+
+  local hex_names_file = assert(scenario_files.hex_names, scenario_file .. " don't have hex_names in files section")
+  local hex_names_path = scenario_dir .. '/' .. hex_names_file
+  local hex_names_data = {}
+  for idx, data in pairs(Parser.create(hex_names_path):get_raw_data()) do
+    local x = assert(data.x, hex_names_path .. " don't have x at row " .. idx)
+    local y = assert(data.y, hex_names_path .. " don't have y at row " .. idx)
+    local name = assert(data.name, hex_names_path .. " don't have name at row " .. idx)
+    local id = x .. ":" .. y
+    hex_names_data[id] = name
+  end
+  gear:set("data/hex_names", nations_data)
+
   --[[ load map ]]
 
   local map_file = assert(scenario_files.map, scenario_file .. " don't have map in files section")
