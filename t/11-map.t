@@ -34,6 +34,7 @@ for _ = 1, (10 * 100) do
   table.insert(map_data.tiles_data, "c1")
   table.insert(map_data.tile_names, "c1")
 end
+gear:set("data/hex_names", {})
 gear:set("data/map", map_data)
 
 
