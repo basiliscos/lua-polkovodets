@@ -237,9 +237,9 @@ function Engine:_fill_initial_data(gear)
   })
 
   gear:declare("map", {
-    dependencies = {"data/map", "engine", "renderer", "terrain", "data/map", "data/hex_names" },
+    dependencies = {"engine", "renderer", "terrain", "data/map", "data/hex_names" },
     constructor  = function() return Map.create() end,
-    initializer  = function(gear, instance, map_data, ... )
+    initializer  = function(gear, instance,  ... )
       instance:initialize(...)
     end,
   })

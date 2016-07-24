@@ -74,7 +74,7 @@ function DataLoader.load(gear, scenario_path)
     local id = x .. ":" .. y
     hex_names_data[id] = name
   end
-  gear:set("data/hex_names", nations_data)
+  gear:set("data/hex_names", hex_names_data)
 
   --[[ load map ]]
 
