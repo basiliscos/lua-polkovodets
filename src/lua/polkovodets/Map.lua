@@ -256,8 +256,8 @@ function Map:pointer_to_tile(x,y, geometry, map_dx, map_dy)
    local ty = my_tile[2] + ((tx % 2 == 1) and 1 or 0) + map_dy
 
    if (tx > 0 and tx <= self.width and ty > 0 and ty <= self.height) then
-      return {tx, ty}
       -- print(string.format("my_tile = %d:%d", tx, ty))
+      return {tx, ty}
    end
 end
 

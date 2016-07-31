@@ -59,6 +59,7 @@ function Engine.create(gear, language)
     'mouse-hint.change', 'map.active_tile.change',
     'mouse-position.change',
     'map.update', 'history.update',
+    'map.view-frame.update',
     'ui.update',
     'full.refresh',
     'event.delay',

@@ -96,8 +96,8 @@ function StrategicalMapWindow:_construct_gui()
   local w, h = math.modf(get_sclaled_width(scale)), math.modf(get_sclaled_height(scale))
 
   local scaled_geometry = {
-    w        = hex_geometry.width / scale,
-    h        = hex_geometry.height / scale,
+    width    = hex_geometry.width / scale,
+    height   = hex_geometry.height / scale,
     x_offset = hex_geometry.x_offset / scale,
     y_offset = hex_geometry.y_offset / scale,
   }
@@ -107,7 +107,7 @@ function StrategicalMapWindow:_construct_gui()
   -- We cannot use common math (virtual coordinates), because rounding errors lead to gaps between tiles,
   -- and they look terribly. Hence, we re-calculate tiels using int-math
 
-  local tile_w, tile_h = math.modf(scaled_geometry.w), math.modf(scaled_geometry.h)
+  local tile_w, tile_h = math.modf(scaled_geometry.width), math.modf(scaled_geometry.height)
   local x_offset, y_offset = math.modf(scaled_geometry.x_offset), math.modf(scaled_geometry.y_offset)
 
   local layer = engine.state:get_active_layer()
@@ -176,8 +176,8 @@ function StrategicalMapWindow:_map_size(x_min, y_min, x_max, y_max)
   local dy = y_max - y_min
   -- assert(dy >= 2)
 
-  local content_w = scaled_geometry.x_offset * (dx - 1) + scaled_geometry.w
-  local content_h =  scaled_geometry.h * dy + scaled_geometry.y_offset
+  local content_w = scaled_geometry.x_offset * (dx - 1) + scaled_geometry.width
+  local content_h =  scaled_geometry.height * dy + scaled_geometry.y_offset
 
   -- print(string.format("map size for (%d, %d, %d, %d) -> (%d, %d)", x_min, y_min, x_max, y_max, content_w, content_h))
   return content_w, content_h
@@ -203,7 +203,7 @@ function StrategicalMapWindow:_draw_map_texture(x_min, y_min, x_max, y_max, dx, 
   local shift_tile = map.tiles[x_min][y_min]
   local first_tile = map.tiles[1][1]
   local shift_x = gui.tile_positions[first_tile.id].dst.x - gui.tile_positions[shift_tile.id].dst.x - scaled_geometry.x_offset
-  local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y - scaled_geometry.h
+  local shift_y = gui.tile_positions[first_tile.id].dst.y - gui.tile_positions[shift_tile.id].dst.y - scaled_geometry.height
 
   for i = x_min, x_max do
     -- for j = y_min, (i % 2 == 0) and y_max - 2 or y_max do
@@ -214,7 +214,7 @@ function StrategicalMapWindow:_draw_map_texture(x_min, y_min, x_max, y_max, dx, 
       local description = gui.tile_positions[tile.id]
 
       local h_multiplier = ((j == y_max) and (i%2 == 0)) and 0.5 or 1
-      local w_multiplier = (i == x_max) and (scaled_geometry.x_offset/scaled_geometry.w) or 1
+      local w_multiplier = (i == x_max) and (scaled_geometry.x_offset/scaled_geometry.width) or 1
 
       local dst = {
         x = description.dst.x + shift_x + dx,
@@ -274,8 +274,8 @@ function StrategicalMapWindow:_update_frame(hx, hy)
   local content_w, content_h = gui.content_size.w, gui.content_size.h
   local frame_w, frame_h = math.min(window_w, content_w), math.min(window_h, content_h)
 
-  local w = math.floor( (frame_w - scaled_geometry.w) / scaled_geometry.x_offset ) - 1
-  local h = math.floor( (frame_h - (scaled_geometry.h + scaled_geometry.y_offset)) / gui.scaled_geometry.h ) - 1
+  local w = math.floor( (frame_w - scaled_geometry.width) / scaled_geometry.x_offset ) - 1
+  local h = math.floor( (frame_h - (scaled_geometry.height + scaled_geometry.y_offset)) / gui.scaled_geometry.height) - 1
 
   hx = (hx + w >= map.width) and math.min(1, map.width - w) or hx
   hy = (hy + h >= map.height) and math.min(1, map.height - h) or hy
@@ -389,19 +389,19 @@ function StrategicalMapWindow:_get_texture()
       assert(sdl_renderer:setTarget(new_texture))
 
       local existing_w = (iw + ((delta[1] >= 0) and 0 or -1)) * scaled_geometry.x_offset
-      local existing_h = (ih + ((delta[2] >= 0) and 0 or -1)) * scaled_geometry.h
+      local existing_h = (ih + ((delta[2] >= 0) and 0 or -1)) * scaled_geometry.height
 
       -- copy exisitng part of map
       local old_src = {
         x = (delta[1] >= 0) and (d_sign[1] * (delta[1] - 1) * scaled_geometry.x_offset) or (scaled_geometry.x_offset),
-        y = (delta[2] >= 0) and (d_sign[2] * (delta[2] - 1) * scaled_geometry.h) or scaled_geometry.h,
+        y = (delta[2] >= 0) and (d_sign[2] * (delta[2] - 1) * scaled_geometry.height) or scaled_geometry.height,
         w = existing_w,
         h = existing_h,
       }
 
       local new_dst = {
         x = (delta[1] > 0) and 0 or ((math.abs(delta[1]) - 0) * scaled_geometry.x_offset),
-        y = (delta[2] > 0) and 0 or ((math.abs(delta[2]) - 0) * scaled_geometry.h),
+        y = (delta[2] > 0) and 0 or ((math.abs(delta[2]) - 0) * scaled_geometry.height),
         w = existing_w,
         h = existing_h,
       }
@@ -488,10 +488,30 @@ function StrategicalMapWindow:_on_ui_update(show)
         return true -- stop further event propagation
       end
       local mouse_click = function(event)
-        --[[
         if (map_region:is_over(event.x, event.y)) then
+          -- pointer_to_tile assumes that (x, y) are related to (0, 0) where map is being drawn
+          -- meanwhile, event.x, event.y already include shift-to-center our strategical map,
+          -- have to adjust a bit
+          local pos_x = event.x - frame.dst.x
+          local pos_y = event.y - frame.dst.y
+          local tile_coords = map:pointer_to_tile(pos_x, pos_y, gui.scaled_geometry, frame.hex_box.x - 1,  frame.hex_box.y - 1)
+          local center_x, center_y = table.unpack(tile_coords)
+
+          -- click has been performed on some tile, but we update view frame
+          local view_frame = engine.state:get_view_frame()
+          local half_frame_w = math.modf(view_frame.w / 2)
+          local half_frame_h = math.modf(view_frame.h / 2)
+
+          center_x = math.min(map.width - half_frame_w, center_x)
+          center_y = math.min(map.height - half_frame_h, center_y)
+
+          local x0 = math.max(center_x - half_frame_w, 1)
+          local y0 = math.max(center_y - half_frame_h, 1)
+          local new_view_frame = {x = x0, y = y0, w = view_frame.w, h = view_frame.h}
+          -- print("new view frame = " .. inspect(new_view_frame))
+          engine.state:set_view_frame(new_view_frame)
+          engine.reactor:publish("map.update")
         end
-        ]]
         engine.interface:remove_window(self)
          -- stop further event propagation
         return true

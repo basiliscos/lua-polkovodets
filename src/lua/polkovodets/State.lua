@@ -36,6 +36,8 @@ function State.create(reactor)
     _recent_history = nil,
     _active_layer   = 'surface',
     _current_player = nil,
+    -- in hex coordinates; w, h are assumed to be calculated later
+    _view_frame     = { x = 1,  y = 1, w = 0, h = 0},
   }
   return setmetatable(o, State)
 end
@@ -105,6 +107,13 @@ function State:set_current_player(value)
   self.reactor:publish('current-player.change', value)
 end
 function State:get_current_player() return self._current_player end
+
+function State:set_view_frame(value)
+  self._view_frame = value
+  -- print(string.format("frame x, y, h, w = %d:%d %d:%d", hx, hy, w, h))
+  self.reactor:publish('map.view-frame.update')
+end
+function State:get_view_frame() return self._view_frame end
 
 return State
 
