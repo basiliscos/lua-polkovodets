@@ -480,21 +480,28 @@ function StrategicalMapWindow:_on_ui_update(show)
     if (not handlers_bound) then
       self.handlers_bound = true
 
+      local pointer_to_tile = function (event)
+        -- pointer_to_tile assumes that (x, y) are related to (0, 0) where map is being drawn
+        -- meanwhile, event.x, event.y already include shift-to-center our strategical map,
+        -- have to adjust a bit
+        local pos_x = event.x - frame.dst.x
+        local pos_y = event.y - frame.dst.y
+        return map:pointer_to_tile(pos_x, pos_y, gui.scaled_geometry, frame.hex_box.x - 1,  frame.hex_box.y - 1)
+      end
+
       local mouse_move = function(event)
         engine.state:set_mouse_hint('')
         if (map_region:is_over(event.x, event.y)) then
+          local tile_coords = pointer_to_tile(event)
+          local tile = map.tiles[tile_coords[1]][tile_coords[2]]
+          engine.reactor:publish('map.active_tile.change', tile)
           engine.reactor:publish("event.delay", 20)
         end
         return true -- stop further event propagation
       end
       local mouse_click = function(event)
         if (map_region:is_over(event.x, event.y)) then
-          -- pointer_to_tile assumes that (x, y) are related to (0, 0) where map is being drawn
-          -- meanwhile, event.x, event.y already include shift-to-center our strategical map,
-          -- have to adjust a bit
-          local pos_x = event.x - frame.dst.x
-          local pos_y = event.y - frame.dst.y
-          local tile_coords = map:pointer_to_tile(pos_x, pos_y, gui.scaled_geometry, frame.hex_box.x - 1,  frame.hex_box.y - 1)
+          local tile_coords = pointer_to_tile(event)
           local center_x, center_y = table.unpack(tile_coords)
 
           -- click has been performed on some tile, but we update view frame
