@@ -103,11 +103,15 @@ function Unit:_update_layer()
 end
 
 function Unit:_update_state(new_state)
-   self.data.state = new_state
-   local united_staff = self:_united_staff()
-   for idx, weapon_instance in pairs(united_staff) do
-      weapon_instance:update_state(new_state)
-   end
+  local changed = self.data.state ~= new_state
+  self.data.state = new_state
+  local united_staff = self:_united_staff()
+  for idx, weapon_instance in pairs(united_staff) do
+    weapon_instance:update_state(new_state)
+  end
+  if (changed) then
+    self.engine.reactor:publish("map.update")
+  end
 end
 
 function Unit:get_movement_layer()
@@ -1146,7 +1150,7 @@ function Unit:get_actions(tile)
     end
 
     -- take (oriented) defence, if there is at least one orientable weapon
-    if (#orientable_weapons > 0) then
+    if ((#orientable_weapons > 0) and self.data.state ~= 'defending') then
       table.insert(list, {
         priority = 11,
         policy = "click",
@@ -1157,14 +1161,14 @@ function Unit:get_actions(tile)
           hilight   = theme.actions.defence.hilight,
         },
         callback = function()
-          print("[TODO] defence")
+          self:_update_state('defending')
         end
       })
     end
 
     -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
     local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
-    if (#non_orientable_weapons > 0) then
+    if ((#non_orientable_weapons > 0) and self.data.state ~= 'circular_defending') then
       table.insert(list, {
         priority = 12,
         policy = "click",
@@ -1175,7 +1179,7 @@ function Unit:get_actions(tile)
           hilight   = theme.actions.circular_defence.hilight,
         },
         callback = function()
-          print("[TODO] circular defence")
+          self:_update_state('circular_defending')
         end
       })
     end
@@ -1235,7 +1239,8 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.retreat.hilight,
       },
       callback = function()
-        print("[TODO] retreat")
+        self:move_to(tile)
+        self:_update_state('retreating')
       end
     })
   end
@@ -1252,7 +1257,8 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.patrol.hilight,
       },
       callback = function()
-        print("[TODO] patrol")
+        self:move_to(tile)
+        self:_update_state('patroling')
       end
     })
   end
@@ -1269,7 +1275,8 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.raid.hilight,
       },
       callback = function()
-        print("[TODO] raid")
+        self:move_to(tile)
+        self:_update_state('raiding')
       end
     })
   end
@@ -1331,7 +1338,7 @@ function Unit:get_actions(tile)
   local can_refuel
     =  (self.definition.unit_type.id == 'ut_land' and self.tile == tile)
     or (self.definition.unit_type.id == 'ut_air' and self.data.actions_map.landing[tile.id])
-  if (can_refuel) then
+  if (can_refuel and self.data.state ~= 'refuelling') then
     table.insert(list, {
       priority = 37,
       policy = "click",
@@ -1342,7 +1349,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.refuel.hilight,
       },
       callback = function()
-        print("[TODO] refuel")
+        self:_update_state('refuelling')
       end
     })
   end
