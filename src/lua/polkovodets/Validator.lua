@@ -174,8 +174,8 @@ function Validator.declare(gear)
             return has
           end,
 
-          patroling = function(unit)
-            return unit.definition.state_icons.patroling and land_unit_attacking(unit)
+          patrolling = function(unit)
+            return unit.definition.state_icons.patrolling and land_unit_attacking(unit)
           end,
 
           raiding = function(unit)

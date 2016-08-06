@@ -1246,7 +1246,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: patrol
-  if (can_move_to_tile and self.definition.state_icons.patrol) then
+  if (can_move_to_tile and self.definition.state_icons.patrolling) then
     table.insert(list, {
       priority = 21,
       policy = "click",
@@ -1258,7 +1258,7 @@ function Unit:get_actions(tile)
       },
       callback = function()
         self:move_to(tile)
-        self:_update_state('patroling')
+        self:_update_state('patrolling')
       end
     })
   end
