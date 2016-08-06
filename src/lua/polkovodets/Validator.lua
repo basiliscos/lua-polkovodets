@@ -260,9 +260,64 @@ function Validator.declare(gear)
     end,
   })
 
+  gear:declare("validators/transition_scheme", {
+    dependencies = {"data/transition_rules", "units/definitions::map"},
+    constructor  = function() return { name = "transition_scheme"} end,
+    initializer  = function(gear, instance, rules, definition_for)
+      instance.fn = function()
+        local unit_definition_state_for = {}
+        for _, definition in pairs(definition_for) do
+          for state, _ in pairs(definition.state_icons) do
+            unit_definition_state_for[state] = true
+          end
+        end
+
+        local actions_for = {}
+        local state_for = {}
+
+        -- check that there state for every defined "from" and "to"
+        for _,rule in pairs(rules) do
+          local start, finish = string.find(rule.to, "action:")
+          if (not start) then
+            local to = rule.to
+            assert(unit_definition_state_for[to],
+              string.format("state %s found in transitions, but not found for any unit definitions", to))
+            state_for[to] = true
+
+            local from = rule.from
+            if (from ~= '*') then
+              assert(unit_definition_state_for[from],
+                string.format("state %s found in transitions, but not found for any unit definitions", from))
+            end
+
+            local cost = rule.cost
+            local valid_cost = (string.find(cost, "%d+") ~= nil)
+              or cost == 'A'
+            assert(valid_cost,
+              string.format("wrong transition %s => %s cost %s", from, to, cost)
+            )
+          else
+            print(rule.to)
+            local action = string.sub(rule.to, finish + 1)
+            actions_for[action] = true
+          end
+        end
+
+        -- reverse check - for all available states there are transition to
+        for state, _ in pairs(unit_definition_state_for) do
+          assert(state_for[state], string.format("missing transtion to state '%s', declared in unit definitions", state))
+        end
+        -- actions check
+
+        print("transition rules are valid")
+      end
+    end,
+  })
+
+
   gear:declare("validator", {
     dependencies = { "validators/weapons/movement_types", "validators/units/classes", "validators/terrain/flags",
-      "validators/units/definitions",
+      "validators/units/definitions", "validators/transition_scheme"
     },
     constructor  = function() return { } end,
     initializer  = function(gear, instance, ...)

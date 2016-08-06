@@ -279,6 +279,20 @@ function SampleData.generate_battle_scheme(gear)
     { block_id = "1", fire_type = "battle", condition = '(I.state == "attacking") && (P.state == "defending")'},
     { block_id = "1.1", active_weapon = 'I.category("wc_infant")', passive_weapon = 'P.target("any")', action = "battle" },
   })
+
+  gear:set("data/transition_rules", {
+    { to = 'action:change_orientation', from = '*', cost = 0},
+    { to = 'defending', from = 'circular_defending', cost = 0},
+    { to = 'defending', from = '*', cost = 'A'},
+    { to = 'circular_defending', from = '*', cost = 'A'},
+    { to = 'marching', from = '*', cost = '0'},
+    { to = 'refuelling', from = '*', cost = 'A'},
+    { to = 'retreating', from = '*', cost = '1'},
+    { to = 'captured', from = '*', cost = 'A'},
+    { to = 'attacking', from = '*', cost = 'A'},
+    { to = 'escaping', from = '*', cost = '0'},
+    { to = 'constructing', from = '*', cost = 'A'},
+  })
 end
 
 function SampleData.generate_map(gear)
