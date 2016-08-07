@@ -5,35 +5,11 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 local t = require 'Test.More'
 local _ = require ("moses")
 local inspect = require('inspect')
-local DummyRenderer = require 't.DummyRenderer'
-
-local Gear = require "gear"
-
-local Engine = require 'polkovodets.Engine'
-local SampleData = require 'polkovodets.SampleData'
-
-local get_fresh_data = function()
-  local gear = Gear.create()
-  gear:declare("renderer", { constructor = function() return DummyRenderer.create(640, 480) end})
-  local engine = Engine.create(gear, "en")
-
-  SampleData.generate_test_data(gear)
-  SampleData.generate_battle_scheme(gear)
-  SampleData.generate_map(gear)
-  SampleData.generate_scenario(gear)
-  SampleData.generate_terrain(gear)
-
-  gear:get("validator").fn()
-  local scenario = gear:get("scenario")
-  local map = gear:get("map")
-  engine:end_turn()
-
-  return engine
-end
+local PT = require('t.PolkovodetsTest')
 
 
 subtest("mergability", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local inf1_l  = map.tiles[3][3]:get_unit('surface')
@@ -62,7 +38,7 @@ subtest("mergability", function()
 end)
 
 subtest("merge: l + m + s", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local inf1_l  = map.tiles[4][3]:get_unit('surface')
@@ -100,7 +76,7 @@ subtest("merge: l + m + s", function()
 end)
 
 subtest("non-mergable: land and air units", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local tank1_m = map.tiles[4][2]:get_unit('surface')
@@ -117,7 +93,7 @@ subtest("non-mergable: land and air units", function()
 end)
 
 subtest("non-mergable: manager and manageable units", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local tank1_m = map.tiles[4][2]:get_unit('surface')

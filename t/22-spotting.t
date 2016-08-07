@@ -4,36 +4,10 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 
 local t = require 'Test.More'
 local _ = require ("moses")
-local inspect = require('inspect')
-local DummyRenderer = require 't.DummyRenderer'
-
-local Gear = require "gear"
-
-local Engine = require 'polkovodets.Engine'
-local SampleData = require 'polkovodets.SampleData'
-
-local get_fresh_data = function()
-  local gear = Gear.create()
-  gear:declare("renderer", { constructor = function() return DummyRenderer.create(640, 480) end})
-  local engine = Engine.create(gear, "en")
-
-  SampleData.generate_test_data(gear)
-  SampleData.generate_battle_scheme(gear)
-  SampleData.generate_map(gear)
-  SampleData.generate_scenario(gear)
-  SampleData.generate_terrain(gear)
-
-  gear:get("validator").fn()
-  local scenario = gear:get("scenario")
-  local map = gear:get("map")
-  engine:end_turn()
-
-  return engine
-end
-
+local PT = require('t.PolkovodetsTest')
 
 subtest("air spotting area", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local aircraft = map.tiles[7][7]:get_unit('air')
@@ -49,7 +23,7 @@ subtest("air spotting area", function()
 end)
 
 subtest("land spotting area", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local tank = map.tiles[7][8]:get_unit('surface')
@@ -65,7 +39,7 @@ subtest("land spotting area", function()
 end)
 
 subtest("map united spotting", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
   is(engine.state:get_current_player().id, "allies")
   ok(map.united_spotting.map[map.tiles[2][6].id])
@@ -99,7 +73,7 @@ subtest("map united spotting", function()
 end)
 
 subtest("map spotting on unit movement", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   ok(not map.tiles[11][5]:get_unit('surface').data.visible_to_current_player,
