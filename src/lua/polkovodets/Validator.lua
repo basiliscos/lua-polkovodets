@@ -272,7 +272,7 @@ function Validator.declare(gear)
           end
         end
 
-        local actions_for = {}
+        local action_for = {}
         local state_for = {}
 
         -- check that there state for every defined "from" and "to"
@@ -297,9 +297,8 @@ function Validator.declare(gear)
               string.format("wrong transition %s => %s cost %s", from, to, cost)
             )
           else
-            print(rule.to)
             local action = string.sub(rule.to, finish + 1)
-            actions_for[action] = true
+            action_for[action] = true
           end
         end
 
@@ -307,7 +306,14 @@ function Validator.declare(gear)
         for state, _ in pairs(unit_definition_state_for) do
           assert(state_for[state], string.format("missing transtion to state '%s', declared in unit definitions", state))
         end
+
         -- actions check
+        local actions = {'information', 'change_orientation', 'attach', 'detach', 'move',
+          'retreat', 'patrol', 'raid',
+        }
+        for _, action in pairs(actions) do
+          assert(action_for[action], string.format("transition for action '%s' not found", action))
+        end
 
         print("transition rules are valid")
       end

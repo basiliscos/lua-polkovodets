@@ -282,12 +282,20 @@ function SampleData.generate_battle_scheme(gear)
 
   gear:set("data/transition_rules", {
     { to = 'action:change_orientation', from = '*', cost = 0},
+    { to = 'action:information', from = '*', cost = 0},
+    { to = 'action:attach', from = '*', cost = 1},
+    { to = 'action:detach', from = '*', cost = 0},
+    { to = 'action:move', from = '*', cost = 0},
+    { to = 'action:retreat', from = '*', cost = 1},
+    { to = 'action:patrol', from = '*', cost = 1},
+    { to = 'action:raid', from = '*', cost = 1},
+
     { to = 'defending', from = 'circular_defending', cost = 0},
     { to = 'defending', from = '*', cost = 'A'},
     { to = 'circular_defending', from = '*', cost = 'A'},
     { to = 'marching', from = '*', cost = '0'},
     { to = 'refuelling', from = '*', cost = 'A'},
-    { to = 'retreating', from = '*', cost = '1'},
+    { to = 'retreating', from = '*', cost = '0'},
     { to = 'captured', from = '*', cost = 'A'},
     { to = 'attacking', from = '*', cost = 'A'},
     { to = 'escaping', from = '*', cost = '0'},

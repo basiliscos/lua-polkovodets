@@ -1116,24 +1116,24 @@ function Unit:get_actions(tile)
 
   if (self.tile == tile) then
     -- unit info
-    table.insert(list, {
-      priority = 10,
-      policy = "click",
-      hint = engine:translate('ui.radial-menu.hex.unit_info', {name = self.name}),
-      state = "available",
-      images = {
-        available = theme.actions.information.available,
-        hilight   = theme.actions.information.hilight,
-      },
-      callback = function()
-        engine.interface:add_window('unit_info_window', self)
-      end
-    })
+    if (self:is_action_possible('information', true)) then
+      table.insert(list, {
+        priority = 10,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_info', {name = self.name}),
+        state = "available",
+        images = {
+          available = theme.actions.information.available,
+          hilight   = theme.actions.information.hilight,
+        },
+        callback = function()
+          engine.interface:add_window('unit_info_window', self)
+        end
+      })
+    end
 
 
-    -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
-    local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
-    if (#orientable_weapons > 0) then
+    if (self:is_action_possible('change_orientation', true)) then
       table.insert(list, {
         priority = 10,
         policy = "click",
@@ -1149,8 +1149,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    -- take (oriented) defence, if there is at least one orientable weapon
-    if ((#orientable_weapons > 0) and self.data.state ~= 'defending') then
+    if (self:is_action_possible('defending', false)) then
       table.insert(list, {
         priority = 11,
         policy = "click",
@@ -1166,9 +1165,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
-    local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
-    if ((#non_orientable_weapons > 0) and self.data.state ~= 'circular_defending') then
+    if (self:is_action_possible('circular_defending', false)) then
       table.insert(list, {
         priority = 12,
         policy = "click",
@@ -1184,7 +1181,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    -- detach attached units
+    -- select attached units for further detach
     _.each(self.data.attached, function(idx, unit)
       table.insert(list, {
         priority = 20 + idx,
@@ -1204,14 +1201,8 @@ function Unit:get_actions(tile)
 
   end
 
-  -- unit action: move to the tile. We cannot move unit here if there are other units on the same
-  -- layer, but something additional might be done, e.g. merge
-  local tile_units = tile:get_all_units(function() return true end)
-  local other_units = _.select(tile_units, function(idx, unit)
-    return unit.data.layer == self.data.layer
-  end)
-  local can_move_to_tile = self.data.actions_map.move[tile.id] and (#other_units == 0)
-  if (can_move_to_tile) then
+  -- move to tile
+  if (self:is_action_possible('move', true, tile)) then
     table.insert(list, {
       priority = 20,
       policy = "click",
@@ -1227,8 +1218,8 @@ function Unit:get_actions(tile)
     })
   end
 
-  -- march
-  if (can_move_to_tile and self.definition.state_icons.retreating) then
+  -- retreat to tile
+  if (self:is_action_possible('retreat', true, tile)) then
     table.insert(list, {
       priority = 20,
       policy = "click",
@@ -1246,7 +1237,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: patrol
-  if (can_move_to_tile and self.definition.state_icons.patrol) then
+  if (self:is_action_possible('patrol', true, tile)) then
     table.insert(list, {
       priority = 21,
       policy = "click",
@@ -1264,7 +1255,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: raid
-  if (can_move_to_tile and self.definition.state_icons.raid) then
+  if (self:is_action_possible('raid', true, tile)) then
     table.insert(list, {
       priority = 22,
       policy = "click",
@@ -1355,6 +1346,64 @@ function Unit:get_actions(tile)
   end
 
   return list
+end
+
+function Unit:is_action_possible(action, action_or_state, context)
+  local transition_scheme = self.engine.gear:get("transition_scheme")
+  local result
+  local allowed = action_or_state
+    and transition_scheme:is_action_allowed(action, self)
+     or transition_scheme:is_state_allowed(action, self)
+
+
+  local action_with_move = function()
+    local tile = context
+    local cost = allowed
+    local tile_units = tile:get_all_units(function() return true end)
+    -- We cannot move unit here if there are other units on the same
+    -- layer, but something additional might be done, e.g. merge
+    local other_units = _.select(tile_units, function(idx, unit)
+      return unit.data.layer == self.data.layer
+    end)
+    local move_cost = self.data.actions_map.move[tile.id]
+    if (not move_cost) then return false end
+
+    local min_move_cost = move_cost:min() + ((cost == 'A') and 1 or cost)
+    local result = (#other_units == 0)
+      and _.all(self:_united_staff(), function(_, wi)
+        -- print(string.format("%s movement %d (min: %d)", wi.id, wi.data.movement, min_move_cost))
+        return wi.data.movement >= min_move_cost
+      end)
+    return result
+  end
+
+
+  if (allowed) then
+    local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
+    local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
+
+    if (action == 'change_orientation') then
+      -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
+      result = (#orientable_weapons > 0)
+    elseif (action == 'move') then
+      result = action_with_move()
+    elseif (action == 'retreat') then
+      result = self.definition.state_icons.retreating and action_with_move()
+    elseif (action == 'patrol') then
+      result = self.definition.state_icons.patrol and action_with_move()
+    elseif (action == 'raid') then
+      result = self.definition.state_icons.raid and action_with_move()
+    elseif (action == 'defending') then
+    -- take (oriented) defence, if there is at least one orientable weapon
+      result = (#orientable_weapons > 0) and (self.data.state ~= 'defending')
+    elseif (action == 'circular_defending') then
+      -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
+      result = (#non_orientable_weapons > 0) and (self.data.state ~= 'circular_defending')
+    else
+      result = true
+    end
+  end
+  return result
 end
 
 function Unit:change_orientation()

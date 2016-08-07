@@ -39,4 +39,13 @@ function DummyRenderer:load_texture(path)
    return self.image
 end
 
+function DummyRenderer:load_joint_texture(path, frame)
+   self.textures[path] = true
+end
+
+function DummyRenderer:ttf(font, size)
+  return string.format("[ttf/%s:%d]", font, size)
+end
+
+
 return DummyRenderer
