@@ -1272,8 +1272,8 @@ function Unit:get_actions(tile)
     })
   end
 
-  -- unit action: merge
-  if (self.data.actions_map.merge[tile.id]) then
+  -- unit action: attach
+  if (self:is_action_possible('attach', true, tile)) then
     table.insert(list, {
       priority = 30,
       policy = "click",
@@ -1356,7 +1356,7 @@ function Unit:is_action_possible(action, action_or_state, context)
      or transition_scheme:is_state_allowed(action, self)
 
 
-  local action_with_move = function()
+  local action_with_move = function(ignore_others)
     local tile = context
     local cost = allowed
     local tile_units = tile:get_all_units(function() return true end)
@@ -1369,11 +1369,12 @@ function Unit:is_action_possible(action, action_or_state, context)
     if (not move_cost) then return false end
 
     local min_move_cost = move_cost:min() + ((cost == 'A') and 1 or cost)
-    local result = (#other_units == 0)
+    local result = (ignore_others and 1 or (#other_units == 0))
       and _.all(self:_united_staff(), function(_, wi)
         -- print(string.format("%s movement %d (min: %d)", wi.id, wi.data.movement, min_move_cost))
         return wi.data.movement >= min_move_cost
       end)
+    -- print(string.format("can move = %s", result))
     return result
   end
 
@@ -1393,6 +1394,9 @@ function Unit:is_action_possible(action, action_or_state, context)
       result = self.definition.state_icons.patrol and action_with_move()
     elseif (action == 'raid') then
       result = self.definition.state_icons.raid and action_with_move()
+    elseif (action == 'attach') then
+      result = self.data.actions_map.merge[context.id]
+            and action_with_move(true)
     elseif (action == 'defending') then
     -- take (oriented) defence, if there is at least one orientable weapon
       result = (#orientable_weapons > 0) and (self.data.state ~= 'defending')
