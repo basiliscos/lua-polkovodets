@@ -281,26 +281,22 @@ function SampleData.generate_battle_scheme(gear)
   })
 
   gear:set("data/transition_rules", {
-    { action = 'change_orientation', from = '*', cost = 0},
-    { action = 'information',        from = '*', cost = 0},
-    { action = 'attach',             from = '*', cost = 1},
-    { action = 'detach',             from = '*', cost = 0},
-    { action = 'move',               from = '*', cost = 0},
-    { action = 'retreat',            from = '*', cost = 1},
-    { action = 'patrol',             from = '*', cost = 1},
-    { action = 'raid',               from = '*', cost = 1},
-    { action = 'refuel',             from = '*', cost = 'A'},
+    { action = 'change_orientation', from = '*',                  cost = 0   },
+    { action = 'information',        from = '*',                  cost = 0   },
+    { action = 'attach',             from = '*',                  cost = 1   },
+    { action = 'detach',             from = '*',                  cost = 0   },
+    { action = 'move',               from = '*',                  cost = 0   },
+    { action = 'retreat',            from = '*',                  cost = 1   },
+    { action = 'patrol',             from = '*',                  cost = 1   },
+    { action = 'raid',               from = '*',                  cost = 1   },
+    { action = 'refuel',             from = '*',                  cost = 'A' },
+    { action = 'defend',             from = 'circular_defending', cost = 0   },
+    { action = 'defend',             from = '*',                  cost = 'A' },
+    { action = 'circular_defend',    from = 'defend',             cost = 0   },
+    { action = 'circular_defend',    from = '*',                  cost = 'A' },
+    { action = 'attack',             from = '*',                  cost = 'A' },
 
     --[[
-    { to = 'defending', from = 'circular_defending', cost = 0},
-    { to = 'defending', from = '*', cost = 'A'},
-    { to = 'circular_defending', from = '*', cost = 'A'},
-    { to = 'marching', from = '*', cost = '0'},
-    { to = 'refuelling', from = '*', cost = 'A'},
-    { to = 'retreating', from = '*', cost = '0'},
-    { to = 'captured', from = '*', cost = 'A'},
-    { to = 'attacking', from = '*', cost = 'A'},
-    { to = 'escaping', from = '*', cost = '0'},
     { to = 'constructing', from = '*', cost = 'A'},
     ]]
   })

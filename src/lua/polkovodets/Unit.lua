@@ -1116,7 +1116,7 @@ function Unit:get_actions(tile)
 
   if (self.tile == tile) then
     -- unit info
-    if (self:is_action_possible('information')) then
+    if (self:is_action_possible('information', self.tile)) then
       table.insert(list, {
         priority = 10,
         policy = "click",
@@ -1132,8 +1132,7 @@ function Unit:get_actions(tile)
       })
     end
 
-
-    if (self:is_action_possible('change_orientation')) then
+    if (self:is_action_possible('change_orientation', self.tile)) then
       table.insert(list, {
         priority = 10,
         policy = "click",
@@ -1149,7 +1148,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    if (self:is_action_possible('defending')) then
+    if (self:is_action_possible('defend', self.tile)) then
       table.insert(list, {
         priority = 11,
         policy = "click",
@@ -1165,7 +1164,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    if (self:is_action_possible('circular_defending')) then
+    if (self:is_action_possible('circular_defend', self.tile)) then
       table.insert(list, {
         priority = 12,
         policy = "click",
@@ -1371,6 +1370,10 @@ function Unit:is_action_possible(action, context)
     return result
   end
 
+  local action_in_self_tile = function()
+    return context and (self.tile.id == context.id)
+  end
+
 
   if (allowed) then
     local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
@@ -1378,7 +1381,7 @@ function Unit:is_action_possible(action, context)
 
     if (action == 'change_orientation') then
       -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
-      result = (#orientable_weapons > 0)
+      result = (#orientable_weapons > 0) and action_in_self_tile()
     elseif (action == 'move') then
       result = action_with_move()
     elseif (action == 'retreat') then
@@ -1390,16 +1393,28 @@ function Unit:is_action_possible(action, context)
     elseif (action == 'attach') then
       result = self.data.actions_map.merge[context.id]
             and action_with_move(true)
-    elseif (action == 'defending') then
+    elseif (action == 'defend') then
     -- take (oriented) defence, if there is at least one orientable weapon
       result = (#orientable_weapons > 0) and (self.data.state ~= 'defending')
-    elseif (action == 'circular_defending') then
+            and (self.definition.unit_type.id == 'ut_land')
+            and action_in_self_tile()
+    elseif (action == 'circular_defend') then
       -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
       result = (#non_orientable_weapons > 0) and (self.data.state ~= 'circular_defending')
-    elseif (action == 'refuel' and (self.data.state ~= 'refuelling')) then
-      result = (self.definition.unit_type.id == 'ut_land')
+            and (self.definition.unit_type.id == 'ut_land')
+            and action_in_self_tile()
+    elseif (action == 'refuel') then
+      result = (self.data.state ~= 'refuelling') and (self.definition.unit_type.id == 'ut_land')
+            and action_in_self_tile()
+    elseif (action == 'information') then
+      result = action_in_self_tile()
+    elseif (action == 'attack') then
+      local tile_id = context[1].id
+      local kind    = context[2].id
+      result = self.data.actions_map.attack[context.id]
+        and self.data.actions_map.attack[context.id][kind]
     else
-      result = true
+      result = false
     end
   end
   return result
