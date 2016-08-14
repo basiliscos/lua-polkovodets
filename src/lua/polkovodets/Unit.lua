@@ -1112,6 +1112,7 @@ end
 function Unit:get_actions(tile)
   local list = {}
   local engine = self.engine
+  local state = engine.state
   local theme = engine.gear:get("theme")
 
   if (self.tile == tile) then
@@ -1182,20 +1183,22 @@ function Unit:get_actions(tile)
 
     -- select attached units for further detach
     _.each(self.data.attached, function(idx, unit)
-      table.insert(list, {
-        priority = 20 + idx,
-        policy = "click",
-        hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
-        state = "available",
-        images = {
-          available = theme.actions.detach.available,
-          hilight   = theme.actions.detach.hilight,
-        },
-        callback = function()
-          unit:update_actions_map()
-          state:set_selected_unit(unit)
-        end
-      })
+      if (unit:is_action_possible('detach', self.tile)) then
+        table.insert(list, {
+          priority = 20 + idx,
+          policy = "click",
+          hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
+          state = "available",
+          images = {
+            available = theme.actions.detach.available,
+            hilight   = theme.actions.detach.hilight,
+          },
+          callback = function()
+            unit:update_actions_map()
+            state:set_selected_unit(unit)
+          end
+        })
+      end
     end)
 
   end
@@ -1393,6 +1396,9 @@ function Unit:is_action_possible(action, context)
     elseif (action == 'attach') then
       result = self.data.actions_map.merge[context.id]
             and action_with_move(true)
+            and self.tile
+    elseif (action == 'detach') then
+      result = (not self.tile) and (self.data.attached_to.tile == context)
     elseif (action == 'defend') then
     -- take (oriented) defence, if there is at least one orientable weapon
       result = (#orientable_weapons > 0) and (self.data.state ~= 'defending')
