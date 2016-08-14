@@ -1116,7 +1116,7 @@ function Unit:get_actions(tile)
 
   if (self.tile == tile) then
     -- unit info
-    if (self:is_action_possible('information', true)) then
+    if (self:is_action_possible('information')) then
       table.insert(list, {
         priority = 10,
         policy = "click",
@@ -1133,7 +1133,7 @@ function Unit:get_actions(tile)
     end
 
 
-    if (self:is_action_possible('change_orientation', true)) then
+    if (self:is_action_possible('change_orientation')) then
       table.insert(list, {
         priority = 10,
         policy = "click",
@@ -1149,7 +1149,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    if (self:is_action_possible('defending', false)) then
+    if (self:is_action_possible('defending')) then
       table.insert(list, {
         priority = 11,
         policy = "click",
@@ -1165,7 +1165,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    if (self:is_action_possible('circular_defending', false)) then
+    if (self:is_action_possible('circular_defending')) then
       table.insert(list, {
         priority = 12,
         policy = "click",
@@ -1202,7 +1202,7 @@ function Unit:get_actions(tile)
   end
 
   -- move to tile
-  if (self:is_action_possible('move', true, tile)) then
+  if (self:is_action_possible('move', tile)) then
     table.insert(list, {
       priority = 20,
       policy = "click",
@@ -1219,7 +1219,7 @@ function Unit:get_actions(tile)
   end
 
   -- retreat to tile
-  if (self:is_action_possible('retreat', true, tile)) then
+  if (self:is_action_possible('retreat', tile)) then
     table.insert(list, {
       priority = 20,
       policy = "click",
@@ -1237,7 +1237,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: patrol
-  if (self:is_action_possible('patrol', true, tile)) then
+  if (self:is_action_possible('patrol', tile)) then
     table.insert(list, {
       priority = 21,
       policy = "click",
@@ -1255,7 +1255,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: raid
-  if (self:is_action_possible('raid', true, tile)) then
+  if (self:is_action_possible('raid', tile)) then
     table.insert(list, {
       priority = 22,
       policy = "click",
@@ -1273,7 +1273,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: attach
-  if (self:is_action_possible('attach', true, tile)) then
+  if (self:is_action_possible('attach', tile)) then
     table.insert(list, {
       priority = 30,
       policy = "click",
@@ -1324,12 +1324,7 @@ function Unit:get_actions(tile)
     })
   end
 
-  -- refuel action: for land units on the self tile, for  air units in aiprots,
-  -- for naval units in haven
-  local can_refuel
-    =  (self.definition.unit_type.id == 'ut_land' and self.tile == tile)
-    or (self.definition.unit_type.id == 'ut_air' and self.data.actions_map.landing[tile.id])
-  if (can_refuel and self.data.state ~= 'refuelling') then
+  if (self:is_action_possible('refuel')) then
     table.insert(list, {
       priority = 37,
       policy = "click",
@@ -1348,12 +1343,10 @@ function Unit:get_actions(tile)
   return list
 end
 
-function Unit:is_action_possible(action, action_or_state, context)
+function Unit:is_action_possible(action, context)
   local transition_scheme = self.engine.gear:get("transition_scheme")
   local result
-  local allowed = action_or_state
-    and transition_scheme:is_action_allowed(action, self)
-     or transition_scheme:is_state_allowed(action, self)
+  local allowed = transition_scheme:is_action_allowed(action, self)
 
 
   local action_with_move = function(ignore_others)
@@ -1403,6 +1396,8 @@ function Unit:is_action_possible(action, action_or_state, context)
     elseif (action == 'circular_defending') then
       -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
       result = (#non_orientable_weapons > 0) and (self.data.state ~= 'circular_defending')
+    elseif (action == 'refuel' and (self.data.state ~= 'refuelling')) then
+      result = (self.definition.unit_type.id == 'ut_land')
     else
       result = true
     end

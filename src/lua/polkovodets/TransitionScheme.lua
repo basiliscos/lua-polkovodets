@@ -24,7 +24,6 @@ local inspect = require('inspect')
 
 function TransitionScheme.create()
   local o = {
-    state_rules = {},
     action_rules = {},
   }
   return setmetatable(o, TransitionScheme)
@@ -32,30 +31,19 @@ end
 
 function TransitionScheme:initialize(transition_rules)
   for _, rule in pairs (transition_rules) do
-    local start, finish = string.find(rule.to, "action:")
-    if (start) then
-      local action = string.sub(rule.to, finish + 1)
-      table.insert(self.action_rules, {
-        to = action,
-        from = rule.from,
-        cost = rule.cost,
-      })
-    else
-      table.insert(self.state_rules, {
-        to = rule.to,
-        from = rule.from,
-        cost = rule.cost,
-      })
-    end
+    table.insert(self.action_rules, {
+      action = rule.action,
+      from   = rule.from,
+      cost   = rule.cost,
+    })
   end
-  self.rules = transition_rules
 end
 
 function TransitionScheme:_is_allowed(action, list, unit)
   assert(unit)
   local from = unit.data.state
   for _, rule in pairs(list) do
-    if ((action == rule.to) and ((rule.from == '*') or rule.from == from)) then
+    if ((action == rule.action) and ((rule.from == '*') or rule.from == from)) then
       local cost = rule.cost
       local result
       if (cost == 0) then
@@ -66,8 +54,12 @@ function TransitionScheme:_is_allowed(action, list, unit)
         for _, wi in pairs(united_staff) do
           min_movement = math.min(wi.data.movement, min_movement)
         end
-        result = ((cost == 'A') and (min_movement > 1))
-          or (cost <= min_movement)
+        -- print("cost = " .. cost)
+        if (cost == 'A') then
+          result = (min_movement > 1)
+        else
+          result = (cost <= min_movement)
+        end
         -- print(string.format("%s costs: %s, min_movement: %d, result: %s", action, cost, min_movement, result))
       end
       return (result and cost)
@@ -78,10 +70,5 @@ end
 function TransitionScheme:is_action_allowed(action, unit)
   return self:_is_allowed(action, self.action_rules, unit)
 end
-
-function TransitionScheme:is_state_allowed(state, unit)
-  return self:_is_allowed(state, self.state_rules, unit)
-end
-
 
 return TransitionScheme
