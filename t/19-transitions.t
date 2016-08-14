@@ -38,7 +38,7 @@ subtest("land unit simple actions", function()
   ok(not inf:is_action_possible('defend', map.tiles[3][4]), "cannot defend in other tile")
   ok(not inf:is_action_possible('circular_defend', map.tiles[3][4]), "can circular_defend in other tile")
 
-  ok(not inf:is_action_possible('attack', {map.tiles[3][3], 'battle'}), "cannot attack at self tile")
+  ok(not inf:is_action_possible('attack', {map.tiles[3][3], 'surface', 'battle'}), "cannot attack at self tile")
 end)
 
 subtest("hq move", function()

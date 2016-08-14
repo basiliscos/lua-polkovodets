@@ -1289,7 +1289,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: battle
-  if (self.data.actions_map.attack[tile.id]) then
+  if (self:is_action_possible('attack', {tile, 'surface', 'battle'})) then
     table.insert(list, {
       priority = 40,
       policy = "click",
@@ -1410,9 +1410,12 @@ function Unit:is_action_possible(action, context)
       result = action_in_self_tile()
     elseif (action == 'attack') then
       local tile_id = context[1].id
-      local kind    = context[2].id
-      result = self.data.actions_map.attack[context.id]
-        and self.data.actions_map.attack[context.id][kind]
+      local layer   = context[2]
+      local kind    = context[3]
+      result = self.data.actions_map.attack[tile_id]
+        and self.data.actions_map.attack[tile_id][layer]
+        and self.data.actions_map.attack[tile_id][layer][kind]
+
     else
       result = false
     end
