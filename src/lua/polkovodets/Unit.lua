@@ -1362,7 +1362,7 @@ function Unit:is_action_possible(action, context)
 
     local min_move_cost = move_cost:min() + ((cost == 'A') and 1 or cost)
     local result = (ignore_others and 1 or (#other_units == 0))
-      and _.all(self:_united_staff(), function(_, wi)
+      and _.all(self:_marched_weapons(), function(_, wi)
         -- print(string.format("%s movement %d (min: %d)", wi.id, wi.data.movement, min_move_cost))
         return wi.data.movement >= min_move_cost
       end)
