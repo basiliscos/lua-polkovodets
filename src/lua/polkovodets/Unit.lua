@@ -1407,6 +1407,23 @@ function Unit:get_actions(tile)
     })
   end
 
+  if (self:is_action_possible('bridge', tile)) then
+    table.insert(list, {
+      priority = 37,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_bridge', {x = tile.data.x, y = tile.data.y}),
+      state = "available",
+      images = {
+        available = theme.actions.bridge.available,
+        hilight   = theme.actions.bridge.hilight,
+      },
+      callback = function()
+        self:perform_action('bridge', tile)
+      end
+    })
+  end
+
+
   return list
 end
 

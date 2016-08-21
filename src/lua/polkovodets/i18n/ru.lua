@@ -51,6 +51,7 @@ t = {
     ['ui.radial-menu.hex.unit_retreat']     = 'Отступить в гекс %{x}:%{y}',
     ['ui.radial-menu.hex.unit_refuel']      = 'Пополнение / обслуживание',
     ['ui.radial-menu.hex.unit_cir_defence'] = 'Занять круговую оборону',
+    ['ui.radial-menu.hex.unit_bridge']      = 'Возвести понтонный мост на клетке %{x}:%{y}',
     ['ui.radial-menu.hex.battle_hist']      = 'Сражение %{index} на клетке: %{i} / %{p}',
 
     -- UI buttons
