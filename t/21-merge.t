@@ -50,14 +50,14 @@ subtest("merge: l + m + s", function()
   art1_s:update_actions_map()
   tank1_m:update_actions_map()
 
-  tank1_m:merge_at(inf1_l.tile)
+  tank1_m:perform_action('merge', inf1_l.tile)
   is(map.tiles[4][3]:get_unit('surface'), inf1_l, "M-unit joins to L-unit")
   ok(not map.tiles[4][2]:get_unit('surface'), "M-unit disappears from map after merge")
   inf1_l:update_actions_map()
   ok(inf1_l.data.actions_map.move[map.tiles[4][2].id], "can move to initial tank position")
 
 
-  art1_s:merge_at(inf1_l.tile)
+  art1_s:perform_action('merge', inf1_l.tile)
   is(map.tiles[4][3]:get_unit('surface'), inf1_l, "S-unit joins to L-unit")
   ok(not map.tiles[4][4]:get_unit('surface'), "s-unit disappears from map after merge")
   is(#inf1_l.data.attached, 2, "valid number of attache units")
@@ -66,7 +66,7 @@ subtest("merge: l + m + s", function()
   ok(not inf1_l.data.actions_map.move[map.tiles[4][2].id], "cannot move (no more movements in the attached artillery)")
 
   art2_s:update_actions_map()
-  art2_s:move_to(map.tiles[3][4])
+  art2_s:perform_action('move', map.tiles[3][4])
 
   engine:end_turn()
   engine:end_turn()
@@ -84,7 +84,7 @@ subtest("non-mergable: land and air units", function()
 
   fighter:update_actions_map()
   ok(not fighter.data.actions_map.merge[tank1_m.tile.id], "s-fighter non-mergeable with m-tank" )
-  fighter:move_to(map.tiles[3][2])
+  fighter:perform_action('move', map.tiles[3][2])
   fighter:update_actions_map()
   tank1_m:update_actions_map()
 
@@ -101,7 +101,7 @@ subtest("non-mergable: manager and manageable units", function()
   hq:update_actions_map()
 
   tank1_m:update_actions_map()
-  tank1_m:move_to(map.tiles[5][6])
+  tank1_m:perform_action('move', map.tiles[5][6])
   tank1_m:update_actions_map()
 
   ok(not hq.data.actions_map.merge[tank1_m.tile.id], "hq isn't mergeable with tank" )

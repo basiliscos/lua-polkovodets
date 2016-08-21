@@ -21,7 +21,7 @@ subtest("reconstruct town from destroyed town", function()
   engineers:update_actions_map()
   is_deeply(engineers.data.actions_map.special, {},
     "the ruined town is too far")
-  engineers:move_to(burned_city)
+  engineers:perform_action('move', burned_city)
 
   engineers:update_actions_map()
   is(burned_city.data.terrain_type.id, 'T', "burned city before rebuild")

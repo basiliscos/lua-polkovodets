@@ -68,7 +68,7 @@ subtest("map united spotting", function()
   local aircraft = map.tiles[7][7]:get_unit('air')
   ok(aircraft)
   aircraft:update_actions_map()
-  aircraft:move_to(map.tiles[2][8])
+  aircraft:perform_action('move', map.tiles[2][8])
   ok(map.united_spotting.map[map.tiles[2][7].id], "now tile 2:7 is visible by aircraft")
 end)
 
@@ -82,12 +82,12 @@ subtest("map spotting on unit movement", function()
   local aircraft = map.tiles[7][7]:get_unit('air')
   ok(aircraft)
   aircraft:update_actions_map()
-  aircraft:move_to(map.tiles[9][5])
+  aircraft:perform_action('move', map.tiles[9][5])
   ok(map.tiles[11][5]:get_unit('surface').data.visible_to_current_player,
     "not the german infantry is visible")
 
   aircraft:update_actions_map()
-  aircraft:move_to(map.tiles[3][7])
+  aircraft:perform_action('move', map.tiles[3][7])
   ok(map.tiles[11][5]:get_unit('surface').data.visible_to_current_player,
     "the german infantry is still visible, even if it is out of the united spot")
 

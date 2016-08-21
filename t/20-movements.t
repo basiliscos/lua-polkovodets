@@ -40,7 +40,7 @@ subtest("movement/leg 1 weapon", function()
   ok(inf.data.actions_map.move[map.tiles[3][5].id])
   ok(inf.data.actions_map.move[map.tiles[3][4].id])
 
-  inf:move_to(map.tiles[3][6])
+  inf:perform_action('move', map.tiles[3][6])
   is_deeply(inf:available_movement(), {
     ["u:rus_unit_1/w:rus_weapon_1"]  = 0,
   }, "no movement left")
@@ -80,7 +80,7 @@ subtest("movement/attacks first", function()
     { ["fire/artillery"] = { "u:rus_unit_3/w:rus_art_1" } },
     "can attack enemy unit before movement"
   )
-  art:move_to(map.tiles[5][5])
+  art:perform_action('move', map.tiles[5][5])
   is_deeply(art:available_movement(), {
     ["u:rus_unit_3/w:rus_art_1"]  = 0,
   }, "no movement left")

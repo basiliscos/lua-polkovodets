@@ -488,7 +488,22 @@ function Unit:_detach()
   end
 end
 
-function Unit:move_to(dst_tile)
+function Unit:perform_action(action, context)
+  local dispatch = {
+    move  = '_move_to',
+    merge = '_merge_at',
+  }
+  local method_name = dispatch[action]
+  assert(method_name)
+  local method = Unit[method_name]
+  method(self, context)
+
+  -- post update
+  self:update_spotting_map()
+  self:update_actions_map()
+end
+
+function Unit:_move_to(dst_tile)
   -- print("moving " .. self.id .. " to " .. dst_tile.id)
   -- print("move map = " .. inspect(self.data.actions_map.move))
   local map = self.engine.gear:get("map")
@@ -572,14 +587,12 @@ function Unit:move_to(dst_tile)
   dst_tile:set_unit(self, self.data.layer)
   self.tile = dst_tile
   self:_update_orientation(dst_tile, src_tile)
-  self:update_spotting_map()
-  self:update_actions_map()
 end
 
-function Unit:merge_at(dst_tile)
+function Unit:_merge_at(dst_tile)
    local layer = self.data.layer
    local other_unit = assert(dst_tile:get_unit(layer))
-   self:move_to(dst_tile)
+   self:_move_to(dst_tile)
 
    local weight_for = {
       L = 100,
@@ -612,7 +625,7 @@ function Unit:merge_at(dst_tile)
 end
 
 function Unit:land_to(tile)
-   self:move_to(tile)
+   self:_move_to(tile)
    self:_update_state('landed')
    self:_update_layer()
    self.data.allow_move = false
@@ -1215,7 +1228,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.move.hilight,
       },
       callback = function()
-        self:move_to(tile)
+        self:perform_action('move', tile)
       end
     })
   end
@@ -1286,7 +1299,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.merge.hilight,
       },
       callback = function()
-        self:merge_at(tile)
+        self:perform_action('merge', tile)
       end
     })
   end
@@ -1309,8 +1322,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit special action: construction
-  local special_actions = self.data.actions_map.special[tile.id]
-  if (special_actions and special_actions.build) then
+  if (self:is_action_possible('construct', {tile, 'build'})) then
     table.insert(list, {
       priority = 35,
       policy = "click",
@@ -1399,6 +1411,11 @@ function Unit:is_action_possible(action, context)
             and self.tile
     elseif (action == 'detach') then
       result = (not self.tile) and (self.data.attached_to.tile == context)
+    elseif (action == 'construct') then
+      local tile = context[1]
+      local kind = context[2]
+      local special_actions = self.data.actions_map.special[tile.id]
+      result = special_actions and special_actions[kind]
     elseif (action == 'defend') then
     -- take (oriented) defence, if there is at least one orientable weapon
       result = (#orientable_weapons > 0) and (self.data.state ~= 'defending')
