@@ -490,11 +490,16 @@ end
 
 function Unit:perform_action(action, context)
   local dispatch = {
-    move   = '_move_to',
-    attach = '_merge_at',
-    land   = '_land_to',
-    attack = '_attack_on',
-    build  = '_build_at',
+    move               = '_move_to',
+    attach             = '_merge_at',
+    land               = '_land_to',
+    attack             = '_attack_on',
+    build              = '_build_at',
+    retreat            = '_retreat',
+    patrol             = '_patrol',
+    raid               = '_raid',
+    refuel             = '_refuel',
+    change_orientation = '_change_orientation'
   }
   local method_name = dispatch[action]
   assert(method_name, "cannot perform action " .. action .. " as there is no dispatcher")
@@ -518,6 +523,26 @@ function Unit:perform_action(action, context)
   self:update_spotting_map()
   self:update_actions_map()
 end
+
+function Unit:_retreat(dst_tile)
+  self:_move_to(dst_tile)
+  self:_update_state('retreating')
+end
+
+function Unit:_patrol(dst_tile)
+  self:move_to(dst_tile)
+  self:_update_state('patroling')
+end
+
+function Unit:_raid(dst_tile)
+  self:move_to(dst_tile)
+  self:_update_state('raiding')
+end
+
+function Unit:_refuel()
+  self:_update_state('refuelling')
+end
+
 
 function Unit:_move_to(dst_tile)
   -- print("moving " .. self.id .. " to " .. dst_tile.id)
@@ -650,7 +675,8 @@ end
 
 function Unit:_attack_on(context)
   local tile, fire_type = table.unpack(context)
-  self:_check_death()
+  self:_update_state('attacking')
+
   local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
   local battle_scheme = self.engine.gear:get("battle_scheme")
   assert(enemy_unit)
@@ -1168,7 +1194,7 @@ function Unit:get_actions(tile)
           hilight   = theme.actions.change_orientation.hilight,
         },
         callback = function()
-          self:change_orientation()
+          self:perform_action('change_orientation')
         end
       })
     end
@@ -1256,8 +1282,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.retreat.hilight,
       },
       callback = function()
-        self:move_to(tile)
-        self:_update_state('retreating')
+        self:perform_action('retreat', tile)
       end
     })
   end
@@ -1274,8 +1299,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.patrol.hilight,
       },
       callback = function()
-        self:move_to(tile)
-        self:_update_state('patroling')
+        self:perform_action('patrol', tile)
       end
     })
   end
@@ -1292,8 +1316,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.raid.hilight,
       },
       callback = function()
-        self:move_to(tile)
-        self:_update_state('raiding')
+        self:perform_action('raid', tile)
       end
     })
   end
@@ -1327,7 +1350,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:_attack_on({tile, "battle"})
+        self:perform_action('attack', {tile, "battle"})
       end
     })
   end
@@ -1349,7 +1372,7 @@ function Unit:get_actions(tile)
     })
   end
 
-  if (self:is_action_possible('refuel')) then
+  if (self:is_action_possible('refuel', tile)) then
     table.insert(list, {
       priority = 37,
       policy = "click",
@@ -1360,7 +1383,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.refuel.hilight,
       },
       callback = function()
-        self:_update_state('refuelling')
+        self:perform_action('refuel')
       end
     })
   end
@@ -1373,6 +1396,7 @@ function Unit:is_action_possible(action, context)
   local result
   local allowed = transition_scheme:is_action_allowed(action, self)
 
+  -- print(string.format("action '%s' allowed = %s", action, allowed))
 
   local action_with_move = function(ignore_others)
     local tile = context
@@ -1457,7 +1481,7 @@ function Unit:is_action_possible(action, context)
   return result
 end
 
-function Unit:change_orientation()
+function Unit:_change_orientation()
   local o = (self.data.orientation == 'left') and 'right' or 'left'
   self.data.orientation = o
   self.engine.reactor:publish("map.update")

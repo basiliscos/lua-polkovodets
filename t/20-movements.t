@@ -134,7 +134,6 @@ subtest("transport problem", function()
   local problems4 = u4:report_problems()
   is(#problems4, 1, "unit with transport in unit definition and w/o transport has problems")
   is(problems4[1].class, "missing_weapon", "... but that is missing weapon problem")
-
 end)
 
 

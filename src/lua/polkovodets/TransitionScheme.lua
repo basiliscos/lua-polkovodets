@@ -56,7 +56,7 @@ function TransitionScheme:_is_allowed(action, list, unit)
         end
         -- print("cost = " .. cost)
         if (cost == 'A') then
-          result = (min_movement > 1)
+          result = (min_movement >= 1)
         else
           result = (cost <= min_movement)
         end
