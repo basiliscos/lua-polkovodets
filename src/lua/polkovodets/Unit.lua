@@ -492,6 +492,9 @@ function Unit:perform_action(action, context)
   local dispatch = {
     move   = '_move_to',
     attach = '_merge_at',
+    land   = '_land_to',
+    attack = '_attack_on',
+    build  = '_build_at',
   }
   local method_name = dispatch[action]
   assert(method_name, "cannot perform action " .. action .. " as there is no dispatcher")
@@ -500,10 +503,10 @@ function Unit:perform_action(action, context)
 
   -- subtract additiditional movement points
   local costs = self.engine.gear:get("transition_scheme"):is_action_allowed(action, self)
-    print(inspect(costs))
+  -- print(inspect(costs))
   assert(costs, "no costs for action " .. action)
   for _, wi in pairs(self:_marched_weapons()) do
-    print(inspect(wi.data.movement))
+    -- print(inspect(wi.data.movement))
     wi.data.movement = wi.data.movement -
       ((costs == 'A')
         and wi.data.movement
@@ -637,7 +640,7 @@ function Unit:_merge_at(dst_tile)
    core_unit:update_actions_map()
 end
 
-function Unit:land_to(tile)
+function Unit:_land_to(tile)
    self:_move_to(tile)
    self:_update_state('landed')
    self:_update_layer()
@@ -645,7 +648,8 @@ function Unit:land_to(tile)
    self:update_actions_map()
 end
 
-function Unit:attack_on(tile, fire_type)
+function Unit:_attack_on(context)
+  local tile, fire_type = table.unpack(context)
   self:_check_death()
   local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
   local battle_scheme = self.engine.gear:get("battle_scheme")
@@ -682,24 +686,18 @@ function Unit:attack_on(tile, fire_type)
   end
 end
 
-function Unit:special_action(tile, action)
+function Unit:_build_at(tile)
   assert(self.data.actions_map.special[tile.id])
-  assert(self.data.actions_map.special[tile.id][action])
+  assert(self.data.actions_map.special[tile.id].build)
 
-  if (action == 'build') then
-    local builde_weapon_instances = self.data.actions_map.special[tile.id][action]
-    local efforts = 0
-    for _, wi in pairs(builde_weapon_instances) do
-      local capability, power = wi:is_capable("BUILD_CAPABILITIES")
-      efforts = efforts + power * wi:quantity()
-      wi.data.can_attack = false
-    end
-    tile:build(efforts)
-  else
-    assert("unknown action: " .. action)
+  local builde_weapon_instances = self.data.actions_map.special[tile.id].build
+  local efforts = 0
+  for _, wi in pairs(builde_weapon_instances) do
+    local capability, power = wi:is_capable("BUILD_CAPABILITIES")
+    efforts = efforts + power * wi:quantity()
+    wi.data.can_attack = false
   end
-  self:update_spotting_map()
-  self:update_actions_map()
+  tile:build(efforts)
 end
 
 
@@ -1329,13 +1327,13 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:attack_on(tile, "battle")
+        self:_attack_on({tile, "battle"})
       end
     })
   end
 
   -- unit special action: construction
-  if (self:is_action_possible('construct', {tile, 'build'})) then
+  if (self:is_action_possible('build', {tile, 'build'})) then
     table.insert(list, {
       priority = 35,
       policy = "click",
@@ -1424,7 +1422,7 @@ function Unit:is_action_possible(action, context)
             and self.tile
     elseif (action == 'detach') then
       result = (not self.tile) and (self.data.attached_to.tile == context)
-    elseif (action == 'construct') then
+    elseif (action == 'build') then
       local tile = context[1]
       local kind = context[2]
       local special_actions = self.data.actions_map.special[tile.id]

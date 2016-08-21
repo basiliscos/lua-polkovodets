@@ -31,7 +31,7 @@ subtest("reconstruct town from destroyed town", function()
 
   is(burned_city.data.terrain_type.id, 'T', "burned city remains, not enought efforts has been spent")
   engineers:update_actions_map()
-  engineers:special_action(burned_city, 'build')
+  engineers:perform_action('build', burned_city)
 
   is_deeply(engineers.data.actions_map.special, {},
     "no more actions in this turn")
@@ -39,7 +39,7 @@ subtest("reconstruct town from destroyed town", function()
   engine:end_turn()
   engine:end_turn()
   engineers:update_actions_map()
-  engineers:special_action(burned_city, 'build')
+  engineers:perform_action('build', burned_city)
 
   is(burned_city.data.terrain_type.id, 't', "city is finally after rebuild")
 

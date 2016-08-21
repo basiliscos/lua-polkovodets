@@ -295,7 +295,7 @@ function SampleData.generate_battle_scheme(gear)
     { action = 'circular_defend',    from = 'defend',             cost = 0   },
     { action = 'circular_defend',    from = '*',                  cost = 'A' },
     { action = 'attack',             from = '*',                  cost = 'A' },
-    { action = 'construct',          from = '*',                  cost = 'A' },
+    { action = 'build',              from = '*',                  cost = 'A' },
   })
 end
 
