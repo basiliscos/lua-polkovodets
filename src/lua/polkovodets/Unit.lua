@@ -508,6 +508,7 @@ function Unit:perform_action(action, context)
     patrol             = '_patrol',
     raid               = '_raid',
     refuel             = '_refuel',
+    bridge             = '_bridge',
     change_orientation = '_change_orientation'
   }
   local method_name = dispatch[action]
@@ -517,8 +518,7 @@ function Unit:perform_action(action, context)
 
   -- subtract additiditional movement points
   local costs = self.engine.gear:get("transition_scheme"):is_action_allowed(action, self)
-  -- print(inspect(costs))
-  assert(costs, "no costs for action " .. action)
+  assert(costs, "no costs for action " .. action .. " for unit " .. self.id)
   for _, wi in pairs(self:_marched_weapons()) do
     -- print(inspect(wi.data.movement))
     wi.data.movement = wi.data.movement -
@@ -543,12 +543,22 @@ function Unit:_retreat(dst_tile)
 end
 
 function Unit:_patrol(dst_tile)
-  self:move_to(dst_tile)
+  self:_move_to(dst_tile)
   self:_update_state('patroling')
 end
 
+function Unit:_bridge(dst_tile)
+  -- we cannot use _move_to as it checks movement costs, here we ignore it
+  dst_tile:set_unit(self, self.data.layer)
+  local src_tile = self.tile
+  self.tile = dst_tile
+  self:_update_layer()
+  self:_update_orientation(dst_tile, src_tile)
+  self:_update_state('bridging')
+end
+
 function Unit:_raid(dst_tile)
-  self:move_to(dst_tile)
+  self:_move_to(dst_tile)
   self:_update_state('raiding')
 end
 
@@ -1449,6 +1459,12 @@ function Unit:is_action_possible(action, context)
       result = self.definition.state_icons.patrol and action_with_move()
     elseif (action == 'raid') then
       result = self.definition.state_icons.raid and action_with_move()
+    elseif (action == 'bridge') then
+      -- allow do bridge on adjascent tile only, if unit is capable to do that
+      -- and context is appropriate type (river or rivelet)
+      result = self.definition.state_icons.bridging
+          and ((context.data.terrain_id == 'G') or (context.data.terrain_id == 'R'))
+          and (self.tile:distance_to(context) == 1)
     elseif (action == 'attach') then
       result = self.data.actions_map.merge[context.id]
             and action_with_move(true)

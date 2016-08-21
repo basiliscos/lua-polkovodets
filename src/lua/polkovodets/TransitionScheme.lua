@@ -60,7 +60,7 @@ function TransitionScheme:_is_allowed(action, list, unit)
         else
           result = (cost <= min_movement)
         end
-        -- print(string.format("%s costs: %s, min_movement: %d, result: %s", action, cost, min_movement, result))
+        -- print(string.format("%s costs: %s, min_movement: %d, result: %s for unit %s", action, cost, min_movement, result, unit.id))
       end
       return (result and cost)
     end

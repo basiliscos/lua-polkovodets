@@ -265,6 +265,80 @@ function SampleData.generate_terrain(gear)
         snowing = "terrain/town-destroyed_snow.bmp",
       }
     },
+    {
+      id         = "R",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "rivelet",
+      flags      = { },
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        tracked = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        leg     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+      },
+      image = {
+        fair    = "terrain/river.bmp",
+        snowing = "terrain/river_snow.bmp",
+      }
+    },
+    {
+      id         = "G",
+      min_entr   = 0,
+      max_entr   = 99,
+      name       = "broad-river",
+      flags      = { },
+      spot_cost  = {
+        fair    = 2,
+        snowing = 2,
+      },
+      move_cost  = {
+        wheeled = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        tracked = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        leg     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        towed     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+        air     = {
+          fair    = 'A',
+          snowing = 'A',
+        },
+      },
+      image = {
+        fair    = "terrain/river.bmp",
+        snowing = "terrain/river_snow.bmp",
+      }
+    },
   }
 
   gear:set("data/terrain", {
@@ -296,6 +370,7 @@ function SampleData.generate_battle_scheme(gear)
     { action = 'circular_defend',    from = '*',                  cost = 'A' },
     { action = 'attack',             from = '*',                  cost = 'A' },
     { action = 'build',              from = '*',                  cost = 'A' },
+    { action = 'bridge',             from = '*',                  cost = 'A' },
   })
 end
 
@@ -320,6 +395,8 @@ function SampleData.generate_map(gear)
     -- town
     ["8_9"] = { "t", 0 }, ["9_10"] = { "T", 2 },
 
+    -- small & large river
+    ["6_11"] = {'R', 5 }, ["6_12"] = {'R', 5 }, ["6_13"] = {'G', 5 }, ["6_14"] = {'G', 5 }
   }
 
   local hex_names = {
@@ -734,6 +811,30 @@ function SampleData.generate_scenario(gear)
       }
     },
     {
+      id = "rus_ud_8",
+      name = "Russian Engeniers Batalion",
+      size = "S",
+      flags = {},
+      nation = "rus",
+      ammo = 5,
+      unit_class = "inf",
+      spotting = 2,
+      staff = {
+        wt_infant = 20,
+      },
+      icons = {
+        marching           = "units/rus/rus_inf_M1.png",
+        defending          = "units/rus/rus_inf_D1.png",
+        circular_defending = "units/rus/rus_inf_DC.png",
+        attacking          = "units/rus/rus_inf_A1.png",
+        retreating         = "units/rus/rus_inf_MR.png",
+        escaping           = "units/rus/rus_inf_ME.png",
+        captured           = "units/rus/rus_inf_C.png",
+        refuelling         = "units/rus/rus_inf_REF.png",
+        bridging           = "units/rus/rus_inf_BR.png",
+      }
+    },
+    {
       id = "ger_ud_1",
       name = "German Unit Definition (batalion)",
       size = "S",
@@ -973,6 +1074,19 @@ function SampleData.generate_scenario(gear)
       state = "defending",
       unit_definition_id = "rus_ud_7",
       x = 5, y = 10,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_weapon_1 = "20",
+      },
+    },
+    {
+      id = "rus_unit_14",
+      name = "Russian engeneers batallion /1",
+      state = "defending",
+      unit_definition_id = "rus_ud_8",
+      x = 5, y = 13,
       exp = 0,
       entr = 0,
       orientation = "right",
