@@ -490,13 +490,26 @@ end
 
 function Unit:perform_action(action, context)
   local dispatch = {
-    move  = '_move_to',
-    merge = '_merge_at',
+    move   = '_move_to',
+    attach = '_merge_at',
   }
   local method_name = dispatch[action]
-  assert(method_name)
+  assert(method_name, "cannot perform action " .. action .. " as there is no dispatcher")
   local method = Unit[method_name]
   method(self, context)
+
+  -- subtract additiditional movement points
+  local costs = self.engine.gear:get("transition_scheme"):is_action_allowed(action, self)
+    print(inspect(costs))
+  assert(costs, "no costs for action " .. action)
+  for _, wi in pairs(self:_marched_weapons()) do
+    print(inspect(wi.data.movement))
+    wi.data.movement = wi.data.movement -
+      ((costs == 'A')
+        and wi.data.movement
+         or costs
+       )
+  end
 
   -- post update
   self:update_spotting_map()

@@ -49,7 +49,7 @@ function TransitionScheme:_is_allowed(action, list, unit)
       if (cost == 0) then
         result = true
       else
-        local united_staff = unit:_united_staff()
+        local united_staff = unit:_marched_weapons()
         local min_movement = united_staff[1].data.movement
         for _, wi in pairs(united_staff) do
           min_movement = math.min(wi.data.movement, min_movement)

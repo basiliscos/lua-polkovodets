@@ -711,6 +711,29 @@ function SampleData.generate_scenario(gear)
       },
     },
     {
+      id = "rus_ud_7",
+      name = "Russian Unit Definition (batalion)",
+      size = "S",
+      flags = {},
+      nation = "rus",
+      ammo = 5,
+      unit_class = "inf",
+      spotting = 2,
+      staff = {
+        wt_infant = 20,
+      },
+      icons = {
+        marching           = "units/rus/rus_inf_M1.png",
+        defending          = "units/rus/rus_inf_D1.png",
+        circular_defending = "units/rus/rus_inf_DC.png",
+        attacking          = "units/rus/rus_inf_A1.png",
+        retreating         = "units/rus/rus_inf_MR.png",
+        escaping           = "units/rus/rus_inf_ME.png",
+        captured           = "units/rus/rus_inf_C.png",
+        refuelling         = "units/rus/rus_inf_REF.png",
+      }
+    },
+    {
       id = "ger_ud_1",
       name = "German Unit Definition (batalion)",
       size = "S",
@@ -916,6 +939,45 @@ function SampleData.generate_scenario(gear)
       orientation = "right",
       staff = {
         rus_tank_1 = "100",
+      },
+    },
+    {
+      id = "rus_unit_11",
+      name = "Russian infantry batallion Unit /1",
+      state = "defending",
+      unit_definition_id = "rus_ud_7",
+      x = 4, y = 9,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_weapon_1 = "20",
+      },
+    },
+    {
+      id = "rus_unit_12",
+      name = "Russian infantry batallion Unit /2",
+      state = "defending",
+      unit_definition_id = "rus_ud_7",
+      x = 4, y = 10,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_weapon_1 = "20",
+      },
+    },
+    {
+      id = "rus_unit_13",
+      name = "Russian infantry batallion Unit /3",
+      state = "defending",
+      unit_definition_id = "rus_ud_7",
+      x = 5, y = 10,
+      exp = 0,
+      entr = 0,
+      orientation = "right",
+      staff = {
+        rus_weapon_1 = "20",
       },
     },
     {
