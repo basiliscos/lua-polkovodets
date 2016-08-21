@@ -488,6 +488,15 @@ function Unit:_detach()
   end
 end
 
+function Unit:_post_action_trigger(action, context)
+  -- auto-land air-unit above airport to the airport
+  if ((self.definition.unit_type.id == 'ut_air')
+    and (self.tile.data.terrain_id == 'a')
+    and (action == 'move')) then
+      self:perform_action('refuel')
+  end
+end
+
 function Unit:perform_action(action, context)
   local dispatch = {
     move               = '_move_to',
@@ -519,9 +528,13 @@ function Unit:perform_action(action, context)
        )
   end
 
+  self:_post_action_trigger(action, context)
+
   -- post update
-  self:update_spotting_map()
-  self:update_actions_map()
+  if (self.data.state ~= 'dead') then
+    self:update_spotting_map()
+    self:update_actions_map()
+  end
 end
 
 function Unit:_retreat(dst_tile)
@@ -706,10 +719,6 @@ function Unit:_attack_on(context)
 
   self:_check_death()
   enemy_unit:_check_death()
-  if (self.data.state ~= 'dead') then
-    self:update_spotting_map()
-    self:update_actions_map()
-  end
 end
 
 function Unit:_build_at(tile)
