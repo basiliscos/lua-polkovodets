@@ -34,7 +34,7 @@ function TransitionScheme:initialize(transition_rules)
     table.insert(self.action_rules, {
       action = rule.action,
       from   = rule.from,
-      cost   = rule.cost,
+      cost   = ((type(rule.cost) == 'string') and rule.cost == 'A') and 'A' or tonumber(rule.cost),
     })
   end
 end
@@ -54,8 +54,7 @@ function TransitionScheme:_is_allowed(action, list, unit)
         for _, wi in pairs(united_staff) do
           min_movement = math.min(wi.data.movement, min_movement)
         end
-        -- print("cost = " .. cost)
-        if (cost == 'A') then
+        if ((type(cost) == 'string') and (cost == 'A')) then
           result = (min_movement >= 1)
         else
           result = (cost <= min_movement)

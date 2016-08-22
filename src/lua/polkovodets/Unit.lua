@@ -551,6 +551,7 @@ function Unit:_bridge(dst_tile)
   -- we cannot use _move_to as it checks movement costs, here we ignore it
   dst_tile:set_unit(self, self.data.layer)
   local src_tile = self.tile
+  src_tile:set_unit(nil, self.data.layer)
   self.tile = dst_tile
   self:_update_layer()
   self:_update_orientation(dst_tile, src_tile)
