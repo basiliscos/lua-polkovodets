@@ -350,7 +350,7 @@ end
 
 function SampleData.generate_battle_scheme(gear)
   gear:set("data/battle_blocks", {
-    { block_id = "1", fire_type = "battle", condition = '(I.state == "attacking") && (P.state == "defending")'},
+    { block_id = "1", command = "battle", condition = '(I.state == "attacking") && (P.state == "defending")'},
     { block_id = "1.1", active_weapon = 'I.category("wc_infant")', passive_weapon = 'P.target("any")', action = "battle" },
   })
 
