@@ -88,9 +88,7 @@ subtest("attack posibilities", function()
     ok(art)
     art:update_actions_map()
     ok(art:is_action_possible('attack-artillery', {map.tiles[5][3], 'surface', 'fire/artillery'}), "possible to attack-artillery enemy infantry")
-
 end)
-
 
 
 subtest("get-possible actions method works", function()
