@@ -76,11 +76,30 @@ subtest("actions for air unit", function()
   is(fighter:is_action_possible('move', map.tiles[8][8]), true, "can move to tile [8:8]")
 end)
 
+subtest("attack posibilities", function()
+    local engine = PT.get_fresh_data()
+    local map = engine.gear:get("map")
+    local inf = map.tiles[4][3]:get_unit('surface')
+    inf:update_actions_map()
+    ok(inf:is_action_possible('attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to attack enemy infantry")
+    ok(inf:is_action_possible('counter-attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to counter-1attack enemy infantry")
+
+    local art = map.tiles[4][4]:get_unit('surface')
+    ok(art)
+    art:update_actions_map()
+    ok(art:is_action_possible('attack-artillery', {map.tiles[5][3], 'surface', 'fire/artillery'}), "possible to attack-artillery enemy infantry")
+
+end)
+
+
+
 subtest("get-possible actions method works", function()
   local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
   local inf = map.tiles[3][3]:get_unit('surface')
   ok(inf.tile:get_possible_actions(), "got action list")
 end)
+
+
 
 done_testing()

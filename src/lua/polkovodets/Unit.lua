@@ -499,17 +499,19 @@ end
 
 function Unit:perform_action(action, context)
   local dispatch = {
-    move               = '_move_to',
-    attach             = '_merge_at',
-    land               = '_land_to',
-    attack             = '_attack_on',
-    build              = '_build_at',
-    retreat            = '_retreat',
-    patrol             = '_patrol',
-    raid               = '_raid',
-    refuel             = '_refuel',
-    bridge             = '_bridge',
-    change_orientation = '_change_orientation'
+    move                 = '_move_to',
+    attach               = '_merge_at',
+    land                 = '_land_to',
+    build                = '_build_at',
+    retreat              = '_retreat',
+    patrol               = '_patrol',
+    raid                 = '_raid',
+    refuel               = '_refuel',
+    bridge               = '_bridge',
+    change_orientation   = '_change_orientation',
+    attack               = '_attack_on',
+    ['counter-attack']   = '_counter_attack_on',
+    ['attack-artillery'] = '_attack_artillery_on',
   }
   local method_name = dispatch[action]
   assert(method_name, "cannot perform action " .. action .. " as there is no dispatcher")
@@ -697,16 +699,14 @@ function Unit:_land_to(tile)
    self:update_actions_map()
 end
 
-function Unit:_attack_on(context)
-  local tile, fire_type = table.unpack(context)
-  self:_update_state('attacking')
-
+function Unit:_battle(context)
+  local tile, action = table.unpack(context)
   local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
   local battle_scheme = self.engine.gear:get("battle_scheme")
   assert(enemy_unit)
   self:_update_orientation(enemy_unit.tile, self.tile)
   local i_casualities, p_casualities, i_participants, p_participants
-    = battle_scheme:perform_battle(self, enemy_unit, fire_type)
+    = battle_scheme:perform_battle(self, enemy_unit, action)
 
   local unit_serializer = function(key, unit)
     return {
@@ -716,10 +716,10 @@ function Unit:_attack_on(context)
   end
 
   local ctx = {
-    i_units   = _.map(self:all_units(), unit_serializer),
-    p_units   = _.map(enemy_unit:all_units(), unit_serializer),
-    fire_type = fire_type,
-    tile      = tile.id,
+    i_units = _.map(self:all_units(), unit_serializer),
+    p_units = _.map(enemy_unit:all_units(), unit_serializer),
+    action  = action,
+    tile    = tile.id,
   }
   local results = {
     i = { casualities = i_casualities, participants = i_participants },
@@ -731,6 +731,20 @@ function Unit:_attack_on(context)
   self:_check_death()
   enemy_unit:_check_death()
 end
+
+function Unit:_attack_on(context)
+    self:_update_state('attacking')
+    self:_battle(context)
+end
+
+function Unit:_attack_artillery_on(context)
+    self:_battle(context)
+end
+
+function Unit:_counter_attack_on(context)
+    self:_battle(context)
+end
+
 
 function Unit:_build_at(tile)
   assert(self.data.actions_map.special[tile.id])
@@ -1375,6 +1389,40 @@ function Unit:get_actions(tile)
     })
   end
 
+  -- unit action: artillery fire
+  if (self:is_action_possible('attack-artillery', {tile, 'surface', 'fire/artillery'})) then
+    table.insert(list, {
+      priority = 41,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_attack-artillery'),
+      state = "available",
+      images = {
+        available = theme.actions.battle.available,
+        hilight   = theme.actions.battle.hilight,
+      },
+      callback = function()
+        self:perform_action('attack-artillery', {tile, "fire/artillery"})
+      end
+    })
+  end
+
+  -- unit action: counter attack
+  if (self:is_action_possible('counter-attack', {tile, 'surface', 'battle'})) then
+    table.insert(list, {
+      priority = 42,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_counter-attack'),
+      state = "available",
+      images = {
+        available = theme.actions.battle.available,
+        hilight   = theme.actions.battle.hilight,
+      },
+      callback = function()
+        self:perform_action('counter-attack', {tile, "battle"})
+      end
+    })
+  end
+
   -- unit special action: construction
   if (self:is_action_possible('build', {tile, 'build'})) then
     table.insert(list, {
@@ -1516,7 +1564,21 @@ function Unit:is_action_possible(action, context)
       result = self.data.actions_map.attack[tile_id]
         and self.data.actions_map.attack[tile_id][layer]
         and self.data.actions_map.attack[tile_id][layer][kind]
-
+    elseif (action == 'counter-attack') then
+      local tile_id = context[1].id
+      local layer   = context[2]
+      local kind    = context[3]
+      result = self.data.actions_map.attack[tile_id]
+        and self.data.actions_map.attack[tile_id][layer]
+        and self.data.actions_map.attack[tile_id][layer][kind]
+        and (self.tile:distance_to(context[1]) == 1)
+    elseif (action == 'attack-artillery') then
+      local tile_id = context[1].id
+      local layer   = context[2]
+      local kind    = context[3]
+      result = self.data.actions_map.attack[tile_id]
+        and self.data.actions_map.attack[tile_id][layer]
+        and self.data.actions_map.attack[tile_id][layer][kind]
     else
       result = false
     end

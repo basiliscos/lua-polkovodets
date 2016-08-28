@@ -273,8 +273,9 @@ function Validator.declare(gear)
 
         -- actions check
         local actions = {'information', 'change_orientation', 'attach', 'detach', 'move',
-          'retreat', 'patrol', 'raid', 'refuel', 'defend', 'circular_defend', 'attack',
-          'build', 'bridge'
+          'retreat', 'patrol', 'raid', 'refuel', 'defend', 'circular_defend',
+          'build', 'bridge',
+          'counter-attack', 'attack', 'attack-artillery',
         }
         for _, action in pairs(actions) do
           assert(action_for[action], string.format("transition for action '%s' not found", action))
