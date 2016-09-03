@@ -1397,8 +1397,8 @@ function Unit:get_actions(tile)
       hint = engine:translate('ui.radial-menu.hex.unit_attack-artillery'),
       state = "available",
       images = {
-        available = theme.actions.battle.available,
-        hilight   = theme.actions.battle.hilight,
+        available = theme.actions.attack_artillery.available,
+        hilight   = theme.actions.attack_artillery.hilight,
       },
       callback = function()
         self:perform_action('attack-artillery', {tile, "fire/artillery"})
@@ -1414,8 +1414,8 @@ function Unit:get_actions(tile)
       hint = engine:translate('ui.radial-menu.hex.unit_counter-attack'),
       state = "available",
       images = {
-        available = theme.actions.battle.available,
-        hilight   = theme.actions.battle.hilight,
+        available = theme.actions.counter_attack.available,
+        hilight   = theme.actions.counter_attack.hilight,
       },
       callback = function()
         self:perform_action('counter-attack', {tile, "battle"})
