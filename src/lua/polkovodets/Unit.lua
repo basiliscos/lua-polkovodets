@@ -546,7 +546,7 @@ end
 
 function Unit:_patrol(dst_tile)
   self:_move_to(dst_tile)
-  self:_update_state('patroling')
+  self:_update_state('patrolling')
 end
 
 function Unit:_bridge(dst_tile)
@@ -1516,6 +1516,7 @@ function Unit:is_action_possible(action, context)
   if (allowed) then
     local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
     local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
+    local state   = self.data.state
 
     if (action == 'change_orientation') then
       -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
@@ -1575,6 +1576,7 @@ function Unit:is_action_possible(action, context)
         and self.data.actions_map.attack[tile_id][layer]
         and self.data.actions_map.attack[tile_id][layer][kind]
         and (self.tile:distance_to(context[1]) == 1)
+        and not ((state == 'raiding') or (state == 'patrolling'))
     elseif (action == 'attack-artillery') then
       local tile_id = context[1].id
       local layer   = context[2]
@@ -1582,6 +1584,7 @@ function Unit:is_action_possible(action, context)
       result = self.data.actions_map.attack[tile_id]
         and self.data.actions_map.attack[tile_id][layer]
         and self.data.actions_map.attack[tile_id][layer][kind]
+        and not ((state == 'raiding') or (state == 'patrolling'))
     else
       result = false
     end

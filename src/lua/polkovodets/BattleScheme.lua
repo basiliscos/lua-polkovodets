@@ -589,9 +589,12 @@ function BattleScheme:_find_block(initiator_unit, passive_unit, command)
 end
 
 function BattleScheme:perform_battle(initiator_unit, passive_unit, command)
-  local block = self:_find_block(initiator_unit, passive_unit, command)
-  assert(block, string.format("no suitable battle scheme rule for command '%s'", command))
-  return block:perform_battle(initiator_unit, passive_unit, command)
+    local block = self:_find_block(initiator_unit, passive_unit, command)
+    if (not block) then
+        error(string.format("no suitable battle scheme rule for command '%s', istate: %s, pstate: %s",
+                            command, initiator_unit.data.state, passive_unit.data.state))
+    end
+    return block:perform_battle(initiator_unit, passive_unit, command)
 end
 
 return BattleScheme
