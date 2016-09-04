@@ -260,9 +260,36 @@ function Validator.declare(gear)
     end,
   })
 
+  gear:declare("validators/transition_scheme", {
+    dependencies = {"data/transition_rules", "units/definitions::map"},
+    constructor  = function() return { name = "transition_scheme"} end,
+    initializer  = function(gear, instance, rules, definition_for)
+      instance.fn = function()
+        local action_for = {}
+
+        for _,rule in pairs(rules) do
+          action_for[rule.action] = true
+        end
+
+        -- actions check
+        local actions = {'information', 'change_orientation', 'attach', 'detach', 'move',
+          'retreat', 'patrol', 'raid', 'refuel', 'defend', 'circular_defend',
+          'build', 'bridge',
+          'counter-attack', 'attack', 'attack-artillery',
+        }
+        for _, action in pairs(actions) do
+          assert(action_for[action], string.format("transition for action '%s' not found", action))
+        end
+
+        print("transition rules are valid")
+      end
+    end,
+  })
+
+
   gear:declare("validator", {
     dependencies = { "validators/weapons/movement_types", "validators/units/classes", "validators/terrain/flags",
-      "validators/units/definitions",
+      "validators/units/definitions", "validators/transition_scheme"
     },
     constructor  = function() return { } end,
     initializer  = function(gear, instance, ...)

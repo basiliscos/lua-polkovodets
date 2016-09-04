@@ -488,7 +488,89 @@ function Unit:_detach()
   end
 end
 
-function Unit:move_to(dst_tile)
+function Unit:_post_action_trigger(action, context)
+  -- auto-land air-unit above airport to the airport
+  if ((self.definition.unit_type.id == 'ut_air')
+    and (self.tile.data.terrain_id == 'a')
+    and (action == 'move')) then
+      self:perform_action('refuel')
+  end
+end
+
+function Unit:perform_action(action, context)
+  local dispatch = {
+    move                 = '_move_to',
+    attach               = '_merge_at',
+    land                 = '_land_to',
+    build                = '_build_at',
+    retreat              = '_retreat',
+    patrol               = '_patrol',
+    raid                 = '_raid',
+    refuel               = '_refuel',
+    bridge               = '_bridge',
+    change_orientation   = '_change_orientation',
+    attack               = '_attack_on',
+    ['counter-attack']   = '_counter_attack_on',
+    ['attack-artillery'] = '_attack_artillery_on',
+  }
+  local method_name = dispatch[action]
+  assert(method_name, "cannot perform action " .. action .. " as there is no dispatcher")
+  local method = Unit[method_name]
+  method(self, context)
+
+  -- subtract additiditional movement points
+  local costs = self.engine.gear:get("transition_scheme"):is_action_allowed(action, self)
+  assert(costs, "no costs for action " .. action .. " for unit " .. self.id)
+  for _, wi in pairs(self:_marched_weapons()) do
+    -- print(inspect(wi.data.movement))
+    wi.data.movement = wi.data.movement -
+      ((costs == 'A')
+        and wi.data.movement
+         or costs
+       )
+  end
+
+  self:_post_action_trigger(action, context)
+
+  -- post update
+  if (self.data.state ~= 'dead') then
+    self:update_spotting_map()
+    self:update_actions_map()
+  end
+end
+
+function Unit:_retreat(dst_tile)
+  self:_move_to(dst_tile)
+  self:_update_state('retreating')
+end
+
+function Unit:_patrol(dst_tile)
+  self:_move_to(dst_tile)
+  self:_update_state('patroling')
+end
+
+function Unit:_bridge(dst_tile)
+  -- we cannot use _move_to as it checks movement costs, here we ignore it
+  dst_tile:set_unit(self, self.data.layer)
+  local src_tile = self.tile
+  src_tile:set_unit(nil, self.data.layer)
+  self.tile = dst_tile
+  self:_update_layer()
+  self:_update_orientation(dst_tile, src_tile)
+  self:_update_state('bridging')
+end
+
+function Unit:_raid(dst_tile)
+  self:_move_to(dst_tile)
+  self:_update_state('raiding')
+end
+
+function Unit:_refuel()
+  self:_update_state('refuelling')
+end
+
+
+function Unit:_move_to(dst_tile)
   -- print("moving " .. self.id .. " to " .. dst_tile.id)
   -- print("move map = " .. inspect(self.data.actions_map.move))
   local map = self.engine.gear:get("map")
@@ -572,14 +654,12 @@ function Unit:move_to(dst_tile)
   dst_tile:set_unit(self, self.data.layer)
   self.tile = dst_tile
   self:_update_orientation(dst_tile, src_tile)
-  self:update_spotting_map()
-  self:update_actions_map()
 end
 
-function Unit:merge_at(dst_tile)
+function Unit:_merge_at(dst_tile)
    local layer = self.data.layer
    local other_unit = assert(dst_tile:get_unit(layer))
-   self:move_to(dst_tile)
+   self:_move_to(dst_tile)
 
    local weight_for = {
       L = 100,
@@ -611,22 +691,22 @@ function Unit:merge_at(dst_tile)
    core_unit:update_actions_map()
 end
 
-function Unit:land_to(tile)
-   self:move_to(tile)
+function Unit:_land_to(tile)
+   self:_move_to(tile)
    self:_update_state('landed')
    self:_update_layer()
    self.data.allow_move = false
    self:update_actions_map()
 end
 
-function Unit:attack_on(tile, fire_type)
-  self:_check_death()
+function Unit:_battle(context)
+  local tile, action = table.unpack(context)
   local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
   local battle_scheme = self.engine.gear:get("battle_scheme")
   assert(enemy_unit)
   self:_update_orientation(enemy_unit.tile, self.tile)
   local i_casualities, p_casualities, i_participants, p_participants
-    = battle_scheme:perform_battle(self, enemy_unit, fire_type)
+    = battle_scheme:perform_battle(self, enemy_unit, action)
 
   local unit_serializer = function(key, unit)
     return {
@@ -636,10 +716,10 @@ function Unit:attack_on(tile, fire_type)
   end
 
   local ctx = {
-    i_units   = _.map(self:all_units(), unit_serializer),
-    p_units   = _.map(enemy_unit:all_units(), unit_serializer),
-    fire_type = fire_type,
-    tile      = tile.id,
+    i_units = _.map(self:all_units(), unit_serializer),
+    p_units = _.map(enemy_unit:all_units(), unit_serializer),
+    action  = action,
+    tile    = tile.id,
   }
   local results = {
     i = { casualities = i_casualities, participants = i_participants },
@@ -650,30 +730,34 @@ function Unit:attack_on(tile, fire_type)
 
   self:_check_death()
   enemy_unit:_check_death()
-  if (self.data.state ~= 'dead') then
-    self:update_spotting_map()
-    self:update_actions_map()
-  end
 end
 
-function Unit:special_action(tile, action)
-  assert(self.data.actions_map.special[tile.id])
-  assert(self.data.actions_map.special[tile.id][action])
+function Unit:_attack_on(context)
+    self:_update_state('attacking')
+    self:_battle(context)
+end
 
-  if (action == 'build') then
-    local builde_weapon_instances = self.data.actions_map.special[tile.id][action]
-    local efforts = 0
-    for _, wi in pairs(builde_weapon_instances) do
-      local capability, power = wi:is_capable("BUILD_CAPABILITIES")
-      efforts = efforts + power * wi:quantity()
-      wi.data.can_attack = false
-    end
-    tile:build(efforts)
-  else
-    assert("unknown action: " .. action)
+function Unit:_attack_artillery_on(context)
+    self:_battle(context)
+end
+
+function Unit:_counter_attack_on(context)
+    self:_battle(context)
+end
+
+
+function Unit:_build_at(tile)
+  assert(self.data.actions_map.special[tile.id])
+  assert(self.data.actions_map.special[tile.id].build)
+
+  local builde_weapon_instances = self.data.actions_map.special[tile.id].build
+  local efforts = 0
+  for _, wi in pairs(builde_weapon_instances) do
+    local capability, power = wi:is_capable("BUILD_CAPABILITIES")
+    efforts = efforts + power * wi:quantity()
+    wi.data.can_attack = false
   end
-  self:update_spotting_map()
-  self:update_actions_map()
+  tile:build(efforts)
 end
 
 
@@ -1112,28 +1196,28 @@ end
 function Unit:get_actions(tile)
   local list = {}
   local engine = self.engine
+  local state = engine.state
   local theme = engine.gear:get("theme")
 
   if (self.tile == tile) then
     -- unit info
-    table.insert(list, {
-      priority = 10,
-      policy = "click",
-      hint = engine:translate('ui.radial-menu.hex.unit_info', {name = self.name}),
-      state = "available",
-      images = {
-        available = theme.actions.information.available,
-        hilight   = theme.actions.information.hilight,
-      },
-      callback = function()
-        engine.interface:add_window('unit_info_window', self)
-      end
-    })
+    if (self:is_action_possible('information', self.tile)) then
+      table.insert(list, {
+        priority = 10,
+        policy = "click",
+        hint = engine:translate('ui.radial-menu.hex.unit_info', {name = self.name}),
+        state = "available",
+        images = {
+          available = theme.actions.information.available,
+          hilight   = theme.actions.information.hilight,
+        },
+        callback = function()
+          engine.interface:add_window('unit_info_window', self)
+        end
+      })
+    end
 
-
-    -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
-    local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
-    if (#orientable_weapons > 0) then
+    if (self:is_action_possible('change_orientation', self.tile)) then
       table.insert(list, {
         priority = 10,
         policy = "click",
@@ -1144,13 +1228,12 @@ function Unit:get_actions(tile)
           hilight   = theme.actions.change_orientation.hilight,
         },
         callback = function()
-          self:change_orientation()
+          self:perform_action('change_orientation')
         end
       })
     end
 
-    -- take (oriented) defence, if there is at least one orientable weapon
-    if ((#orientable_weapons > 0) and self.data.state ~= 'defending') then
+    if (self:is_action_possible('defend', self.tile)) then
       table.insert(list, {
         priority = 11,
         policy = "click",
@@ -1166,9 +1249,7 @@ function Unit:get_actions(tile)
       })
     end
 
-    -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
-    local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
-    if ((#non_orientable_weapons > 0) and self.data.state ~= 'circular_defending') then
+    if (self:is_action_possible('circular_defend', self.tile)) then
       table.insert(list, {
         priority = 12,
         policy = "click",
@@ -1184,34 +1265,30 @@ function Unit:get_actions(tile)
       })
     end
 
-    -- detach attached units
+    -- select attached units for further detach
     _.each(self.data.attached, function(idx, unit)
-      table.insert(list, {
-        priority = 20 + idx,
-        policy = "click",
-        hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
-        state = "available",
-        images = {
-          available = theme.actions.detach.available,
-          hilight   = theme.actions.detach.hilight,
-        },
-        callback = function()
-          unit:update_actions_map()
-          state:set_selected_unit(unit)
-        end
-      })
+      if (unit:is_action_possible('detach', self.tile)) then
+        table.insert(list, {
+          priority = 20 + idx,
+          policy = "click",
+          hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
+          state = "available",
+          images = {
+            available = theme.actions.detach.available,
+            hilight   = theme.actions.detach.hilight,
+          },
+          callback = function()
+            unit:update_actions_map()
+            state:set_selected_unit(unit)
+          end
+        })
+      end
     end)
 
   end
 
-  -- unit action: move to the tile. We cannot move unit here if there are other units on the same
-  -- layer, but something additional might be done, e.g. merge
-  local tile_units = tile:get_all_units(function() return true end)
-  local other_units = _.select(tile_units, function(idx, unit)
-    return unit.data.layer == self.data.layer
-  end)
-  local can_move_to_tile = self.data.actions_map.move[tile.id] and (#other_units == 0)
-  if (can_move_to_tile) then
+  -- move to tile
+  if (self:is_action_possible('move', tile)) then
     table.insert(list, {
       priority = 20,
       policy = "click",
@@ -1222,13 +1299,13 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.move.hilight,
       },
       callback = function()
-        self:move_to(tile)
+        self:perform_action('move', tile)
       end
     })
   end
 
-  -- march
-  if (can_move_to_tile and self.definition.state_icons.retreating) then
+  -- retreat to tile
+  if (self:is_action_possible('retreat', tile)) then
     table.insert(list, {
       priority = 20,
       policy = "click",
@@ -1239,14 +1316,13 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.retreat.hilight,
       },
       callback = function()
-        self:move_to(tile)
-        self:_update_state('retreating')
+        self:perform_action('retreat', tile)
       end
     })
   end
 
   -- unit action: patrol
-  if (can_move_to_tile and self.definition.state_icons.patrolling) then
+  if (self:is_action_possible('patrol', tile)) then
     table.insert(list, {
       priority = 21,
       policy = "click",
@@ -1257,14 +1333,13 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.patrol.hilight,
       },
       callback = function()
-        self:move_to(tile)
-        self:_update_state('patrolling')
+        self:perform_action('patrol', tile)
       end
     })
   end
 
   -- unit action: raid
-  if (can_move_to_tile and self.definition.state_icons.raid) then
+  if (self:is_action_possible('raid', tile)) then
     table.insert(list, {
       priority = 22,
       policy = "click",
@@ -1275,14 +1350,13 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.raid.hilight,
       },
       callback = function()
-        self:move_to(tile)
-        self:_update_state('raiding')
+        self:perform_action('raid', tile)
       end
     })
   end
 
-  -- unit action: merge
-  if (self.data.actions_map.merge[tile.id]) then
+  -- unit action: attach
+  if (self:is_action_possible('attach', tile)) then
     table.insert(list, {
       priority = 30,
       policy = "click",
@@ -1293,13 +1367,13 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.merge.hilight,
       },
       callback = function()
-        self:merge_at(tile)
+        self:perform_action('merge', tile)
       end
     })
   end
 
   -- unit action: battle
-  if (self.data.actions_map.attack[tile.id]) then
+  if (self:is_action_possible('attack', {tile, 'surface', 'battle'})) then
     table.insert(list, {
       priority = 40,
       policy = "click",
@@ -1310,14 +1384,47 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:attack_on(tile, "battle")
+        self:perform_action('attack', {tile, "battle"})
+      end
+    })
+  end
+
+  -- unit action: artillery fire
+  if (self:is_action_possible('attack-artillery', {tile, 'surface', 'fire/artillery'})) then
+    table.insert(list, {
+      priority = 41,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_attack-artillery'),
+      state = "available",
+      images = {
+        available = theme.actions.attack_artillery.available,
+        hilight   = theme.actions.attack_artillery.hilight,
+      },
+      callback = function()
+        self:perform_action('attack-artillery', {tile, "fire/artillery"})
+      end
+    })
+  end
+
+  -- unit action: counter attack
+  if (self:is_action_possible('counter-attack', {tile, 'surface', 'battle'})) then
+    table.insert(list, {
+      priority = 42,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_counter-attack'),
+      state = "available",
+      images = {
+        available = theme.actions.counter_attack.available,
+        hilight   = theme.actions.counter_attack.hilight,
+      },
+      callback = function()
+        self:perform_action('counter-attack', {tile, "battle"})
       end
     })
   end
 
   -- unit special action: construction
-  local special_actions = self.data.actions_map.special[tile.id]
-  if (special_actions and special_actions.build) then
+  if (self:is_action_possible('build', {tile, 'build'})) then
     table.insert(list, {
       priority = 35,
       policy = "click",
@@ -1333,12 +1440,7 @@ function Unit:get_actions(tile)
     })
   end
 
-  -- refuel action: for land units on the self tile, for  air units in aiprots,
-  -- for naval units in haven
-  local can_refuel
-    =  (self.definition.unit_type.id == 'ut_land' and self.tile == tile)
-    or (self.definition.unit_type.id == 'ut_air' and self.data.actions_map.landing[tile.id])
-  if (can_refuel and self.data.state ~= 'refuelling') then
+  if (self:is_action_possible('refuel', tile)) then
     table.insert(list, {
       priority = 37,
       policy = "click",
@@ -1349,15 +1451,142 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.refuel.hilight,
       },
       callback = function()
-        self:_update_state('refuelling')
+        self:perform_action('refuel')
       end
     })
   end
 
+  if (self:is_action_possible('bridge', tile)) then
+    table.insert(list, {
+      priority = 37,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_bridge', {x = tile.data.x, y = tile.data.y}),
+      state = "available",
+      images = {
+        available = theme.actions.bridge.available,
+        hilight   = theme.actions.bridge.hilight,
+      },
+      callback = function()
+        self:perform_action('bridge', tile)
+      end
+    })
+  end
+
+
   return list
 end
 
-function Unit:change_orientation()
+function Unit:is_action_possible(action, context)
+  local transition_scheme = self.engine.gear:get("transition_scheme")
+  local result
+  local allowed = transition_scheme:is_action_allowed(action, self)
+
+  -- print(string.format("action '%s' allowed = %s", action, allowed))
+
+  local action_with_move = function(ignore_others)
+    local tile = context
+    local cost = allowed
+    local tile_units = tile:get_all_units(function() return true end)
+    -- We cannot move unit here if there are other units on the same
+    -- layer, but something additional might be done, e.g. merge
+    local other_units = _.select(tile_units, function(idx, unit)
+      return unit.data.layer == self.data.layer
+    end)
+    local move_cost = self.data.actions_map.move[tile.id]
+    if (not move_cost) then return false end
+
+    local min_move_cost = move_cost:min() + ((cost == 'A') and 1 or cost)
+    local result = (ignore_others and 1 or (#other_units == 0))
+      and _.all(self:_marched_weapons(), function(_, wi)
+        -- print(string.format("%s movement %d (min: %d)", wi.id, wi.data.movement, min_move_cost))
+        return wi.data.movement >= min_move_cost
+      end)
+    -- print(string.format("can move = %s", result))
+    return result
+  end
+
+  local action_in_self_tile = function()
+    return context and (self.tile.id == context.id)
+  end
+
+
+  if (allowed) then
+    local orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("NON_ORIENTED_ONLY") end)
+    local non_orientable_weapons = _.select(self.staff, function(_, wi) return not wi.weapon:is_capable("ORIENTED_ONLY") end)
+
+    if (action == 'change_orientation') then
+      -- change orientation, it if there is a any weapon without NON_ORIENTED_ONLY flag
+      result = (#orientable_weapons > 0) and action_in_self_tile()
+    elseif (action == 'move') then
+      result = action_with_move()
+    elseif (action == 'retreat') then
+      result = self.definition.state_icons.retreating and action_with_move()
+    elseif (action == 'patrol') then
+      result = self.definition.state_icons.patrol and action_with_move()
+    elseif (action == 'raid') then
+      result = self.definition.state_icons.raid and action_with_move()
+    elseif (action == 'bridge') then
+      -- allow do bridge on adjascent tile only, if unit is capable to do that
+      -- and context is appropriate type (river or rivelet)
+      result = self.definition.state_icons.bridging
+          and ((context.data.terrain_id == 'G') or (context.data.terrain_id == 'R'))
+          and (self.tile:distance_to(context) == 1)
+    elseif (action == 'attach') then
+      result = self.data.actions_map.merge[context.id]
+            and action_with_move(true)
+            and self.tile
+    elseif (action == 'detach') then
+      result = (not self.tile) and (self.data.attached_to.tile == context)
+    elseif (action == 'build') then
+      local tile = context[1]
+      local kind = context[2]
+      local special_actions = self.data.actions_map.special[tile.id]
+      result = special_actions and special_actions[kind]
+    elseif (action == 'defend') then
+    -- take (oriented) defence, if there is at least one orientable weapon
+      result = (#orientable_weapons > 0) and (self.data.state ~= 'defending')
+            and (self.definition.unit_type.id == 'ut_land')
+            and action_in_self_tile()
+    elseif (action == 'circular_defend') then
+      -- circular defence can be taken, if we have at least one weapon, without ORIENTED_ONLY flag
+      result = (#non_orientable_weapons > 0) and (self.data.state ~= 'circular_defending')
+            and (self.definition.unit_type.id == 'ut_land')
+            and action_in_self_tile()
+    elseif (action == 'refuel') then
+      result = (self.data.state ~= 'refuelling') and (self.definition.unit_type.id == 'ut_land')
+            and action_in_self_tile()
+    elseif (action == 'information') then
+      result = action_in_self_tile()
+    elseif (action == 'attack') then
+      local tile_id = context[1].id
+      local layer   = context[2]
+      local kind    = context[3]
+      result = self.data.actions_map.attack[tile_id]
+        and self.data.actions_map.attack[tile_id][layer]
+        and self.data.actions_map.attack[tile_id][layer][kind]
+    elseif (action == 'counter-attack') then
+      local tile_id = context[1].id
+      local layer   = context[2]
+      local kind    = context[3]
+      result = self.data.actions_map.attack[tile_id]
+        and self.data.actions_map.attack[tile_id][layer]
+        and self.data.actions_map.attack[tile_id][layer][kind]
+        and (self.tile:distance_to(context[1]) == 1)
+    elseif (action == 'attack-artillery') then
+      local tile_id = context[1].id
+      local layer   = context[2]
+      local kind    = context[3]
+      result = self.data.actions_map.attack[tile_id]
+        and self.data.actions_map.attack[tile_id][layer]
+        and self.data.actions_map.attack[tile_id][layer][kind]
+    else
+      result = false
+    end
+  end
+  return result
+end
+
+function Unit:_change_orientation()
   local o = (self.data.orientation == 'left') and 'right' or 'left'
   self.data.orientation = o
   self.engine.reactor:publish("map.update")

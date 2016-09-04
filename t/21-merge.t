@@ -5,35 +5,11 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 local t = require 'Test.More'
 local _ = require ("moses")
 local inspect = require('inspect')
-local DummyRenderer = require 't.DummyRenderer'
-
-local Gear = require "gear"
-
-local Engine = require 'polkovodets.Engine'
-local SampleData = require 'polkovodets.SampleData'
-
-local get_fresh_data = function()
-  local gear = Gear.create()
-  gear:declare("renderer", { constructor = function() return DummyRenderer.create(640, 480) end})
-  local engine = Engine.create(gear, "en")
-
-  SampleData.generate_test_data(gear)
-  SampleData.generate_battle_scheme(gear)
-  SampleData.generate_map(gear)
-  SampleData.generate_scenario(gear)
-  SampleData.generate_terrain(gear)
-
-  gear:get("validator").fn()
-  local scenario = gear:get("scenario")
-  local map = gear:get("map")
-  engine:end_turn()
-
-  return engine
-end
+local PT = require('t.PolkovodetsTest')
 
 
 subtest("mergability", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local inf1_l  = map.tiles[3][3]:get_unit('surface')
@@ -61,8 +37,8 @@ subtest("mergability", function()
   ok(tank1_m.data.actions_map.merge[art1_s.tile.id], "medium unit mergeable with small")
 end)
 
-subtest("merge: l + m + s", function()
-  local engine = get_fresh_data()
+subtest("merge: l + m", function()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local inf1_l  = map.tiles[4][3]:get_unit('surface')
@@ -74,33 +50,44 @@ subtest("merge: l + m + s", function()
   art1_s:update_actions_map()
   tank1_m:update_actions_map()
 
-  tank1_m:merge_at(inf1_l.tile)
+  tank1_m:perform_action('attach', inf1_l.tile)
   is(map.tiles[4][3]:get_unit('surface'), inf1_l, "M-unit joins to L-unit")
   ok(not map.tiles[4][2]:get_unit('surface'), "M-unit disappears from map after merge")
   inf1_l:update_actions_map()
   ok(inf1_l.data.actions_map.move[map.tiles[4][2].id], "can move to initial tank position")
 
+  ok(not art1_s:is_action_possible('attach', inf1_l.tile, "no enought movement points for attach"))
+end)
 
-  art1_s:merge_at(inf1_l.tile)
-  is(map.tiles[4][3]:get_unit('surface'), inf1_l, "S-unit joins to L-unit")
-  ok(not map.tiles[4][4]:get_unit('surface'), "s-unit disappears from map after merge")
+
+subtest("merge: l + s", function()
+  local engine = PT.get_fresh_data()
+  local map = engine.gear:get("map")
+
+  local inf1_l  = map.tiles[5][9]:get_unit('surface')
+  local inf1_s  = map.tiles[4][9]:get_unit('surface')
+  local inf2_s  = map.tiles[4][10]:get_unit('surface')
+  local inf3_s  = map.tiles[5][9]:get_unit('surface')
+
+  for _, u in pairs({inf1_l, inf1_s, inf2_s, infe_s }) do
+    u:update_actions_map()
+  end
+
+  inf1_s:perform_action('attach', inf1_l.tile)
+  is(inf1_l.tile:get_unit('surface'), inf1_l, "S-unit joins to L-unit")
+  ok(not map.tiles[4][9]:get_unit('surface'), "s-unit disappears from map after merge")
+  is(#inf1_l.data.attached, 1, "valid number of attache units")
+
+  inf2_s:perform_action('attach', inf1_l.tile)
+  is(inf1_l.tile:get_unit('surface'), inf1_l, "S-unit joins to L-unit")
+  ok(not map.tiles[4][10]:get_unit('surface'), "s-unit disappears from map after merge")
   is(#inf1_l.data.attached, 2, "valid number of attache units")
 
-  inf1_l:update_actions_map()
-  ok(not inf1_l.data.actions_map.move[map.tiles[4][2].id], "cannot move (no more movements in the attached artillery)")
-
-  art2_s:update_actions_map()
-  art2_s:move_to(map.tiles[3][4])
-
-  engine:end_turn()
-  engine:end_turn()
-  art2_s:update_actions_map()
-  ok(not art2_s.data.actions_map.merge[inf1_l.tile.id], "small unit mergeable with large, because 2 units are already attached")
-
+  ok(not inf3_s:is_action_possible('attach', inf1_l.tile, "cannot merge, already 3 units are attached"))
 end)
 
 subtest("non-mergable: land and air units", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local tank1_m = map.tiles[4][2]:get_unit('surface')
@@ -108,7 +95,7 @@ subtest("non-mergable: land and air units", function()
 
   fighter:update_actions_map()
   ok(not fighter.data.actions_map.merge[tank1_m.tile.id], "s-fighter non-mergeable with m-tank" )
-  fighter:move_to(map.tiles[3][2])
+  fighter:perform_action('move', map.tiles[3][2])
   fighter:update_actions_map()
   tank1_m:update_actions_map()
 
@@ -117,7 +104,7 @@ subtest("non-mergable: land and air units", function()
 end)
 
 subtest("non-mergable: manager and manageable units", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local tank1_m = map.tiles[4][2]:get_unit('surface')
@@ -125,12 +112,11 @@ subtest("non-mergable: manager and manageable units", function()
   hq:update_actions_map()
 
   tank1_m:update_actions_map()
-  tank1_m:move_to(map.tiles[5][6])
+  tank1_m:perform_action('move', map.tiles[5][6])
   tank1_m:update_actions_map()
 
   ok(not hq.data.actions_map.merge[tank1_m.tile.id], "hq isn't mergeable with tank" )
   ok(not tank1_m.data.actions_map.merge[hq.tile.id], "the same for tank" )
 end)
-
 
 done_testing()

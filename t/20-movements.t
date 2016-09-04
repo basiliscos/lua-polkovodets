@@ -5,34 +5,10 @@ package.path = "?.lua;" .. "src/lua/?.lua;" .. package.path
 local t = require 'Test.More'
 local _ = require ("moses")
 local inspect = require('inspect')
-local DummyRenderer = require 't.DummyRenderer'
-
-local Gear = require "gear"
-
-local Engine = require 'polkovodets.Engine'
-local SampleData = require 'polkovodets.SampleData'
-
-local get_fresh_data = function()
-  local gear = Gear.create()
-  gear:declare("renderer", { constructor = function() return DummyRenderer.create(640, 480) end})
-  local engine = Engine.create(gear, "en")
-
-  SampleData.generate_test_data(gear)
-  SampleData.generate_battle_scheme(gear)
-  SampleData.generate_map(gear)
-  SampleData.generate_scenario(gear)
-  SampleData.generate_terrain(gear)
-
-  gear:get("validator").fn()
-  local scenario = gear:get("scenario")
-  local map = gear:get("map")
-  engine:end_turn()
-
-  return engine
-end
+local PT = require('t.PolkovodetsTest')
 
 subtest("movement/leg 1 weapon", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local inf = map.tiles[3][3]:get_unit('surface')
@@ -64,14 +40,14 @@ subtest("movement/leg 1 weapon", function()
   ok(inf.data.actions_map.move[map.tiles[3][5].id])
   ok(inf.data.actions_map.move[map.tiles[3][4].id])
 
-  inf:move_to(map.tiles[3][6])
+  inf:perform_action('move', map.tiles[3][6])
   is_deeply(inf:available_movement(), {
     ["u:rus_unit_1/w:rus_weapon_1"]  = 0,
   }, "no movement left")
 end)
 
 subtest("movement/leg motorized", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local inf = map.tiles[4][3]:get_unit('surface')
@@ -93,7 +69,7 @@ subtest("movement/leg motorized", function()
 end)
 
 subtest("movement/attacks first", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local art = map.tiles[4][4]:get_unit('surface')
@@ -104,7 +80,7 @@ subtest("movement/attacks first", function()
     { ["fire/artillery"] = { "u:rus_unit_3/w:rus_art_1" } },
     "can attack enemy unit before movement"
   )
-  art:move_to(map.tiles[5][5])
+  art:perform_action('move', map.tiles[5][5])
   is_deeply(art:available_movement(), {
     ["u:rus_unit_3/w:rus_art_1"]  = 0,
   }, "no movement left")
@@ -113,7 +89,7 @@ subtest("movement/attacks first", function()
 end)
 
 subtest("movement/air", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local fighter = map.tiles[7][7]:get_unit('air')
@@ -128,7 +104,7 @@ subtest("movement/air", function()
 end)
 
 subtest("transport problem", function()
-  local engine = get_fresh_data()
+  local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
 
   local u = map.tiles[5][9]:get_unit('surface')
@@ -158,9 +134,7 @@ subtest("transport problem", function()
   local problems4 = u4:report_problems()
   is(#problems4, 1, "unit with transport in unit definition and w/o transport has problems")
   is(problems4[1].class, "missing_weapon", "... but that is missing weapon problem")
-
 end)
-
 
 
 done_testing()

@@ -224,10 +224,26 @@ function DataLoader.load(gear, scenario_path)
       fire_type      = data.fire_type,      -- optional / non-defined for all blocks
       active_weapon  = data.active_weapon,  -- optional / non-defined for all blocks
       passive_weapon = data.active_weapon,  -- optional / non-defined for all blocks
-      action         = data.action,         -- optional / non-defined for all blocks
+      command        = data.command,         -- optional / non-defined for all blocks
     })
   end
   gear:set("data/battle_blocks", battle_scheme_blocks)
+
+  --[[ load transitions scheme ]]
+
+  local transitions_scheme_file = assert(armed_forces_parser:get_value('transition-scheme', armed_forces_file .. " don't have transition-scheme"))
+  local transitions_scheme_path = data_dirs.definitions .. '/' .. transitions_scheme_file
+  local transitions_scheme_parser = Parser.create(transitions_scheme_path)
+  local transitions_scheme_blocks = {}
+  for idx, data in pairs(transitions_scheme_parser:get_raw_data()) do
+    table.insert(transitions_scheme_blocks, {
+      action  = assert(data.action, transitions_scheme_path .. " should have 'action' for rule " .. idx),
+      from    = assert(data.from, transitions_scheme_path .. " should have 'from' for rule " .. idx),
+      cost    = assert(data.cost, transitions_scheme_path .. " should have 'cost' for rule " .. idx),
+    })
+  end
+  gear:set("data/transition_rules", transitions_scheme_blocks)
+
 
   --[[ load weapons / target types ]]
 

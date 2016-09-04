@@ -287,7 +287,7 @@ local _Block = {}
 _Block.__index = _Block
 
 
-function _Block.create(battle_scheme, id, fire_type, condition,
+function _Block.create(battle_scheme, id, command, condition,
                        active_weapon_selector, passive_weapon_selector, action)
    assert(id)
    assert(string.find(id, "%w+(%.?%w*)"))
@@ -301,7 +301,7 @@ function _Block.create(battle_scheme, id, fire_type, condition,
       id            = id,
       parent_id     = parent_id,
       battle_scheme = battle_scheme,
-      fire_type     = fire_type,
+      command       = command,
       condition     = condition,
       active        = active_weapon_selector,
       passive       = passive_weapon_selector,
@@ -317,21 +317,21 @@ end
 
 function _Block:validate()
    if (not self.parent_id) then
-      assert(self.fire_type)
+      assert(self.command)
       assert(self.condition)
       self.condition:validate()
    else
       local parent_block = self.battle_scheme:_lookup_block(self.parent_id)
       assert(parent_block)
-      assert(not self.fire_type)
+      assert(not self.command)
       if (self.condition) then self.condition:validate() end
    end
 end
 
-function _Block:matches(fire_type, i_unit, p_unit)
+function _Block:matches(command, i_unit, p_unit)
   assert(i_unit)
   assert(p_unit)
-  if (self.fire_type == fire_type) then
+  if (self.command == command) then
     return self.condition:matches(i_unit, p_unit)
   end
 end
@@ -361,7 +361,7 @@ function _Block:select_pair(ctx)
   end
 end
 
-function _Block:perform_battle(i_unit, p_unit, fire_type)
+function _Block:perform_battle(i_unit, p_unit, command)
   local range = i_unit.tile:distance_to(p_unit.tile)
   local i_weapon_instances = i_unit:_united_staff()
   local p_weapon_instances = p_unit:_united_staff()
@@ -502,7 +502,7 @@ function BattleScheme:initialize(battle_formula, battle_blocks)
 
   for idx, data in pairs(battle_blocks) do
     local id = assert(data.block_id)
-    local fire_type = data.fire_type
+    local command = data.command
     local action = data.action
     local condition_str = data.condition
     local active_weapon_selector = data.active_weapon
@@ -526,7 +526,7 @@ function BattleScheme:initialize(battle_formula, battle_blocks)
 
     local block = self:_create_block(
       id,
-      fire_type,
+      command,
       condition,
       active_weapon,
       passive_weapon,
@@ -547,10 +547,10 @@ function BattleScheme:_parse_selection(s)
    return selection
 end
 
-function BattleScheme:_create_block(id, fire_type, condition,
+function BattleScheme:_create_block(id, command, condition,
                                     active_weapon_selector, passive_weapon_selector, action)
    assert(not self.block_for[id], "block " .. id .. " alredy exists")
-   local b = _Block.create(self, id, fire_type, condition, active_weapon_selector, passive_weapon_selector, action)
+   local b = _Block.create(self, id, command, condition, active_weapon_selector, passive_weapon_selector, action)
    self.block_for[id] = b
    if (not b.parent_id) then
       table.insert(self.root_blocks, b)
@@ -565,19 +565,19 @@ function BattleScheme:_lookup_block(id)
    return self.block_for[id]
 end
 
-function BattleScheme:_find_block(initiator_unit, passive_unit, fire_type)
+function BattleScheme:_find_block(initiator_unit, passive_unit, command)
   for idx, block in pairs(self.root_blocks) do
     print("examining " .. block.id)
-    if (block:matches(fire_type, initiator_unit, passive_unit)) then
+    if (block:matches(command, initiator_unit, passive_unit)) then
       return block
     end
   end
 end
 
-function BattleScheme:perform_battle(initiator_unit, passive_unit, fire_type)
-  local block = self:_find_block(initiator_unit, passive_unit, fire_type)
+function BattleScheme:perform_battle(initiator_unit, passive_unit, command)
+  local block = self:_find_block(initiator_unit, passive_unit, command)
   assert(block)
-  return block:perform_battle(initiator_unit, passive_unit, fire_type)
+  return block:perform_battle(initiator_unit, passive_unit, command)
 end
 
 return BattleScheme

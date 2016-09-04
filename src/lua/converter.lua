@@ -1,6 +1,6 @@
 --[[
 
-Copyright (C) 2015 Ivan Baidakou
+Copyright (C) 2015, 2016 Ivan Baidakou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ local input_for = {
       'weapon-types.csv', 'weapon-categories.csv', 'weapon-target-types.csv',
       'weapon-classes.csv', 'weapon-movement-types.csv', 'weapons.csv',
       'unit-types.csv', 'unit-classes.csv', 'unit-definitions.csv',
-      'armed-forces.csv', 'battle-scheme.csv',
+      'armed-forces.csv', 'battle-scheme.csv', 'transition-scheme.csv',
    },
    scenario = {
       'players.csv', 'objectives.csv', 'army.csv', 'scenario.csv', 'hex-names.csv',

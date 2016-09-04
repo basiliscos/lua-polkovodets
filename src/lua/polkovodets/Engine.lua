@@ -38,6 +38,7 @@ local State = require 'polkovodets.State'
 local Terrain = require 'polkovodets.Terrain'
 local Theme = require 'polkovodets.Theme'
 local Tile = require 'polkovodets.Tile'
+local TransitionScheme = require 'polkovodets.TransitionScheme'
 local Weapon = require 'polkovodets.Weapon'
 local WeaponClass = require 'polkovodets.WeaponClass'
 local WeaponType = require 'polkovodets.WeaponType'
@@ -334,7 +335,7 @@ function Engine:_fill_initial_data(gear)
     end,
   })
 
-  -- battle scheme & formula
+  -- battle scheme, formula, transition scheme
   gear:declare("battle_formula", {
     dependencies = {"engine"},
     constructor  = function() return BattleFormula.create() end,
@@ -345,6 +346,12 @@ function Engine:_fill_initial_data(gear)
     dependencies = {"data/battle_blocks", "battle_formula"},
     constructor  = function() return BattleScheme.create() end,
     initializer  = function(gear, instance, battle_blocks, battle_formula) instance:initialize(battle_formula, battle_blocks) end
+  })
+
+  gear:declare("transition_scheme", {
+    dependencies = {"data/transition_rules"},
+    constructor  = function() return TransitionScheme.create() end,
+    initializer  = function(gear, instance, transition_rules) instance:initialize(transition_rules) end
   })
 
   -- scenario

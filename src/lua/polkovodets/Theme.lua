@@ -162,6 +162,18 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         available = renderer:load_texture(theme_dir .. '/actions/attack.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/attack-hilight.png'),
       },
+      attack_artillery = {
+        available = renderer:load_texture(theme_dir .. '/actions/attack-artillery.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/attack-artillery-hilight.png'),
+      },
+      counter_attack = {
+        available = renderer:load_texture(theme_dir .. '/actions/counter-attack.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/counter-attack-hilight.png'),
+      },
+      bridge = {
+        available = renderer:load_texture(theme_dir .. '/actions/bridge.png'),
+        hilight   = renderer:load_texture(theme_dir .. '/actions/bridge-hilight.png'),
+      },
       battle_history = {
         available = renderer:load_texture(theme_dir .. '/actions/battle-history.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/battle-history-hilight.png'),
