@@ -446,6 +446,7 @@ function BattleScheme.create()
       local Value  = (lpeg.P('"') * (BareString/literal_c) * lpeg.P('"')) + Property
       local Relation = Value * Space * lpeg.C(lpeg.P("==") + lpeg.P("!=")) * Space * Value / relation_c
       local RelationAtom = (lpeg.P('(') * Space * Relation * Space * lpeg.P(')')) + Relation
+      local LogicalRelation = lpeg.P('&&') + lpeg.P('||')
 
       -- Grammar
       local condition_grammar = lpeg.P{
@@ -453,14 +454,13 @@ function BattleScheme.create()
          Expr
             = lpeg.V("Logical_Operation")
             + lpeg.V("Negation")
+            + lpeg.V("PExpr")
             + RelationAtom
-            + (Space * lpeg.P('(') * Space * lpeg.V("Expr") * Space * lpeg.P(')')),
-         Negation
-            = (lpeg.P('!') * Space * lpeg.V('Expr')) / negation_c,
-         Logical_Operation
-            = (RelationAtom * (Space * lpeg.C(lpeg.P('&&')) * Space * RelationAtom)^1) / l_operation_c,
+            ,
+         Negation = (lpeg.P('!') * Space * lpeg.V('Expr')) / negation_c,
+         PExpr = lpeg.P('(') * lpeg.V("Expr") * lpeg.P(')'),
+         Logical_Operation = (lpeg.V("PExpr") * (Space * lpeg.C(LogicalRelation) * Space * lpeg.V("PExpr"))^1) / l_operation_c
       }
-
       o.condition_grammar = condition_grammar
    end
 
