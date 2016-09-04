@@ -113,15 +113,20 @@ function _RelationCondition:validate()
 end
 
 function _RelationCondition:matches(I_unit, P_unit)
-  local v1 = self.v1:get_value(I_unit, P_unit)
-  local v2 = self.v2:get_value(I_unit, P_unit)
-  assert(type(v1) == 'string')
-  assert(type(v2) == 'string')
-  local result = (self.operator == '==')
-    and (v1 == v2)
-    or  (v1 ~= v2)
-  print("result " .. (result and 't' or 'f'))
-  return result
+    local v1 = self.v1:get_value(I_unit, P_unit)
+    local v2 = self.v2:get_value(I_unit, P_unit)
+    assert(type(v1) == 'string')
+    assert(type(v2) == 'string')
+    local result
+    if (self.operator == '==') then
+        result = (v1 == v2)
+    elseif (self.operator == '!=') then
+        result = (v1 ~= v2)
+    else
+        error("Unknown operator: " .. self.operator)
+    end
+    -- print(string.format("matching result for (%s '%s' %s) => %s", v1, self.operator, v2, result))
+    return result
 end
 
 --[[ Negation Condition class ]]--
@@ -170,6 +175,7 @@ function _LogicalOperationCondition:matches(I_unit, P_unit)
       result = result and r_match
     end
   end
+  -- print(string.format("condition matches for I.state = %s, P.state = %s => %s", I_unit.data.state, P_unit.data.state, result))
   return result
 end
 
@@ -584,7 +590,7 @@ end
 
 function BattleScheme:perform_battle(initiator_unit, passive_unit, command)
   local block = self:_find_block(initiator_unit, passive_unit, command)
-  assert(block)
+  assert(block, string.format("no suitable battle scheme rule for command '%s'", command))
   return block:perform_battle(initiator_unit, passive_unit, command)
 end
 

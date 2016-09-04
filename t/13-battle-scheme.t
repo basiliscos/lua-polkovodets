@@ -111,6 +111,24 @@ subtest("parse condition", function()
   end)
 end)
 
+subtest("match/not-match", function()
+    local r = bs:_parse_condition('(I.state == "defending") && (P.state == "attacking") && (I.orientation != P.orientation)')
+    print(inspect(r))
+    subtest("not-match", function()
+        local i_unit = { data = { state = "defending", orientation = "left"},}
+        local p_unit = { data = { state = "defending", orientation = "right"},}
+        local result = r:matches(i_unit, p_unit)
+        is(result, false)
+    end)
+
+    subtest("match", function()
+        local i_unit = { data = { state = "defending", orientation = "left"},}
+        local p_unit = { data = { state = "attacking", orientation = "right"},}
+        local result = r:matches(i_unit, p_unit)
+        is(result, true)
+    end)
+end)
+
 
 subtest("parse selection", function()
   subtest("simple selector", function()

@@ -725,7 +725,7 @@ function Unit:_battle(context)
     i = { casualities = i_casualities, participants = i_participants },
     p = { casualities = p_casualities, participants = p_participants },
   }
-  self.engine.history:record_player_action('battle', ctx, true, results)
+  self.engine.history:record_player_action(action, ctx, true, results)
   print("batte results = " .. inspect(results))
 
   self:_check_death()
@@ -734,14 +734,17 @@ end
 
 function Unit:_attack_on(context)
     self:_update_state('attacking')
+    table.insert(context, #context + 1, 'battle')
     self:_battle(context)
 end
 
 function Unit:_attack_artillery_on(context)
+    table.insert(context, #context + 1, 'fire/artillery')
     self:_battle(context)
 end
 
 function Unit:_counter_attack_on(context)
+    table.insert(context, #context + 1, 'counter-attack')
     self:_battle(context)
 end
 
@@ -1373,7 +1376,7 @@ function Unit:get_actions(tile)
   end
 
   -- unit action: battle
-  if (self:is_action_possible('attack', {tile, 'surface', 'battle'})) then
+  if (self:is_action_possible('attack', {tile, 'surface', "battle"})) then
     table.insert(list, {
       priority = 40,
       policy = "click",
@@ -1384,7 +1387,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:perform_action('attack', {tile, "battle"})
+        self:perform_action('attack', {tile})
       end
     })
   end
@@ -1401,7 +1404,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.attack_artillery.hilight,
       },
       callback = function()
-        self:perform_action('attack-artillery', {tile, "fire/artillery"})
+        self:perform_action('attack-artillery', {tile})
       end
     })
   end
@@ -1418,7 +1421,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.counter_attack.hilight,
       },
       callback = function()
-        self:perform_action('counter-attack', {tile, "battle"})
+        self:perform_action('counter-attack', {tile})
       end
     })
   end
