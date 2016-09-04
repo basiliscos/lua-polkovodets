@@ -70,6 +70,8 @@ gear:set("data/dirs", {
 
 DataLoader.load(gear, 'Poland')
 
+gear:get("battle_scheme")
+
 engine:end_turn()
 
 local gui_renderer = gear:get("renderer")

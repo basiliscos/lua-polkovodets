@@ -361,7 +361,7 @@ function BattleDetailsWindow:_on_ui_update(show)
       return (images_pair or gui.not_found)[style]
     end
 
-    local sdl_renderer = assert(context.renderer.sdl_renderer)
+    local sdl_renderer = engine.gear:get("renderer").sdl_renderer
     self.drawing.content_fn = function()
       -- drawing order: background, window decorations, controls
 

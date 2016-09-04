@@ -288,31 +288,39 @@ _Block.__index = _Block
 
 
 function _Block.create(battle_scheme, id, command, condition,
-                       active_weapon_selector, passive_weapon_selector, action)
-   assert(id)
-   assert(string.find(id, "%w+(%.?%w*)"))
+                       active_weapon_selector, active_multiplier,
+                       passive_weapon_selector, passive_multiplier,
+                       action)
+    assert(id)
+    assert(string.find(id, "%w+(%.?%w*)"))
 
-   local parent_id_start, parent_id_end = string.find(id, '%w+%.')
-   local parent_id
-   if (parent_id_end) then
-      parent_id = string.sub(id, parent_id_start, parent_id_end - parent_id_start)
-   end
-   local o = {
-      id            = id,
-      parent_id     = parent_id,
-      battle_scheme = battle_scheme,
-      command       = command,
-      condition     = condition,
-      active        = active_weapon_selector,
-      passive       = passive_weapon_selector,
-      action        = action,
-      children      = {},
-   }
-   setmetatable(o, _Block)
-   if (condition) then condition:set_block(o) end
-   if (active) then active:set_block(o) end
-   if (passive) then passive:set_block(o) end
-   return o
+    local parent_id_start, parent_id_end = string.find(id, '%w+%.')
+    local parent_id
+    if (parent_id_end) then
+        parent_id = string.sub(id, parent_id_start, parent_id_end - parent_id_start)
+    end
+    if (not parent_id) then
+        assert(condition, "no condition for block " .. id)
+    end
+
+    local o = {
+        id            = id,
+        parent_id     = parent_id,
+        battle_scheme = battle_scheme,
+        command       = command,
+        condition     = condition,
+        active        = active_weapon_selector,
+        a_multiplier  = active_multiplier,
+        passive       = passive_weapon_selector,
+        p_multiplier  = passive_multiplier,
+        action        = action,
+        children      = {},
+    }
+    setmetatable(o, _Block)
+    if (condition) then condition:set_block(o) end
+    if (active) then active:set_block(o) end
+    if (passive) then passive:set_block(o) end
+    return o
 end
 
 function _Block:validate()

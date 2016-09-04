@@ -220,11 +220,13 @@ function DataLoader.load(gear, scenario_path)
   local battle_scheme_blocks = {}
   for idx, data in pairs(battle_scheme_parser:get_raw_data()) do
     table.insert(battle_scheme_blocks, {
-      block_id       = assert(data.block_id, battle_scheme_path .. " should have block_id for block " .. idx),
-      fire_type      = data.fire_type,      -- optional / non-defined for all blocks
-      active_weapon  = data.active_weapon,  -- optional / non-defined for all blocks
-      passive_weapon = data.active_weapon,  -- optional / non-defined for all blocks
-      command        = data.command,         -- optional / non-defined for all blocks
+      block_id           = assert(data.block_id, battle_scheme_path .. " should have block_id for block " .. idx),
+      command            = data.command,                -- optional / non-defined for all blocks
+      condition          = data.condition,              -- optional / non-defined for all blocks
+      active_weapon      = data.active_weapon,          -- optional / non-defined for all blocks
+      active_multiplier  = data.active_multiplier,      -- optional / non-defined for all blocks
+      passive_weapon     = data.passive_weapon,         -- optional / non-defined for all blocks
+      passive_multiplier = data.passive_multiplier,     -- optional / non-defined for all blocks
     })
   end
   gear:set("data/battle_blocks", battle_scheme_blocks)
