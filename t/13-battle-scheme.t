@@ -22,6 +22,13 @@ local bs = BattleScheme.create()
 
 subtest("parse condition", function()
 
+  subtest("always true condition", function()
+    local r = bs:_parse_condition('I.orientation == I.orientation')
+    print(inspect(r))
+    ok(r)
+    is(r.kind, 'Relation')
+  end)
+
   subtest("orientation eq", function()
     local r = bs:_parse_condition('I.orientation == P.orientation')
     print(inspect(r))
