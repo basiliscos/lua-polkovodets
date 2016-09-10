@@ -167,16 +167,23 @@ function _LogicalOperationCondition:validate()
 end
 
 function _LogicalOperationCondition:matches(I_unit, P_unit)
-  local result = false
-  if (self.operator == '&&') then
-    result = #self.relations > 0
-    for idx, relation in pairs(self.relations) do
-      local r_match = relation:matches(I_unit, P_unit)
-      result = result and r_match
+    local result = false
+    if (self.operator == '&&') then
+        result = #self.relations > 0
+        for idx, relation in pairs(self.relations) do
+            local r_match = relation:matches(I_unit, P_unit)
+            result = result and r_match
+        end
+    elseif (self.operator == '||') then
+        for idx, relation in pairs(self.relations) do
+            local r_match = relation:matches(I_unit, P_unit)
+            result = result or r_match
+        end
+    else
+        error("uknown logical condition operator " .. self.operator)
     end
-  end
-  -- print(string.format("condition matches for I.state = %s, P.state = %s => %s", I_unit.data.state, P_unit.data.state, result))
-  return result
+    -- print(string.format("logic condition '%s' matches for I.state = %s, P.state = %s => %s", self.operator, I_unit.data.state, P_unit.data.state, result))
+    return result
 end
 
 -- Selector classes
@@ -581,8 +588,9 @@ end
 
 function BattleScheme:_find_block(initiator_unit, passive_unit, command)
   for idx, block in pairs(self.root_blocks) do
-    print("examining " .. block.id)
-    if (block:matches(command, initiator_unit, passive_unit)) then
+    local match_found = block:matches(command, initiator_unit, passive_unit)
+    print("examining block " .. block.id .. " " .. (match_found and 'y' or 'n'))
+    if (match_found) then
       return block
     end
   end

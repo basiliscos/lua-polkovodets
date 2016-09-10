@@ -89,6 +89,9 @@ subtest("attack posibilities", function()
     ok(inf:is_action_possible('attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to attack enemy infantry")
     ok(inf:is_action_possible('counter-attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to counter-1attack enemy infantry")
 
+    inf.data.state = 'circular_defending';
+    ok(inf:is_action_possible('counter-attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to counter-1attack enemy infantry (from circullar defending)")
+
     local art = map.tiles[4][4]:get_unit('surface')
     ok(art)
     art:update_actions_map()
