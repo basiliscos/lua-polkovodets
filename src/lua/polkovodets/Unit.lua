@@ -699,9 +699,17 @@ function Unit:_land_to(tile)
    self:update_actions_map()
 end
 
+function Unit:_pre_battle(tile)
+    if (self.data.state == 'patrolling') then
+        self.data.state = 'defending'
+    end
+end
+
 function Unit:_battle(context)
   local tile, action = table.unpack(context)
   local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
+  self:_pre_battle(tile)
+  enemy_unit:_pre_battle(tile)
   local battle_scheme = self.engine.gear:get("battle_scheme")
   assert(enemy_unit)
   self:_update_orientation(enemy_unit.tile, self.tile)
@@ -1526,9 +1534,9 @@ function Unit:is_action_possible(action, context)
     elseif (action == 'retreat') then
       result = self.definition.state_icons.retreating and action_with_move()
     elseif (action == 'patrol') then
-      result = self.definition.state_icons.patrol and action_with_move()
+      result = self.definition.state_icons.patrolling and action_with_move()
     elseif (action == 'raid') then
-      result = self.definition.state_icons.raid and action_with_move()
+      result = self.definition.state_icons.raiding and action_with_move()
     elseif (action == 'bridge') then
       -- allow do bridge on adjascent tile only, if unit is capable to do that
       -- and context is appropriate type (river or rivelet)

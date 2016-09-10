@@ -25,7 +25,7 @@ subtest("land unit simple actions", function()
   is(inf:is_action_possible('retreat', map.tiles[3][4]), true, "can retreat tile [3:4]")
   ok(not inf:is_action_possible('retreat', map.tiles[3][6]), "cannot retreat tile [3:6] (too far, but we can move there)")
   ok(not inf:is_action_possible('retreat', map.tiles[13][4]), "cannot retreat to tile [13:4] (too far)")
-  ok(not inf:is_action_possible('patrol', map.tiles[3][4]), "cannot patrol tile [3:4] (n/a)")
+  is(inf:is_action_possible('patrol', map.tiles[3][4]), true, "can patrol tile [3:4]")
   ok(not inf:is_action_possible('raid', map.tiles[3][4]), "cannot raid tile [3:4] (n/a)")
   ok(not inf:is_action_possible('attach', map.tiles[3][4]), "can't attach at tile [4:4] (no unit)")
   ok(inf:is_action_possible('attach', map.tiles[4][4]), "can attach at tile [4:4]")
@@ -97,7 +97,5 @@ subtest("get-possible actions method works", function()
   local inf = map.tiles[3][3]:get_unit('surface')
   ok(inf.tile:get_possible_actions(), "got action list")
 end)
-
-
 
 done_testing()
