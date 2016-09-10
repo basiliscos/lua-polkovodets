@@ -44,6 +44,7 @@ subtest("movement/leg 1 weapon", function()
   is_deeply(inf:available_movement(), {
     ["u:rus_unit_1/w:rus_weapon_1"]  = 0,
   }, "no movement left")
+  is(inf.data.state, 'marching', 'state changed to marching')
 end)
 
 subtest("movement/leg motorized", function()

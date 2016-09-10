@@ -79,8 +79,13 @@ end)
 subtest("attack posibilities", function()
     local engine = PT.get_fresh_data()
     local map = engine.gear:get("map")
+
     local inf = map.tiles[4][3]:get_unit('surface')
     inf:update_actions_map()
+
+    local enemy_unit = map.tiles[5][3]:get_unit('surface')
+    --force switch to attack enemy to make possible counter-attack
+    enemy_unit.data.state = 'attacking'
     ok(inf:is_action_possible('attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to attack enemy infantry")
     ok(inf:is_action_possible('counter-attack', {map.tiles[5][3], 'surface', 'battle'}), "possible to counter-1attack enemy infantry")
 

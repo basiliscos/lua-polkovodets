@@ -1577,14 +1577,33 @@ function Unit:is_action_possible(action, context)
         and self.data.actions_map.attack[tile_id][layer]
         and self.data.actions_map.attack[tile_id][layer][kind]
     elseif (action == 'counter-attack') then
+      result = false
       local tile_id = context[1].id
       local layer   = context[2]
       local kind    = context[3]
-      result = self.data.actions_map.attack[tile_id]
-        and self.data.actions_map.attack[tile_id][layer]
-        and self.data.actions_map.attack[tile_id][layer][kind]
-        and (self.tile:distance_to(context[1]) == 1)
-        and not ((state == 'raiding') or (state == 'patrolling'))
+      local enemy   = context[1]:get_unit(layer)
+
+      if (not enemy) then
+          result = false
+      else
+          local enemy_state = enemy.data.state
+          local distance = context[1].data.x - self.tile.data.x
+          local orient_vector = (enemy.data.orientation == 'left') and 1
+            or (enemy.data.orientation == 'right') and -1
+            or 0
+          result =
+            self.data.actions_map.attack[tile_id]
+            and self.data.actions_map.attack[tile_id][layer]
+            and self.data.actions_map.attack[tile_id][layer][kind]
+            and (self.tile:distance_to(context[1]) == 1)
+            and ((state == 'defending') or (state == 'circular_defending'))
+            and ((enemy_state == 'assulting')
+                -- additionally check that enemy unit should be oriented
+                -- towards us
+                or (((enemy_state == 'attacking') or (enemy_state == 'marching') or (enemy_state == 'retreating'))
+                    and ((distance == 0) or (distance * orient_vector == 1)))
+            )
+      end
     elseif (action == 'attack-artillery') then
       local tile_id = context[1].id
       local layer   = context[2]
