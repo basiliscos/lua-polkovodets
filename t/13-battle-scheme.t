@@ -49,6 +49,18 @@ subtest("parse condition", function()
     is(r.v2.value, 'A')
   end)
 
+  subtest("check type", function()
+    local r = bs:_parse_condition('I.type == "ut_land"')
+    print(inspect(r))
+    ok(r)
+    is(r.kind, 'Relation')
+    is(r.v1.object, 'I')
+    is(r.v1.property, 'type')
+    is(r.v2.kind, 'Literal')
+    is(r.v2.value, 'ut_land')
+  end)
+
+
   subtest("parenthesis", function()
     local r = bs:_parse_condition('((I.state == "A"))')
     print(inspect(r))
@@ -119,23 +131,22 @@ subtest("parse condition", function()
 end)
 
 subtest("match/not-match", function()
-    local r = bs:_parse_condition('(I.state == "defending") && (P.state == "attacking") && (I.orientation != P.orientation)')
+    local r = bs:_parse_condition('((I.type == "ut_land") && (P.type == "ut_land")) && (I.state == "defending") && (P.state == "attacking") && (I.orientation != P.orientation)')
     print(inspect(r))
     subtest("not-match", function()
-        local i_unit = { data = { state = "defending", orientation = "left"},}
-        local p_unit = { data = { state = "defending", orientation = "right"},}
+        local i_unit = { data = { state = "defending", orientation = "left"}, definition = { unit_type = { id = "ut_land"} }}
+        local p_unit = { data = { state = "defending", orientation = "right"}, definition = { unit_type = { id = "ut_land"} }}
         local result = r:matches(i_unit, p_unit)
         is(result, false)
     end)
 
     subtest("match", function()
-        local i_unit = { data = { state = "defending", orientation = "left"},}
-        local p_unit = { data = { state = "attacking", orientation = "right"},}
+        local i_unit = { data = { state = "defending", orientation = "left"},  definition = { unit_type = { id = "ut_land"} }}
+        local p_unit = { data = { state = "attacking", orientation = "right"}, definition = { unit_type = { id = "ut_land"} }}
         local result = r:matches(i_unit, p_unit)
         is(result, true)
     end)
 end)
-
 
 subtest("parse selection", function()
   subtest("simple selector", function()

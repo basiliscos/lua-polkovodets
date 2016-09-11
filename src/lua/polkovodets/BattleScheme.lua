@@ -68,13 +68,25 @@ function _PropertyCondition.create(object, prop)
 end
 
 function _PropertyCondition:validate()
-   assert((self.property == 'state') or (self.property == 'orientation'))
+    local v = self.property
+    assert((v == 'state') or (v == 'orientation') or (v == 'type'))
 end
 
 function _PropertyCondition:get_value(I_unit, P_unit)
-  local o = (self.object == 'I') and I_unit or P_unit
-  local value = o.data[self.property]
-  return value
+    local o = (self.object == 'I') and I_unit or P_unit
+    local property = self.property
+    local value
+    if (property == 'orientation') then
+        value = o.data.orientation
+    elseif (property == 'state') then
+        value = o.data.state
+    elseif (property == 'type') then
+        value = o.definition.unit_type.id
+    else
+        error("unknow unit property " .. property)
+    end
+    -- print(string.format("k = %s => ", property, value))
+    return value
 end
 
 --[[ Literal Condition class ]]--
