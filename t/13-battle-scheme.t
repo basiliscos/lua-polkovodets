@@ -131,7 +131,7 @@ subtest("parse condition", function()
 end)
 
 subtest("match/not-match", function()
-    local r = bs:_parse_condition('((I.type == "ut_land") && (P.type == "ut_land")) && (I.state == "defending") && (P.state == "attacking") && (I.orientation != P.orientation)')
+    local r = bs:_parse_condition('(I.type == "ut_land") && (P.type == "ut_land") && (I.state == "defending") && (P.state == "attacking") && (I.orientation != P.orientation)')
     print(inspect(r))
     subtest("not-match", function()
         local i_unit = { data = { state = "defending", orientation = "left"}, definition = { unit_type = { id = "ut_land"} }}
