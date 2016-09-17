@@ -645,7 +645,7 @@ function Unit:_move_to(dst_tile)
   local new_state
   if (unit_type == 'ut_land') then
     new_state = self:_enemy_near(dst_tile) and 'defending' or 'marching'
-  elseif (unit_type == 'ut_air') then
+  else
     new_state = 'marching'
   end
   self:_update_state(new_state)
