@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local Tile = {}
 Tile.__index = Tile
 local SDL	= require "SDL"
+local Region = require 'polkovodets.utils.Region'
 
 local _ = require ("moses")
 local inspect = require('inspect')
@@ -112,6 +113,8 @@ function Tile:bind_ctx(context)
   local state   = engine.state
   local player  = state:get_current_player()
   local sdl_renderer = engine.gear:get("renderer").sdl_renderer
+  local hex_geometry = engine.gear:get("hex_geometry")
+
   -- print(inspect(weather))
   -- print(inspect(self.data.terrain_type.image))
 
@@ -128,9 +131,17 @@ function Tile:bind_ctx(context)
 
   -- draw nation/objective flag in city, unless there is unit (then unit flag will be drawn)
   local objective = self.data.objective
-  local units_on_tile = (self.layers.surface and 1 or 0) + (self.layers.air and 1 or 0)
-  -- force drawing 0 units
-  if (landscape_only) then units_on_tile = 0 end
+  local units_per_layer = {}
+  local units_on_tile = 0
+  if (not landscape_only) then
+      for _, layer in pairs({'surface', 'air'}) do
+        local unit = self.layers[layer]
+        if (unit) then
+            units_per_layer[layer] = unit
+            units_on_tile = units_on_tile + 1
+        end
+      end
+  end
 
   local tile_context = _.clone(context, true)
   tile_context.tile = self
@@ -147,12 +158,23 @@ function Tile:bind_ctx(context)
     -- print("unit on " .. unit.tile.id .. " is visible: " .. tostring(unit.data.visible_to_current_player))
     return result
   end
+  local is_unit_drawn = function(unit)
+    local land_unit_in_airport = (unit.definition.unit_type.id == 'ut_land') and (self.data.terrain_id == 'a')
+    local land_unit_in_port = (unit.definition.unit_type.id == 'ut_land') and (self.data.terrain_id == 'h')
+    local result = (not land_unit_in_airport) and (not land_unit_in_port)
+    return result
+  end
+
+  local main_unit
 
   if (units_on_tile == 1) then
     local normal_unit = self.layers.surface or self.layers.air
     if (is_unit_shown(normal_unit)) then
-      tile_context.unit[normal_unit.id] = { size = 'normal' }
-      table.insert(drawers, normal_unit)
+      main_unit = normal_unit
+      if (is_unit_drawn(normal_unit)) then
+          tile_context.unit[normal_unit.id] = { size = 'normal' }
+          table.insert(drawers, normal_unit)
+      end
     end
   elseif (units_on_tile == 2) then -- draw 2 units: small and large
     local active_layer = context.active_layer
@@ -164,19 +186,48 @@ function Tile:bind_ctx(context)
     -- cauched first. This is more important
     local small_unit = self.layers[inactive_layer]
     if (is_unit_shown(small_unit)) then
-      local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
-      tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
-      table.insert(drawers, small_unit)
+      main_unit = small_unit
+      if (is_unit_drawn(small_unit)) then
+          local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
+          tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
+          table.insert(drawers, small_unit)
+      end
     end
 
     local normal_unit = self.layers[active_layer]
     if (is_unit_shown(normal_unit)) then
-      tile_context.unit[normal_unit.id] = { size = 'normal' }
-      table.insert(drawers, normal_unit)
+      main_unit = normal_unit
+      if (is_unit_drawn(normal_unit)) then
+          tile_context.unit[normal_unit.id] = { size = 'normal' }
+          table.insert(drawers, normal_unit)
+      end
     end
   end
 
+  local icon_drawer
   local hex_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
+  if (main_unit) then
+    local unit_flag = main_unit.definition.nation.unit_flag
+      -- +/- 1 is required to narrow the clickable/hilightable area
+      -- which is also needed to prevent hilighting when mouse pointer
+      -- will be moved to the bottom tile
+      local unit_flag_region = Region.create(
+        x + 1 + hex_geometry.x_offset - unit_flag.w,
+        y + 1 + hex_geometry.height - unit_flag.h,
+        x - 1 + hex_geometry.x_offset,
+        y - 1 + hex_geometry.height
+      )
+      local unit_flag_dst =  {
+        x = x + hex_geometry.x_offset - unit_flag.w,
+        y = y + hex_h - unit_flag.h,
+        w = unit_flag.w,
+        h = unit_flag.h,
+      }
+      icon_drawer = function()
+        assert(sdl_renderer:copy(unit_flag.texture, nil, unit_flag_dst))
+      end
+  end
+
 
   local draw_fn = function()
     -- draw terrain
@@ -213,6 +264,7 @@ function Tile:bind_ctx(context)
 
     -- draw flag and unit(s)
     _.each(self.drawing.objects, function(k, v) v:draw() end)
+    if (icon_drawer) then icon_drawer() end
 
     -- draw grid
     if (show_grid) then

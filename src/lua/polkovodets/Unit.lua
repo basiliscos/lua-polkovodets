@@ -155,23 +155,12 @@ function Unit:bind_ctx(context)
     w = math.modf(image.w * scale),
     h = math.modf(image.h * scale),
   }
+  local do_draw_state = (size == 'normal')
+
   local orientation = self.data.orientation
   assert((orientation == 'left') or (orientation == 'right'), "Unknown unit orientation: " .. orientation)
   local flip = (orientation == 'left') and SDL.rendererFlip.none or
   (orientation == 'right') and SDL.rendererFlip.Horizontal
-
-  -- unit nation flag
-  local unit_flag = self.definition.nation.unit_flag
-  -- +/- 1 is required to narrow the clickable/hilightable area
-  -- which is also needed to preven hilighting when mouse pointer
-  -- will be moved to the bottom tile
-  local unit_flag_region = Region.create(x + 1 + hex_x_offset - unit_flag.w, y + 1 + hex_h - unit_flag.h, x - 1 + hex_x_offset, y - 1 + hex_h)
-  local unit_flag_dst =  {
-    x = x + hex_x_offset - unit_flag.w,
-    y = y + hex_h - unit_flag.h,
-    w = unit_flag.w,
-    h = unit_flag.h,
-  }
 
   local mouse = state:get_mouse()
 
@@ -193,6 +182,7 @@ function Unit:bind_ctx(context)
     end
   end
 
+
   self.drawing.fn = function()
     -- draw selection frame
     if (draw_frame) then draw_frame() end
@@ -207,21 +197,19 @@ function Unit:bind_ctx(context)
       flip        = flip,
     }))
 
-    -- draw unit nation flag
-    assert(sdl_renderer:copy(unit_flag.texture, nil, unit_flag_dst))
-
     -- draw unit state
-    assert(sdl_renderer:copy(
-      unit_state.texture,
-      nil,
-      {
-        x = x + (hex_w - hex_x_offset),
-        y = y + hex_h - unit_state.h,
-        w = unit_state.w,
-        h = unit_state.h,
-      }
-    ))
-
+    if (do_draw_state) then
+        assert(sdl_renderer:copy(
+          unit_state.texture,
+          nil,
+          {
+            x = x + (hex_w - hex_x_offset),
+            y = y + hex_h - unit_state.h,
+            w = unit_state.w,
+            h = unit_state.h,
+          }
+        ))
+    end
   end
 
   local update_action = function(tile_id, x, y)
