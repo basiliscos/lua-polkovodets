@@ -261,9 +261,12 @@ end
 
 -- returns list of all units, i.e. self + attached
 function Unit:all_units()
-  local unit_list = {self}
-  for idx, unit in pairs(self.data.attached) do table.insert(unit_list, unit) end
-  return unit_list
+    local unit_list = {self}
+    for idx, unit in pairs(self.data.attached) do
+        -- print(string.format("unit %s is attached to %s", unit.id, self.id))
+        table.insert(unit_list, unit)
+    end
+    return unit_list
 end
 
 -- retunrs a table of weapon instances, which are will be marched,
@@ -483,9 +486,13 @@ function Unit:_post_action_trigger(action, context)
     or (
         (self.definition.unit_type.id == 'ut_naval')
         and (self.tile.data.terrain_id == 'h'))
+
   if (stash_candidate
-    and (#self.tile.stash < 5)
-    and (action == 'move')) then
+        and (#self.tile.stash < 5)
+        and (action == 'move')
+        -- might be enough to move, but not enough to refuel
+        and self.engine.gear:get("transition_scheme"):is_action_allowed('refuel', self)
+    ) then
       self.tile:set_unit(nil, self.data.layer)
       self.tile:stash_unit(self)
       self:perform_action('refuel')
@@ -509,13 +516,14 @@ function Unit:perform_action(action, context)
     ['attack-artillery'] = '_attack_artillery_on',
   }
   local method_name = dispatch[action]
+  -- costs must be calculated before actual action be done
+  local costs = self.engine.gear:get("transition_scheme"):is_action_allowed(action, self)
+  assert(costs, "no costs for action " .. action .. " for unit " .. self.id .. " from state " .. self.data.state)
   assert(method_name, "cannot perform action " .. action .. " as there is no dispatcher")
   local method = Unit[method_name]
   method(self, context)
 
   -- subtract additiditional movement points
-  local costs = self.engine.gear:get("transition_scheme"):is_action_allowed(action, self)
-  assert(costs, "no costs for action " .. action .. " for unit " .. self.id)
   for _, wi in pairs(self:_marched_weapons()) do
     -- print(inspect(wi.data.movement))
     wi.data.movement = wi.data.movement -
@@ -627,7 +635,10 @@ function Unit:_move_to(dst_tile)
   -- print("history = " .. inspect(self.engine.history.records_at))
 
   self.data.allow_move = not(self:_enemy_near(dst_tile)) and not(self:_enemy_near(src_tile))
-  if (not being_attached) then src_tile:set_unit(nil, self.data.layer) end
+  if (not being_attached) then
+    src_tile:set_unit(nil, self.data.layer)
+    src_tile:unstash_unit(self)
+  end
   -- print(inspect(costs))
   for idx, weapon_instance in pairs(marched_weapons) do
     local cost = costs.data[weapon_instance.id]
@@ -1363,6 +1374,7 @@ function Unit:get_actions(tile)
 
   -- unit action: attach
   if (self:is_action_possible('attach', tile)) then
+    -- print("attach allowed at " .. tile.id .. " for unit " .. self.id)
     table.insert(list, {
       priority = 30,
       policy = "click",
@@ -1373,7 +1385,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.merge.hilight,
       },
       callback = function()
-        self:perform_action('merge', tile)
+        self:perform_action('attach', tile)
       end
     })
   end

@@ -119,4 +119,18 @@ subtest("non-mergable: manager and manageable units", function()
   ok(not tank1_m.data.actions_map.merge[hq.tile.id], "the same for tank" )
 end)
 
+subtest("merge to unit w/o movements", function()
+    local engine = PT.get_fresh_data()
+    local map = engine.gear:get("map")
+
+    local u1 = map.tiles[4][4]:get_unit('surface')
+    u1:update_actions_map()
+    u1:perform_action('move', map.tiles[3][4])
+
+    local u2 = map.tiles[4][3]:get_unit('surface')
+    u2:update_actions_map()
+    u2:perform_action('attach', u1.tile)
+    is(#u2.data.attached, 1, "valid number of attache units")
+end)
+
 done_testing()

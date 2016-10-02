@@ -83,14 +83,15 @@ end
 
 function Tile:stash_unit(unit)
     table.insert(self.stash, unit)
+    unit.tile = self
 end
 
 function Tile:unstash_unit(unit)
-    for idx, u in pairs(self.tash) do
+    for idx, u in pairs(self.stash) do
         if (u == unit) then
+            table.remove(self.stash, idx)
         end
     end
-    table.insert(self.stash, unit)
 end
 
 
@@ -154,9 +155,6 @@ function Tile:bind_ctx(context)
             units_per_layer[layer] = unit
             units_on_tile = units_on_tile + 1
         end
-      end
-      for _, unit in pairs(self.stash) do
-
       end
   end
 
@@ -436,6 +434,7 @@ function Tile:get_possible_actions()
   local theme = engine.gear:get("theme")
   local my_unit = state:get_selected_unit()
   local tile_units = self:get_all_units(function() return true end)
+  _.each(self.stash, function(_, unit) table.insert(tile_units, unit) end)
   local current_layer = state:get_active_layer()
   local current_player = state:get_current_player()
 

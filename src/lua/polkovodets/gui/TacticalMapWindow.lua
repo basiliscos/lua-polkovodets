@@ -254,6 +254,7 @@ function TacticalMapWindow:_prepare_context()
   self.drawing.map_context = map_context
   self.drawing.objects = drawers
   self.drawing.drawers_per_tile = drawers_per_tile
+  -- print("bind drawers " .. #self.drawing.objects)
 end
 
 
@@ -456,6 +457,7 @@ function TacticalMapWindow:unbind_ctx()
   local context = self.drawing.context
   local reactor = self.engine.reactor
 
+  -- print("unbind drawers " .. #self.drawing.objects)
   _.each(self.drawing.objects, function(k, v) v:unbind_ctx(map_context) end)
   self.drawing.objects = {}
 
@@ -475,6 +477,7 @@ function TacticalMapWindow:unbind_ctx()
   self.drawing.mouse_click = nil
   self.drawing.idle = nil
   self.drawing.context = nil
+  self.drawing.drawers_per_tile = nil
 
   self.handlers_bound = false
 end
