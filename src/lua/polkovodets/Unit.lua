@@ -480,7 +480,10 @@ function Unit:_post_action_trigger(action, context)
   -- auto-land air-unit above airport to the airport
   if ((self.definition.unit_type.id == 'ut_air')
     and (self.tile.data.terrain_id == 'a')
+    and (#self.tile.stash < 5)
     and (action == 'move')) then
+      self.tile:set_unit(nil, self.data.layer)
+      self.tile:stash_unit(self)
       self:perform_action('refuel')
   end
 end

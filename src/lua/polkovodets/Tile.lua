@@ -60,6 +60,7 @@ function Tile.create(engine, data)
       air     = nil,
       surface = nil,
     },
+    stash = {},
     drawing = {
       fn          = nil,
       mouse_click = nil,
@@ -79,6 +80,19 @@ function Tile:set_unit(unit, layer)
    assert(layer == 'surface' or layer == 'air', 'unknown layer ' .. inspect(layer))
    self.layers[layer] = unit
 end
+
+function Tile:stash_unit(unit)
+    table.insert(self.stash, unit)
+end
+
+function Tile:unstash_unit(unit)
+    for idx, u in pairs(self.tash) do
+        if (u == unit) then
+        end
+    end
+    table.insert(self.stash, unit)
+end
+
 
 function Tile:get_unit(layer)
    assert(layer == 'surface' or layer == 'air')
@@ -141,6 +155,9 @@ function Tile:bind_ctx(context)
             units_on_tile = units_on_tile + 1
         end
       end
+      for _, unit in pairs(self.stash) do
+
+      end
   end
 
   local tile_context = _.clone(context, true)
@@ -148,8 +165,6 @@ function Tile:bind_ctx(context)
   tile_context.unit = {}
 
   local drawers = {}
-
-  if (objective and (units_on_tile == 0)) then table.insert(drawers, objective) end
 
   local spotting = map.united_spotting.map[self.id]
 
@@ -166,6 +181,7 @@ function Tile:bind_ctx(context)
   end
 
   local main_unit
+  local drawn_units = 0
 
   if (units_on_tile == 1) then
     local normal_unit = self.layers.surface or self.layers.air
@@ -174,6 +190,7 @@ function Tile:bind_ctx(context)
       if (is_unit_drawn(normal_unit)) then
           tile_context.unit[normal_unit.id] = { size = 'normal' }
           table.insert(drawers, normal_unit)
+          drawn_units = drawn_units + 1
       end
     end
   elseif (units_on_tile == 2) then -- draw 2 units: small and large
@@ -191,6 +208,7 @@ function Tile:bind_ctx(context)
           local magnet_to = (inactive_layer == 'air') and 'top' or 'bottom'
           tile_context.unit[small_unit.id] = {size = 'small', magnet_to = magnet_to}
           table.insert(drawers, small_unit)
+          drawn_units = drawn_units + 1
       end
     end
 
@@ -200,9 +218,23 @@ function Tile:bind_ctx(context)
       if (is_unit_drawn(normal_unit)) then
           tile_context.unit[normal_unit.id] = { size = 'normal' }
           table.insert(drawers, normal_unit)
+          drawn_units = drawn_units + 1
       end
     end
   end
+  if ((drawn_units == 0) and (#self.stash > 0)) then
+    -- draw only 1st stashed unit
+    local unit = self.stash[1]
+    if (is_unit_shown(unit)) then
+      main_unit = unit
+      tile_context.unit[unit.id] = { size = 'normal' }
+      drawn_units = drawn_units + 1
+      table.insert(drawers, unit)
+    end
+  end
+
+  if (objective and (drawn_units == 0)) then table.insert(drawers, objective) end
+
 
   local icon_drawer
   local hex_rectange = {x = 0, y = 0, w = hex_w, h = hex_h}
