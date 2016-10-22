@@ -28,10 +28,12 @@ function OrderedHandlers.new()
 end
 
 function OrderedHandlers:apply(fn)
+  local result
   for idx, handler in self:pairs(true) do
-    local stop = fn(handler)
-    if (stop) then break end
+    result = fn(handler)
+    if (result) then break end
   end
+  return result
 end
 
 

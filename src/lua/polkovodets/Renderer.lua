@@ -211,16 +211,22 @@ function Renderer:main_loop()
   local sdl_renderer = self.sdl_renderer
   local kind = SDL.eventWindow
 
+
+  local custom_delay = nil
+  engine.reactor:subscribe('event.delay', function(_, value) custom_delay = value end)
+
   local fn_idle = function()
     local state, x, y = SDL.getMouseState()
     local event = { x = x,  y = y, }
     -- process handlers in stack (FILO) order
     self.handlers.idle:apply(function(cb) return cb(event) end)
+
+    -- not custom delay means that scrolling isn't performed, so we can
+    -- ask GC to run
+    if (not custom_delay) then
+        collectgarbage("step", 2000)
+    end
   end
-
-  local custom_delay = nil
-  engine.reactor:subscribe('event.delay', function(_, value) custom_delay = value end)
-
 
   while (running) do
     local e = SDL.waitEvent(custom_delay or EVENT_DELAY)
@@ -269,7 +275,7 @@ function Renderer:main_loop()
         -- process handlerss in stack (FILO) order
         self.handlers.mouse_click:apply(function(cb) return cb(event) end)
 	   else
-       fn_idle()
+        fn_idle()
      end
     -- idle
     else
