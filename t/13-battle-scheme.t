@@ -162,14 +162,14 @@ end)
 
 subtest("blocks", function()
   local condition = bs:_parse_condition("I.orientation == P.orientation")
-  assert(condition)
+  ok(condition)
   local b_parent = bs:_create_block('1', 'battle', condition)
   ok(b_parent)
   b_parent:validate()
-
   local b_child = bs:_create_block('1.1', nil,
-    bs:_parse_condition('I.category("wc_artil")'),
-    bs:_parse_condition('P.category("wc_hweap") || P.category("wc_antitank")'),
+    bs:_parse_condition('(I.type == "ut_land") && (P.type == "ut_land")'),
+    bs:_parse_condition('I.category("wc_artil")'), 1,
+    bs:_parse_condition('P.category("wc_hweap") || P.category("wc_antitank")'), 1,
     'fire'
   )
   ok(b_child)
@@ -179,7 +179,7 @@ end)
 subtest("initialization", function()
   gear:set("data/battle_blocks", {
     { block_id = "1", fire_type = "battle", condition = '(I.state == "attacking") && (P.state == "defending")'},
-    { block_id = "1.1", active_weapon = 'I.category("wc_infant")', passive_weapon = 'P.target("any")', action = "battle" },
+    { block_id = "1.1", active_weapon = 'I.category("wc_infant")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
   })
 
   local bs2 = gear:get("battle_scheme")

@@ -221,8 +221,10 @@ function _Selector:select_weapons(role, ctx)
   assert(e)
 
   local select_by_selector = function(weapon_instance)
+    -- print(string.format("select_by_selector, method %s", self.method))
     if (self.method == 'category') then
-      return weapon_instance.weapon.category == self.specification
+    -- print(string.format("select_by_selector/category = %s, wi.cat = %s", self.specification, weapon_instance.weapon.category.id))
+      return weapon_instance.weapon.category.id == self.specification
     elseif ((self.method == 'target') and (self.specification == 'any')) then
       return true
     end
@@ -246,7 +248,7 @@ function _Selector:select_weapons(role, ctx)
   if (role == 'active') then
     local e_layer = e.layer
     role_filter = function(weapon_instance)
-        local range_ok = weapon_instance.weapon.data.range[e_layer] >= ctx.range
+        local range_ok = weapon_instance.weapon.range[e_layer] >= ctx.range
         local quantities_ok = weapon_instance.data.quantity > 0
         local shots_ok = o.shots[weapon_instance.id] > 0
         return range_ok and quantities_ok and shots_ok
@@ -323,6 +325,11 @@ function _Block.create(battle_scheme, id, command, condition,
     local parent_id
     if (parent_id_end) then
         parent_id = string.sub(id, parent_id_start, parent_id_end - parent_id_start)
+        active_multiplier = tonumber(active_multiplier)
+        passive_multiplier = tonumber(passive_multiplier)
+        assert(active_multiplier > 0)
+        assert(passive_multiplier > 0)
+        assert(action)
     end
     if (not parent_id) then
         assert(condition, "no condition for block " .. id)
@@ -428,7 +435,7 @@ function _Block:perform_battle(i_unit, p_unit, command)
     print("trying block " .. block.id)
     local pair = block:select_pair(ctx)
     if (pair) then
-      print("matching pair = " .. inspect(pair))
+      -- print("matching pair = " .. inspect(pair))
       self.battle_scheme.battle_formula:perform_battle(pair)
       print("casualities for I = " .. inspect(ctx.i.casualities))
       print("casualities for P = " .. inspect(ctx.p.casualities))
@@ -540,6 +547,7 @@ function BattleScheme:initialize(battle_formula, battle_blocks)
     local condition_str = data.condition
     local active_weapon_selector = data.active_weapon
     local passive_weapon_selector = data.passive_weapon
+    local active_weapon, passive_weapon
 
     local condition, active_weapon, passive_weapon
     if (condition_str) then
@@ -557,12 +565,16 @@ function BattleScheme:initialize(battle_formula, battle_blocks)
       assert(passive_weapon, "passive weapon " .. passive_weapon_selector .. " isn't valid")
     end
 
+    -- print(string.format("creating block, active = %s, passive = %s, data = %s", active_weapon, passive_weapon, inspect(data)))
+
     local block = self:_create_block(
       id,
       command,
       condition,
       active_weapon,
+      data.active_multiplier,
       passive_weapon,
+      data.passive_multiplier,
       action
     )
   end
@@ -580,10 +592,10 @@ function BattleScheme:_parse_selection(s)
    return selection
 end
 
-function BattleScheme:_create_block(id, command, condition,
-                                    active_weapon_selector, passive_weapon_selector, action)
+function BattleScheme:_create_block(id, command, condition, active_weapon_selector, active_multiplier,
+                                    passive_weapon_selector, passive_multiplier, action)
    assert(not self.block_for[id], "block " .. id .. " alredy exists")
-   local b = _Block.create(self, id, command, condition, active_weapon_selector, passive_weapon_selector, action)
+   local b = _Block.create(self, id, command, condition, active_weapon_selector, active_multiplier, passive_weapon_selector, passive_multiplier, action)
    self.block_for[id] = b
    if (not b.parent_id) then
       table.insert(self.root_blocks, b)

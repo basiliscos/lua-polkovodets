@@ -15,7 +15,6 @@ subtest("patrol attacks patrol: attack & defend switch", function()
     local inf_ru_aux = map.tiles[4][3]:get_unit('surface')
     inf_ru_aux:update_actions_map()
     inf_ru_aux:perform_action('move', map.tiles[3][6])
-
     local inf_ru = map.tiles[3][3]:get_unit('surface')
     inf_ru:update_actions_map()
     is(inf_ru:is_action_possible('patrol', map.tiles[4][3]), true, "can patrol tile [3:4]")

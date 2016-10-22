@@ -351,10 +351,11 @@ end
 function SampleData.generate_battle_scheme(gear)
   gear:set("data/battle_blocks", {
     { block_id = "1", command = "battle", condition = '(I.state == "attacking") && ((P.state == "attacking") || (P.state == "defending")) && (I.orientation == P.orientation)'},
-    { block_id = "1.1", active_weapon = 'I.category("wc_infant")', passive_weapon = 'P.target("any")', action = "battle" },
+    { block_id = "1.1", active_weapon = 'I.category("wc_infant")', active_multiplier = "1",  passive_weapon = 'P.target("any")', passive_multiplier = 1, action = "battle" },
 
     { block_id = "2", command = "battle", condition = '(I.state == "attacking") && (P.state == "defending")'},
-    { block_id = "2.1", active_weapon = 'I.category("wc_infant")', passive_weapon = 'P.target("any")', action = "battle" },
+    { block_id = "2.1", active_weapon = 'I.category("wc_infant")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+    { block_id = "2.2", active_weapon = 'I.category("wc_tank")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
   })
 

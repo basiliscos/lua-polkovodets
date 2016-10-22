@@ -227,6 +227,7 @@ function DataLoader.load(gear, scenario_path)
       active_multiplier  = data.active_multiplier,      -- optional / non-defined for all blocks
       passive_weapon     = data.passive_weapon,         -- optional / non-defined for all blocks
       passive_multiplier = data.passive_multiplier,     -- optional / non-defined for all blocks
+      action             = data.action,                 -- optional / non-defined for all blocks
     })
   end
   gear:set("data/battle_blocks", battle_scheme_blocks)

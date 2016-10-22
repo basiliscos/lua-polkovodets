@@ -64,11 +64,12 @@ function BattleFormula:perform_battle(pair)
 
   local select_weapons = function()
     local iterator = function(state, value) -- ignored
-      if (#available_active > 0 and #available_passive > 0) then
-        local a_idx = math.random(#available_active)
-        local p_idx = math.random(#available_passive)
-        return a_idx, p_idx
-      end
+        -- print(string.format("select_weapons(), active: %d, passive: %d", #available_active, #available_passive))
+        if (#available_active > 0 and #available_passive > 0) then
+            local a_idx = math.random(#available_active)
+            local p_idx = math.random(#available_passive)
+            return a_idx, p_idx
+        end
     end
     return iterator, nil, true
   end
@@ -89,14 +90,15 @@ function BattleFormula:perform_battle(pair)
     -- get attack/defence ration
     local p_target_type = wi_p.weapon.target_type
     local a_taret_type = wi_a.weapon.target_type
-    local attack = wi_a.weapon.attacks[p_target_type]
+    local attack = wi_a.weapon.attacks[p_target_type.id]
     local unit_a = self.engine:get_unit(wi_a.unit_id)
     local unit_p = self.engine:get_unit(wi_p.unit_id)
     local attacks_from_layer = unit_a:get_layer()
     local defence = wi_p.weapon.defends[attacks_from_layer]
-    local attack = wi_a.weapon.attacks[p_target_type]
+    local attack = wi_a.weapon.attacks[p_target_type.id]
 
-    -- do not simulat shoots
+    -- do not simulate shoots
+    print(string.format("performing shot, attack = %s (target = %s)", attack, p_target_type.id))
     if (attack == 0) then return end
     local ad = attack/defence
     print("ad = " .. ad .. " for " .. wi_a.id.. " vs " .. wi_p.id)
