@@ -56,6 +56,10 @@ for k, name in pairs(input_for[kind]) do
   local iterator = function()
     line_no = line_no + 1
     local line = in_file:read('*l');
+    -- remove windows endings
+    if (line) then
+        line = string.gsub(line, "\r", "")
+    end
     return line, line_no
   end
   local converter = Converter.create(iterator)
