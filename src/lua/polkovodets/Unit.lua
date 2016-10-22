@@ -481,12 +481,23 @@ end
 
 function Unit:_post_action_trigger(action, context)
   -- auto-land air-unit above airport to the airport
-  local stash_candidate = ((self.definition.unit_type.id == 'ut_air')
-        and (self.tile.data.terrain_id == 'a'))
+  local staff = self:_united_staff()
+  local all_seaplane = _.all(staff, function(_, wi) return wi.weapon.movement_type.id == 'seaplane' end)
+  local all_air = _.all(staff, function(_, wi) return wi.weapon.movement_type.id == 'air' end)
+
+  local stash_candidate =
+    -- auto-land aircaft to airport
+        ((self.definition.unit_type.id == 'ut_air')
+        and (self.tile.data.terrain_id == 'a')
+        and all_air)
+    -- auto-land sea-planes to haven
+    or ((self.definition.unit_type.id == 'ut_air')
+        and (self.tile.data.terrain_id == 'h')
+        and all_seaplane)
+    -- auto-dock naval units to haven
     or (
         (self.definition.unit_type.id == 'ut_naval')
         and (self.tile.data.terrain_id == 'h'))
-
   if (stash_candidate
         and (#self.tile.stash < 5)
         and (action == 'move')
