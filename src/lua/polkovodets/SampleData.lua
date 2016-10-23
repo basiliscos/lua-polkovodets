@@ -536,7 +536,7 @@ function SampleData.generate_scenario(gear)
       range   = {air = 0, surface = 1},
       defence = {air = 1, surface = 1 },
       attack = { air = 0, soft = 0, hard = 0 },
-      flags  = { TRANSPORTS_LEG = 1 },
+      flags  = { TRANSPORTS_LEG = 1, TRANSPORTS_TOWED = 1 },
       move_type = "wheeled",
       weap_category = "wc_rear",
       target_type = "soft",
@@ -1103,6 +1103,23 @@ function SampleData.generate_scenario(gear)
         rus_weapon_1 = "20",
       },
     },
+    {
+        id = "rus_unit_15",
+        name = "Russian Unit 2/1",
+        state = "defending",
+        unit_definition_id = "rus_ud_2",
+        x = 32, y = 5,
+        exp = 0,
+        entr = 0,
+        orientation = "right",
+        staff = {
+            rus_weapon_1   = "30",
+            rus_art_1      = "20",
+            rus_trasport_1 = "50",
+        },
+    },
+
+
     {
       id = "ger_unit_1",
       name = "German Unit Definition 1",

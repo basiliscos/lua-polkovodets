@@ -101,4 +101,21 @@ function Weapon:is_capable(flag_mask)
   end
 end
 
+function Weapon:capabilities_iterator(filter)
+    local flags = _.keys(self.flags)
+    local idx = 0
+    local iterator = function()
+        idx = idx + 1
+        while (idx <= #flags) do
+            local flag = flags[idx]
+            local value = self.flags[flag]
+            if (filter(flag, value)) then
+                return flag, value
+            end
+            idx = idx + 1
+        end
+    end
+    return iterator, nil, true
+end
+
 return Weapon

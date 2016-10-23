@@ -57,6 +57,11 @@ function WeaponInstance:is_capable(flag_mask)
   return self.weapon:is_capable(flag_mask)
 end
 
+function WeaponInstance:capabilities_iterator(filter)
+  return self.weapon:capabilities_iterator(filter)
+end
+
+
 function WeaponInstance:update_state(new_state)
    local attacks_first = self:is_capable('ATTACKS_FIRST')
    if (new_state == 'marching' and attacks_first) then

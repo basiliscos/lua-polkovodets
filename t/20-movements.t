@@ -7,6 +7,7 @@ local _ = require ("moses")
 local inspect = require('inspect')
 local PT = require('t.PolkovodetsTest')
 
+
 subtest("movement/leg 1 weapon", function()
   local engine = PT.get_fresh_data()
   local map = engine.gear:get("map")
@@ -137,5 +138,16 @@ subtest("transport problem", function()
   is(problems4[1].class, "missing_weapon", "... but that is missing weapon problem")
 end)
 
+
+subtest("transport for multiple types", function()
+    local engine = PT.get_fresh_data()
+    local map = engine.gear:get("map")
+    local u = map.tiles[32][5]:get_unit('surface')
+    ok(u)
+    u:update_actions_map();
+    local marched_weapons = u:_marched_weapons()
+    is(#marched_weapons, 1, "all weapons are packed into transport")
+    ok(u.data.actions_map.move[map.tiles[35][4].id], "transport can move far enough")
+end)
 
 done_testing()
