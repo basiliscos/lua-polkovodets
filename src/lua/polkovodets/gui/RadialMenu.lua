@@ -144,6 +144,23 @@ function RadialMenu:_generic_actions()
   }
   table.insert(list, toggle_landscape_button)
 
+  -- toggle landscape button
+  local toggle_landscape_button = {
+    policy = "toggle",
+    hint = engine:translate('ui.radial-menu.general.toggle_grid'),
+    state = state:get_show_grid() and "on" or "off",
+    states = {"on", "off"},
+    images = {
+      on  = theme.actions.toggle_grid.on,
+      off = theme.actions.toggle_grid.off,
+    },
+    callback = function()
+      local new_value = not state:get_show_grid()
+      state:set_show_grid(new_value)
+    end
+  }
+  table.insert(list, toggle_landscape_button)
+
   return list
 end
 

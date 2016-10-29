@@ -74,11 +74,8 @@ function Engine.create(gear, language)
     history_layer      = false,
     total_players      = 0,
     reactor            = reactor,
-    options = {
-      show_grid = true,
-    },
-    state          = State.create(reactor),
-    gear           = gear,
+    state              = State.create(reactor),
+    gear               = gear,
   }
   setmetatable(e,Engine)
   e.history = History.create(e)

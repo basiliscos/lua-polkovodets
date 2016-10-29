@@ -142,7 +142,7 @@ function Tile:bind_ctx(context)
 
 
   local landscape_only = state:get_landscape_only()
-  local show_grid = engine.options.show_grid
+  local show_grid = state:get_show_grid()
 
   -- draw nation/objective flag in city, unless there is unit (then unit flag will be drawn)
   local objective = self.data.objective

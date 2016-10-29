@@ -388,12 +388,14 @@ function _Block:select_pair(ctx)
           shots       = a_side.shots,
           casualities = a_side.casualities,
           side        = a_side,
+          multiplier  = self.a_multiplier,
         },
         p = {
           weapons     = p_weapons,
           shots       = p_side.shots,
           casualities = p_side.casualities,
           side        = p_side,
+          multiplier  = self.p_multiplier,
         },
         action  = self.action,
       }

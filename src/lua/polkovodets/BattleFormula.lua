@@ -55,16 +55,31 @@ local _perform_shot = function(p, shots, targets_per_shot, targets)
   return initial_targets - targets, shots
 end
 
+-- randomy selects share weapons from list
+function _opt_random_weapons(list, multiplier)
+    assert((multiplier > 0) and (multiplier <= 1), "multiplier " .. multiplier ..  " should be in range (0; 1]")
+    local cloned_list = _.clone(list, true)
+    local count = math.modf(#list * multiplier)
+    local result = {}
+    while(count > 0) do
+        local idx = math.random(#cloned_list)
+        local wi = table.remove(cloned_list, idx)
+        table.insert(result, wi)
+        count = count - 1
+    end
+    -- return result
+    return _.clone(list, true)
+end
 
 function BattleFormula:perform_battle(pair)
   print("performing " .. pair.action)
 
-  local available_active = _.clone(pair.a.weapons, true)
-  local available_passive = _.clone(pair.p.weapons, true)
+  local available_active = _opt_random_weapons(pair.a.weapons, pair.a.multiplier)
+  local available_passive = _opt_random_weapons(pair.p.weapons, pair.p.multiplier)
 
   local select_weapons = function()
     local iterator = function(state, value) -- ignored
-        -- print(string.format("select_weapons(), active: %d, passive: %d", #available_active, #available_passive))
+        print(string.format("select_weapons(), active: %d, passive: %d", #available_active, #available_passive))
         if (#available_active > 0 and #available_passive > 0) then
             local a_idx = math.random(#available_active)
             local p_idx = math.random(#available_passive)
@@ -131,6 +146,7 @@ function BattleFormula:perform_battle(pair)
 
     update_availabiliy(a_idx, p_idx)
   end
+
   print("casualities results a:" .. inspect(pair.a.casualities)
         .. ", p:" .. inspect(pair.p.casualities))
   print("remaining shots a:" .. inspect(pair.a.shots)

@@ -36,6 +36,7 @@ function State.create(reactor)
     _recent_history = nil,
     _active_layer   = 'surface',
     _current_player = nil,
+    _show_grid      = true,
     -- in hex coordinates; w, h are assumed to be calculated later
     _view_frame     = { x = 1,  y = 1, w = 0, h = 0},
   }
@@ -89,6 +90,12 @@ function State:set_landscape_only(value)
 end
 function State:get_landscape_only() return self._landscape_only end
 
+function State:set_show_grid(value)
+  self._show_grid = value
+  self.reactor:publish('map.update', value)
+end
+function State:get_show_grid() return self._show_grid end
+
 function State:set_recent_history(value)
   self._recent_history = value
   self.reactor:publish('map.update', value)
@@ -110,7 +117,6 @@ function State:get_current_player() return self._current_player end
 
 function State:set_view_frame(value)
   self._view_frame = value
-  -- print(string.format("frame x, y, h, w = %d:%d %d:%d", hx, hy, w, h))
   self.reactor:publish('map.view-frame.update')
 end
 function State:get_view_frame() return self._view_frame end

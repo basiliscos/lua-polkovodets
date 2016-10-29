@@ -106,6 +106,10 @@ function Theme:initialize(theme_data, renderer, data_dirs)
         on  = renderer:load_texture(theme_dir .. '/actions/landscape-on.png'),
         off = renderer:load_texture(theme_dir .. '/actions/landscape-off.png'),
       },
+      toggle_grid = {
+        on  = renderer:load_texture(theme_dir .. '/actions/show-grid-on.png'),
+        off = renderer:load_texture(theme_dir .. '/actions/show-grid-off.png'),
+      },
       select_unit = {
         available = renderer:load_texture(theme_dir .. '/actions/select-unit.png'),
         hilight   = renderer:load_texture(theme_dir .. '/actions/select-unit-hilight.png'),
