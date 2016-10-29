@@ -152,14 +152,18 @@ end)
 
 
 subtest("possibility to move fighter to occupied by other fighter hex, but out of the spot", function()
-  local engine = PT.get_fresh_data()
-  local map = engine.gear:get("map")
+    local engine = PT.get_fresh_data()
+    local map = engine.gear:get("map")
 
-  local f = map.tiles[7][7]:get_unit('air')
-  ok(f)
-  f:update_actions_map()
-  -- print(inspect(f.data.actions_map.move))
-  ok(f.data.actions_map.move[map.tiles[12][4].id], "fighter don't knows that hex is occupied by other")
+    local f = map.tiles[7][7]:get_unit('air')
+    ok(f)
+    f:update_actions_map()
+    -- print(inspect(f.data.actions_map.move))
+    ok(f.data.actions_map.move[map.tiles[12][4].id], "fighter don't knows that hex is occupied by other")
+
+    f:perform_action('move', map.tiles[12][5])
+    f:update_actions_map()
+    ok(f:is_action_possible('attack', {map.tiles[12][4], 'air', 'battle'}), "possible to air-attack enemy aircraft")
 end)
 
 

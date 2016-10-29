@@ -15,7 +15,7 @@ subtest("simple shot 250 vs 30 infantry units", function()
     local map = engine.gear:get("map")
     local ru_1 = map.tiles[4][3]:get_unit('surface')
     ok(ru_1)
-    ru_1:update_actions_map();
+    ru_1:update_actions_map()
     ru_1:perform_action('attack', {map.tiles[5][3]})
 
     local record = (engine.state:get_actual_records())[1]
@@ -27,6 +27,24 @@ subtest("simple shot 250 vs 30 infantry units", function()
 
     is(record.results.p.participants["u:ger_unit_1/w:ger_weapon_1"], 30);
     ok(record.results.p.casualities["u:ger_unit_1/w:ger_weapon_1"] > 0, "somebody from enemies should be killed");
+end)
+
+subtest("air vs air", function()
+    local engine = PT.get_fresh_data()
+    local map = engine.gear:get("map")
+    local ru_1 = map.tiles[7][7]:get_unit('air')
+
+    ok(ru_1)
+    ru_1:update_actions_map()
+    ru_1:perform_action('move', map.tiles[12][5])
+    ru_1:update_actions_map();
+    ru_1:perform_action('attack', {map.tiles[12][4]})
+
+    local records = engine.state:get_actual_records()
+    local record = records[#records]
+    print(inspect(record.results))
+
+    ok(record.results.p.casualities["u:ger_unit_4/w:ger_aircraft_1"] > 0, "somebody from enemies should be killed");
 end)
 
 done_testing()

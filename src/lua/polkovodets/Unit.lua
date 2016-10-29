@@ -589,7 +589,7 @@ function Unit:_move_to(dst_tile)
   -- print("move map = " .. inspect(self.data.actions_map.move))
   local map = self.engine.gear:get("map")
   local costs = assert(self.data.actions_map.move[dst_tile.id],
-    "unit " .. self.id  .. " cannot move to ".. dst_tile.id)
+    string.format("unit %s cannot be moved to %s", self.id, dst_tile.id))
   local being_attached = self:_detach()
   local src_tile = self.tile
 
@@ -758,7 +758,10 @@ function Unit:_battle(context)
 end
 
 function Unit:_attack_on(context)
-    self:_update_state('attacking')
+    -- for air & naval units no sense of "attacking" state
+    if (self.definition.unit_type.id == 'ut_land') then
+        self:_update_state('attacking')
+    end
     table.insert(context, #context + 1, 'battle')
     self:_battle(context)
 end
@@ -1121,7 +1124,7 @@ function Unit:update_actions_map()
   self.data.actions_map = actions_map
   self.engine.reactor:publish("map.update");
 
-  -- print(inspect(actions_map.move))
+  -- print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)
@@ -1438,6 +1441,23 @@ function Unit:get_actions(tile)
       },
       callback = function()
         self:perform_action('attack-artillery', {tile})
+      end
+    })
+  end
+
+  -- unit action: air battle
+  if (self:is_action_possible('attack', {tile, 'air', "battle"})) then
+    table.insert(list, {
+      priority = 42,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_battle'),
+      state = "available",
+      images = {
+        available = theme.actions.battle.available,
+        hilight   = theme.actions.battle.hilight,
+      },
+      callback = function()
+        self:perform_action('attack', {tile})
       end
     })
   end

@@ -357,6 +357,9 @@ function SampleData.generate_battle_scheme(gear)
     { block_id = "2.1", active_weapon = 'I.category("wc_infant")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
     { block_id = "2.2", active_weapon = 'I.category("wc_tank")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
+    { block_id = "3", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_air") && (I.state == "marching") && (I.state == "marching")'},
+    { block_id = "3.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+
   })
 
   gear:set("data/transition_rules", {
