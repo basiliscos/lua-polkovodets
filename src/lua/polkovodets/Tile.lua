@@ -432,6 +432,7 @@ function Tile:get_possible_actions()
   local engine = self.engine
   local state = engine.state
   local theme = engine.gear:get("theme")
+  local map = engine.gear:get("map")
   local my_unit = state:get_selected_unit()
   local tile_units = self:get_all_units(function() return true end)
   _.each(self.stash, function(_, unit) table.insert(tile_units, unit) end)
@@ -440,6 +441,10 @@ function Tile:get_possible_actions()
 
   local list = {}
   local my_units_selector = function(_, unit) return unit.player == current_player end
+  local visible_enemy_units_selector = function(_, unit)
+    local spot_value = map.united_spotting.map[self.id]
+    return (unit.player ~= current_player) and spot_value and spot_value > 0
+  end
 
   -- we can't much in view-only mode
   if (state:get_landscape_only()) then return list end
@@ -471,7 +476,7 @@ function Tile:get_possible_actions()
       table.insert(list, action)
     end)
 
-    _.each(_.reject(tile_units, my_units_selector), function(idx, unit)
+    _.each(_.select(tile_units, visible_enemy_units_selector), function(idx, unit)
       local action = {
         policy = "click",
         priority = 100 * idx,

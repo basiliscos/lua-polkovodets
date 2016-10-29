@@ -795,7 +795,10 @@ function Unit:_enemy_near(tile)
   for adj_tile in map:get_adjastent_tiles(tile) do
     local enemy = adj_tile:get_unit(layer)
     local has_enemy = enemy and enemy.player ~= self.player
-    if (has_enemy) then return true end
+    local spotting_value = map.united_spotting.map[adj_tile.id]
+    if (has_enemy and spotting_value and spotting_value > 0) then
+        return true
+    end
   end
   return false
 end
@@ -929,9 +932,13 @@ function Unit:update_actions_map()
         table.insert(landing_candidates, dst_tile)
       end
 
-      local can_move = not (other_unit and other_unit.player ~= self.player and other_unit:get_layer() == layer)
+      local can_move = not (other_unit and other_unit.player ~= self.player
+        and other_unit:get_layer() == layer
+        and map.united_spotting.map[dst_tile.id] and map.united_spotting.map[dst_tile.id] > 0
+      )
+      -- print(string.format("%s -> %s, united spot %s", src_tile.id, dst_tile.id, map.united_spotting.map[dst_tile.id]))
       if (can_move) then
-        -- print(string.format("%s -> %s : %d", src_tile.id, dst_tile.id, cost))
+        -- print(string.format("%s -> %s", src_tile.id, dst_tile.id))
         fuel_at[dst_tile.id] = costs
         local has_enemy_near = self:_enemy_near(dst_tile)
         for adj_tile in map:get_adjastent_tiles(dst_tile, fuel_at) do

@@ -150,4 +150,17 @@ subtest("transport for multiple types", function()
     ok(u.data.actions_map.move[map.tiles[35][4].id], "transport can move far enough")
 end)
 
+
+subtest("possibility to move fighter to occupied by other fighter hex, but out of the spot", function()
+  local engine = PT.get_fresh_data()
+  local map = engine.gear:get("map")
+
+  local f = map.tiles[7][7]:get_unit('air')
+  ok(f)
+  f:update_actions_map()
+  -- print(inspect(f.data.actions_map.move))
+  ok(f.data.actions_map.move[map.tiles[12][4].id], "fighter don't knows that hex is occupied by other")
+end)
+
+
 done_testing()
