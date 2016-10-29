@@ -76,7 +76,7 @@ subtest("actions for air unit", function()
   is(fighter:is_action_possible('move', map.tiles[8][8]), true, "can move to tile [8:8]")
 end)
 
-subtest("attack posibilities", function()
+subtest("land unit attack posibilities", function()
     local engine = PT.get_fresh_data()
     local map = engine.gear:get("map")
 

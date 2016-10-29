@@ -637,6 +637,22 @@ function SampleData.generate_scenario(gear)
       weap_type  = "wt_engineer",
       weap_class = "wk_infant",
     },
+    {
+      id = "ger_aircraft_1",
+      name = "messerschmitt",
+      nation = "ger",
+      movement = 15,
+      range   = {air = 1, surface = 0},
+      defence = {air = 10, surface = 7 },
+      attack = { air = 10, soft = 4, hard = 1 },
+      flags  = { },
+      move_type = "air",
+      weap_category = "wc_fighter",
+      target_type = "air",
+      weap_type  = "wt_FightLt",
+      weap_class = "wk_fighter",
+    },
+
   })
 
 
@@ -890,6 +906,24 @@ function SampleData.generate_scenario(gear)
         constructing       = "units/ger/GerInf01.png",
       }
     },
+    {
+      id = "ger_ud_3",
+      name = "Messerschmitt Bf.109",
+      size = "S",
+      flags = {},
+      nation = "ger",
+      ammo = 5,
+      unit_class = "air_fighter",
+      spotting = 3,
+      staff = {
+        wt_FightLt = 15,
+      },
+      icons = {
+        marching    = "units/ger/ger_avia_F1.png",
+        refuelling  = "units/ger/ger_avia_S1.png",
+      },
+    },
+
   })
 
 
@@ -1157,6 +1191,19 @@ function SampleData.generate_scenario(gear)
       orientation = "left",
       staff = {
         ger_weapon_2 = "10",
+      },
+    },
+    {
+      id = "ger_unit_4",
+      name = "German Unit 4 / Messerschmit",
+      state = "marching",
+      unit_definition_id = "ger_ud_3",
+      x = 12, y = 4,
+      exp = 0,
+      entr = 0,
+      orientation = "left",
+      staff = {
+        ger_aircraft_1 = 15,
       },
     },
   })
