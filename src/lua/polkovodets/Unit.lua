@@ -551,6 +551,7 @@ function Unit:perform_action(action, context)
     self:update_spotting_map()
     self:update_actions_map()
   end
+  self.engine.reactor:publish("map.update")
 end
 
 function Unit:_retreat(dst_tile)
@@ -1124,7 +1125,7 @@ function Unit:update_actions_map()
   self.data.actions_map = actions_map
   self.engine.reactor:publish("map.update");
 
-  print(inspect(actions_map.attack))
+  -- print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)

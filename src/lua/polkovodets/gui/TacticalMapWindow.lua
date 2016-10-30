@@ -283,12 +283,20 @@ function TacticalMapWindow:_remove_hanlder(event_type, tile_id, cb)
 end
 
 function TacticalMapWindow:_on_map_update()
-  local context = self.drawing.context
-  if (self.handlers_bound) then
-    self:unbind_ctx()
-  end
-  self:bind_ctx(context)
-  self:_on_ui_update()
+    local context = self.drawing.context
+    if (self.handlers_bound) then
+        self:unbind_ctx()
+    end
+    self:bind_ctx(context)
+
+    -- refresh current actions
+    local state = self.engine.state
+    local tile = state:get_active_tile()
+    if (tile) then
+        state:set_active_tile(tile, tile:get_possible_actions())
+    end
+
+    self:_on_ui_update()
 end
 
 
