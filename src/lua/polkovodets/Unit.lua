@@ -751,7 +751,7 @@ function Unit:_battle(context)
     i = { casualities = i_casualities, participants = i_participants },
     p = { casualities = p_casualities, participants = p_participants },
   }
-  self.engine.history:record_player_action(action, ctx, true, results)
+  self.engine.history:record_player_action('battle', ctx, true, results)
   print("batte results = " .. inspect(results))
 
   self:_check_death()

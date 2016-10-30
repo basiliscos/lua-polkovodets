@@ -357,14 +357,17 @@ function SampleData.generate_battle_scheme(gear)
     { block_id = "2.1", active_weapon = 'I.category("wc_infant")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
     { block_id = "2.2", active_weapon = 'I.category("wc_tank")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
-    { block_id = "3", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_air") && (I.state == "marching") && (I.state == "marching")'},
-    { block_id = "3.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+    { block_id = "3", command = "fire/artillery", condition = '(I.state == "defending") && (P.type == "ut_land")'},
+    { block_id = "3.1", active_weapon = 'I.category("wc_artil")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "fire" },
 
-    { block_id = "4", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_land") && (I.state == "marching")'},
-    { block_id = "4.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+    { block_id = "4", command = "fire/artillery", condition = '(I.type == "ut_land") && (P.type == "ut_air") && (P.state == "marching")'},
+    { block_id = "4.1", active_weapon = 'I.category("wc_antiair")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "fire" },
 
-    { block_id = "5", command = "fire/artillery", condition = '(I.type == "ut_land") && (P.type == "ut_air") && (P.state == "marching")'},
-    { block_id = "5.1", active_weapon = 'I.category("wc_antiair")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+    { block_id = "10", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_air") && (I.state == "marching") && (I.state == "marching")'},
+    { block_id = "10.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+
+    { block_id = "11", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_land") && (I.state == "marching")'},
+    { block_id = "11.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
   })
 
