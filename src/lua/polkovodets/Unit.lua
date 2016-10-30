@@ -1124,7 +1124,7 @@ function Unit:update_actions_map()
   self.data.actions_map = actions_map
   self.engine.reactor:publish("map.update");
 
-  -- print(inspect(actions_map.attack))
+  print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)
@@ -1241,7 +1241,7 @@ function Unit:get_actions(tile)
     -- unit info
     if (self:is_action_possible('information', self.tile)) then
       table.insert(list, {
-        priority = 10,
+        priority = 1000,
         policy = "click",
         hint = engine:translate('ui.radial-menu.hex.unit_info', {name = self.name}),
         state = "available",
@@ -1257,7 +1257,7 @@ function Unit:get_actions(tile)
 
     if (self:is_action_possible('change_orientation', self.tile)) then
       table.insert(list, {
-        priority = 10,
+        priority = 1001,
         policy = "click",
         hint = engine:translate('ui.radial-menu.hex.unit_rotate'),
         state = "available",
@@ -1461,6 +1461,23 @@ function Unit:get_actions(tile)
       end
     })
   end
+
+  if (self:is_action_possible('attack', {tile, 'surface', "fire/bombing"})) then
+    table.insert(list, {
+      priority = 43,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_battle'),
+      state = "available",
+      images = {
+        available = theme.actions.battle.available,
+        hilight   = theme.actions.battle.hilight,
+      },
+      callback = function()
+        self:perform_action('attack', {tile})
+      end
+    })
+  end
+
 
   -- unit action: counter attack
   if (self:is_action_possible('counter-attack', {tile, 'surface', 'battle'})) then

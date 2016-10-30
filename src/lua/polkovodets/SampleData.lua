@@ -360,6 +360,9 @@ function SampleData.generate_battle_scheme(gear)
     { block_id = "3", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_air") && (I.state == "marching") && (I.state == "marching")'},
     { block_id = "3.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
+    { block_id = "4", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_land") && (I.state == "marching")'},
+    { block_id = "4.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+
   })
 
   gear:set("data/transition_rules", {
@@ -583,7 +586,7 @@ function SampleData.generate_scenario(gear)
       movement = 15,
       range   = {air = 1, surface = 0},
       defence = {air = 10, surface = 7 },
-      attack = { air = 10, soft = 4, hard = 1 },
+      attack = { air = 10, soft = 10, hard = 1 },
       flags  = { },
       move_type = "air",
       weap_category = "wc_fighter",
@@ -647,7 +650,7 @@ function SampleData.generate_scenario(gear)
       movement = 15,
       range   = {air = 1, surface = 0},
       defence = {air = 10, surface = 7 },
-      attack = { air = 10, soft = 4, hard = 1 },
+      attack = { air = 10, soft = 10, hard = 1 },
       flags  = { },
       move_type = "air",
       weap_category = "wc_fighter",

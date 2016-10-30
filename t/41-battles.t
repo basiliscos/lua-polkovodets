@@ -10,7 +10,7 @@ local PT = require('t.PolkovodetsTest')
 -- always the same results
 math.randomseed(0)
 
-subtest("simple shot 250 vs 30 infantry units", function()
+subtest("[land vs land] simple shot 250 vs 30 infantry units", function()
     local engine = PT.get_fresh_data()
     local map = engine.gear:get("map")
     local ru_1 = map.tiles[4][3]:get_unit('surface')
@@ -29,7 +29,7 @@ subtest("simple shot 250 vs 30 infantry units", function()
     ok(record.results.p.casualities["u:ger_unit_1/w:ger_weapon_1"] > 0, "somebody from enemies should be killed");
 end)
 
-subtest("air vs air", function()
+subtest("[air vs air]", function()
     local engine = PT.get_fresh_data()
     local map = engine.gear:get("map")
     local ru_1 = map.tiles[7][7]:get_unit('air')
@@ -46,5 +46,24 @@ subtest("air vs air", function()
 
     ok(record.results.p.casualities["u:ger_unit_4/w:ger_aircraft_1"] > 0, "somebody from enemies should be killed");
 end)
+
+subtest("[air vs land]", function()
+    local engine = PT.get_fresh_data()
+    local map = engine.gear:get("map")
+    local ru_1 = map.tiles[7][7]:get_unit('air')
+
+    ok(ru_1)
+    ru_1:update_actions_map()
+    ru_1:perform_action('move', map.tiles[5][3])
+    ru_1:update_actions_map();
+    ru_1:perform_action('attack', {map.tiles[5][3]})
+
+    local records = engine.state:get_actual_records()
+    local record = records[#records]
+    print(inspect(record.results))
+
+    ok(record.results.p.casualities["u:ger_unit_1/w:ger_weapon_1"] > 0, "somebody from enemies should be killed");
+end)
+
 
 done_testing()
