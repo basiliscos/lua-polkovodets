@@ -768,6 +768,13 @@ function Unit:_attack_on(context)
 end
 
 function Unit:_attack_artillery_on(context)
+
+    if (self.definition.unit_type.id == 'ut_land') then
+        local state = self.data.state
+        if ((state ~= 'attacking') and (state ~= 'defending') and (state ~= 'circular_defending')) then
+            self:_update_state('defending')
+        end
+    end
     table.insert(context, #context + 1, 'fire/artillery')
     self:_battle(context)
 end
@@ -1492,7 +1499,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:perform_action('attack', {tile})
+        self:perform_action('attack-artillery', {tile})
       end
     })
   end

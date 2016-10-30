@@ -363,7 +363,7 @@ function SampleData.generate_battle_scheme(gear)
     { block_id = "4", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_land") && (I.state == "marching")'},
     { block_id = "4.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
-    { block_id = "5", command = "battle", condition = '(I.type == "ut_land") && (P.type == "ut_air") && (P.state == "marching")'},
+    { block_id = "5", command = "fire/artillery", condition = '(I.type == "ut_land") && (P.type == "ut_air") && (P.state == "marching")'},
     { block_id = "5.1", active_weapon = 'I.category("wc_antiair")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
   })

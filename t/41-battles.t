@@ -78,9 +78,11 @@ subtest("[land vs air]", function()
 
     local ger_1 = map.tiles[9][11]:get_unit('surface')
     ok(ger_1)
+    ger_1:_update_state('marching')
     ger_1:update_actions_map();
-    ger_1:perform_action('attack', {map.tiles[10][10]})
+    ger_1:perform_action('attack-artillery', {map.tiles[10][10]})
 
+    is(ger_1.data.state, "defending", "force switch to defedning state from march before artillery attack")
     local records = engine.state:get_actual_records()
     local record = records[#records]
     print(inspect(record.results))
