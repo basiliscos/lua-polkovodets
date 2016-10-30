@@ -1274,7 +1274,7 @@ function Unit:get_actions(tile)
 
     if (self:is_action_possible('defend', self.tile)) then
       table.insert(list, {
-        priority = 11,
+        priority = 211,
         policy = "click",
         hint = engine:translate('ui.radial-menu.hex.unit_defence'),
         state = "available",
@@ -1290,7 +1290,7 @@ function Unit:get_actions(tile)
 
     if (self:is_action_possible('circular_defend', self.tile)) then
       table.insert(list, {
-        priority = 12,
+        priority = 212,
         policy = "click",
         hint = engine:translate('ui.radial-menu.hex.unit_cir_defence'),
         state = "available",
@@ -1308,7 +1308,7 @@ function Unit:get_actions(tile)
     _.each(self.data.attached, function(idx, unit)
       if (unit:is_action_possible('detach', self.tile)) then
         table.insert(list, {
-          priority = 20 + idx,
+          priority = 220 + idx,
           policy = "click",
           hint = engine:translate('ui.radial-menu.hex.unit_detach', {name = unit.name}),
           state = "available",
@@ -1329,7 +1329,7 @@ function Unit:get_actions(tile)
   -- move to tile
   if (self:is_action_possible('move', tile)) then
     table.insert(list, {
-      priority = 20,
+      priority = 120,
       policy = "click",
       hint = engine:translate('ui.radial-menu.hex.unit_move', {x = tile.data.x, y = tile.data.y}),
       state = "available",
@@ -1346,7 +1346,7 @@ function Unit:get_actions(tile)
   -- retreat to tile
   if (self:is_action_possible('retreat', tile)) then
     table.insert(list, {
-      priority = 20,
+      priority = 121,
       policy = "click",
       hint = engine:translate('ui.radial-menu.hex.unit_retreat', {x = tile.data.x, y = tile.data.y}),
       state = "available",
@@ -1363,7 +1363,7 @@ function Unit:get_actions(tile)
   -- unit action: patrol
   if (self:is_action_possible('patrol', tile)) then
     table.insert(list, {
-      priority = 21,
+      priority = 122,
       policy = "click",
       hint = engine:translate('ui.radial-menu.hex.unit_patrol', {x = tile.data.x, y = tile.data.y}),
       state = "available",
@@ -1380,7 +1380,7 @@ function Unit:get_actions(tile)
   -- unit action: raid
   if (self:is_action_possible('raid', tile)) then
     table.insert(list, {
-      priority = 22,
+      priority = 123,
       policy = "click",
       hint = engine:translate('ui.radial-menu.hex.unit_raid', {x = tile.data.x, y = tile.data.y}),
       state = "available",
@@ -1398,7 +1398,7 @@ function Unit:get_actions(tile)
   if (self:is_action_possible('attach', tile)) then
     -- print("attach allowed at " .. tile.id .. " for unit " .. self.id)
     table.insert(list, {
-      priority = 30,
+      priority = 130,
       policy = "click",
       hint = engine:translate('ui.radial-menu.hex.unit_merge'),
       state = "available",
@@ -1463,6 +1463,7 @@ function Unit:get_actions(tile)
     })
   end
 
+  -- unit action: air bombs land units
   if (self:is_action_possible('attack', {tile, 'surface', "fire/bombing"})) then
     table.insert(list, {
       priority = 43,
@@ -1479,11 +1480,27 @@ function Unit:get_actions(tile)
     })
   end
 
+  -- unit action: land unit shoots at aircraft
+  if (self:is_action_possible('attack', {tile, 'air', "fire/anti-air"})) then
+    table.insert(list, {
+      priority = 44,
+      policy = "click",
+      hint = engine:translate('ui.radial-menu.hex.unit_battle'),
+      state = "available",
+      images = {
+        available = theme.actions.battle.available,
+        hilight   = theme.actions.battle.hilight,
+      },
+      callback = function()
+        self:perform_action('attack', {tile})
+      end
+    })
+  end
 
   -- unit action: counter attack
   if (self:is_action_possible('counter-attack', {tile, 'surface', 'battle'})) then
     table.insert(list, {
-      priority = 42,
+      priority = 49,
       policy = "click",
       hint = engine:translate('ui.radial-menu.hex.unit_counter-attack'),
       state = "available",

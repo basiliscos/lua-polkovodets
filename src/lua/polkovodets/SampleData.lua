@@ -363,6 +363,9 @@ function SampleData.generate_battle_scheme(gear)
     { block_id = "4", command = "battle", condition = '(I.type == "ut_air") && (P.type == "ut_land") && (I.state == "marching")'},
     { block_id = "4.1", active_weapon = 'I.category("wc_fighter")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
 
+    { block_id = "5", command = "battle", condition = '(I.type == "ut_land") && (P.type == "ut_air") && (P.state == "marching")'},
+    { block_id = "5.1", active_weapon = 'I.category("wc_antiair")', active_multiplier = "1", passive_weapon = 'P.target("any")', passive_multiplier = "1", action = "battle" },
+
   })
 
   gear:set("data/transition_rules", {
@@ -497,6 +500,7 @@ function SampleData.generate_scenario(gear)
     {id = "wk_infant", flags = {}, icon = "units/classes/wk_infant" },
     {id = "wk_armor", flags = {}, icon = "units/classes/wk_armor" },
     {id = "wk_artil", flags = { RANGED_FIRE = "TRUE" }, icon = "units/classes/wk_artil" },
+    {id = "wk_antiair", flags = { RANGED_FIRE = "TRUE" }, icon = "units/classes/wk_antiair" },
     {id = "wk_fighter", flags = {}, icon = "units/classes/wk_fighter" },
     {id = "wk_transp", flags = {}, icon = "units/classes/wk_transp" },
   })
@@ -507,6 +511,7 @@ function SampleData.generate_scenario(gear)
     {id = "wc_artil",   flags = {} },
     {id = "wc_rear",    flags = {} },
     {id = "wc_fighter", flags = {} },
+    {id = "wc_antiair", flags = {} },
   })
 
   gear:set("data/weapons/types", {
@@ -515,6 +520,7 @@ function SampleData.generate_scenario(gear)
     {id = "wt_tankInfMid", class_id = "wk_armor",   flags = {} },
     {id = "wt_transp",     class_id = "wk_transp",  flags = {} },
     {id = "wt_artil",      class_id = "wk_artil",   flags = {} },
+    {id = "wt_antiair",    class_id = "wk_antiair", flags = {} },
     {id = "wt_FightLt",    class_id = "wk_fighter", flags = {} },
   })
 
@@ -658,7 +664,22 @@ function SampleData.generate_scenario(gear)
       weap_type  = "wt_FightLt",
       weap_class = "wk_fighter",
     },
-
+    {
+      id = "ger_aa_weapon_1",
+      name = "Flack 36",
+      range = { surface = 1 },
+      nation = "ger",
+      movement = 3,
+      range   = {air = 2, surface = 1},
+      defence = {air = 8, surface = 7 },
+      attack = { air = 10, soft = 1, hard = 1 },
+      flags  = { },
+      move_type = "tracked",
+      weap_category = "wc_antiair",
+      target_type = "soft",
+      weap_type  = "wt_antiair",
+      weap_class = "wk_antiair",
+    },
   })
 
 
@@ -923,6 +944,7 @@ function SampleData.generate_scenario(gear)
       spotting = 3,
       staff = {
         wt_FightLt = 15,
+        wt_antiair = 15,
       },
       icons = {
         marching    = "units/ger/ger_avia_F1.png",
@@ -1197,6 +1219,7 @@ function SampleData.generate_scenario(gear)
       orientation = "left",
       staff = {
         ger_weapon_2 = "10",
+        ger_aa_weapon_1 = 15,
       },
     },
     {
