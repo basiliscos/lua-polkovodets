@@ -724,8 +724,9 @@ function Unit:_pre_battle(tile)
 end
 
 function Unit:_battle(context)
-  local tile, action = table.unpack(context)
-  local enemy_unit = tile:get_any_unit(self.engine.state:get_active_layer())
+  local tile, layer, action = table.unpack(context)
+  local enemy_unit = tile:get_any_unit(layer)
+  assert(enemy_unit, "no enemy unit at tile " .. tile.id .. " on layer " .. layer)
   self:_pre_battle(tile)
   enemy_unit:_pre_battle(tile)
   local battle_scheme = self.engine.gear:get("battle_scheme")
@@ -1132,7 +1133,7 @@ function Unit:update_actions_map()
   self.data.actions_map = actions_map
   self.engine.reactor:publish("map.update");
 
-  -- print(inspect(actions_map.attack))
+  print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)
@@ -1431,7 +1432,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:perform_action('attack', {tile})
+        self:perform_action('attack', {tile, 'surface'})
       end
     })
   end
@@ -1448,7 +1449,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.attack_artillery.hilight,
       },
       callback = function()
-        self:perform_action('attack-artillery', {tile})
+        self:perform_action('attack-artillery', {tile, 'surface'})
       end
     })
   end
@@ -1465,7 +1466,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:perform_action('attack', {tile})
+        self:perform_action('attack', {tile, 'air'})
       end
     })
   end
@@ -1482,7 +1483,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:perform_action('attack', {tile})
+        self:perform_action('attack', {tile, 'surface'})
       end
     })
   end
@@ -1499,7 +1500,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.battle.hilight,
       },
       callback = function()
-        self:perform_action('attack-artillery', {tile})
+        self:perform_action('attack-artillery', {tile, 'air'})
       end
     })
   end
@@ -1516,7 +1517,7 @@ function Unit:get_actions(tile)
         hilight   = theme.actions.counter_attack.hilight,
       },
       callback = function()
-        self:perform_action('counter-attack', {tile})
+        self:perform_action('counter-attack', {tile, 'surface' })
       end
     })
   end

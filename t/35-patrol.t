@@ -31,7 +31,7 @@ subtest("patrol attacks patrol: attack & defend switch", function()
     is(inf_ger.data.state, 'patrolling')
     ok(inf_ru:is_action_possible('attack', {map.tiles[5][4], 'surface', 'battle'}), "can attack enemy patrolling unit")
 
-    inf_ru:perform_action('attack', {map.tiles[5][4], 'battle'})
+    inf_ru:perform_action('attack', {map.tiles[5][4], 'surface', 'battle'})
     is(inf_ru.data.state, 'attacking')
     is(inf_ger.data.state, 'defending')
 end)

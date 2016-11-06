@@ -16,7 +16,7 @@ subtest("[land vs land] simple battle 250 vs 30 infantry units", function()
     local ru_1 = map.tiles[4][3]:get_unit('surface')
     ok(ru_1)
     ru_1:update_actions_map()
-    ru_1:perform_action('attack', {map.tiles[5][3]})
+    ru_1:perform_action('attack', {map.tiles[5][3], 'surface'})
 
     local record = (engine.state:get_actual_records())[1]
     print(inspect(record.results))
@@ -35,7 +35,7 @@ subtest("[land vs land] artillery fire", function()
     local ru_1 = map.tiles[4][4]:get_unit('surface')
     ok(ru_1)
     ru_1:update_actions_map()
-    ru_1:perform_action('attack-artillery', {map.tiles[5][3]})
+    ru_1:perform_action('attack-artillery', {map.tiles[5][3], 'surface'})
 
     local record = (engine.state:get_actual_records())[1]
     print(inspect(record.results))
@@ -53,7 +53,7 @@ subtest("[air vs air]", function()
     ru_1:update_actions_map()
     ru_1:perform_action('move', map.tiles[12][5])
     ru_1:update_actions_map();
-    ru_1:perform_action('attack', {map.tiles[12][4]})
+    ru_1:perform_action('attack', {map.tiles[12][4], 'air'})
 
     local records = engine.state:get_actual_records()
     local record = records[#records]
@@ -71,7 +71,7 @@ subtest("[air vs land]", function()
     ru_1:update_actions_map()
     ru_1:perform_action('move', map.tiles[5][3])
     ru_1:update_actions_map();
-    ru_1:perform_action('attack', {map.tiles[5][3]})
+    ru_1:perform_action('attack', {map.tiles[5][3], 'surface'})
 
     local records = engine.state:get_actual_records()
     local record = records[#records]
@@ -95,7 +95,7 @@ subtest("[land vs air]", function()
     ok(ger_1)
     ger_1:_update_state('marching')
     ger_1:update_actions_map();
-    ger_1:perform_action('attack-artillery', {map.tiles[10][10]})
+    ger_1:perform_action('attack-artillery', {map.tiles[10][10], 'air'})
 
     is(ger_1.data.state, "defending", "force switch to defedning state from march before artillery attack")
     local records = engine.state:get_actual_records()
