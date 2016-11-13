@@ -1133,7 +1133,7 @@ function Unit:update_actions_map()
   self.data.actions_map = actions_map
   self.engine.reactor:publish("map.update");
 
-  print(inspect(actions_map.attack))
+  -- print(inspect(actions_map.attack))
 end
 
 function Unit:is_capable(flag_mask)
