@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local inspect = require('inspect')
 local _ = require ("moses")
 
+local _DEBUG_FORMULA = true
+
 local BattleFormula = {}
 BattleFormula.__index = BattleFormula
 
@@ -36,73 +38,14 @@ local HIT_PROBABILITY_MAX = 0.98
 local HIT_PROBABILITY_MIN = 0.02
 
 local _probability = function(v)
-  local p = 0.1 * (v^2.2)
+  local p = 0.05 * (v^2.2)
   if (p > HIT_PROBABILITY_MAX) then return HIT_PROBABILITY_MAX end
   if (p < HIT_PROBABILITY_MIN) then return HIT_PROBABILITY_MIN end
   return p
 end
 
-local _perform_shot = function(p, shots, targets_per_shot, targets)
-  local initial_targets, initial_shots = targets, shots
-  local end_value =  ((targets_per_shot < 1) and 1 or targets_per_shot)
-  while((shots > 0) and (targets > 0)) do
-    shots = shots - 1
-    for h = 1,end_value do
-      local r = math.random()
-      if ((r <= p) and (targets > 0)) then targets = targets - 1 end
-    end
-  end
-  return initial_targets - targets, shots
-end
-
--- randomy selects share weapons from list
-function _opt_random_weapons(list, multiplier)
-    assert((multiplier > 0) and (multiplier <= 1), "multiplier " .. multiplier ..  " should be in range (0; 1]")
-    local cloned_list = _.clone(list, true)
-    local count = math.modf(#list * multiplier)
-    local result = {}
-    while(count > 0) do
-        local idx = math.random(#cloned_list)
-        local wi = table.remove(cloned_list, idx)
-        table.insert(result, wi)
-        count = count - 1
-    end
-    -- return result
-    return _.clone(list, true)
-end
-
-function BattleFormula:perform_battle(pair)
-  print("performing " .. pair.action)
-
-  local available_active = _opt_random_weapons(pair.a.weapons, pair.a.multiplier)
-  local available_passive = _opt_random_weapons(pair.p.weapons, pair.p.multiplier)
-
-  local select_weapons = function()
-    local iterator = function(state, value) -- ignored
-        print(string.format("select_weapons(), active: %d, passive: %d", #available_active, #available_passive))
-        if (#available_active > 0 and #available_passive > 0) then
-            local a_idx = math.random(#available_active)
-            local p_idx = math.random(#available_passive)
-            return a_idx, p_idx
-        end
-    end
-    return iterator, nil, true
-  end
-
-  local update_availabiliy = function(a_idx, p_idx)
-    local wi_a = available_active[a_idx]
-    local wi_p = available_passive[p_idx]
-    if ((wi_a.data.quantity > 0) or (pair.a.shots[wi_a.id])) then
-      table.remove(available_active, a_idx)
-    end
-
-    if (wi_p.data.quantity > 0) then
-      table.remove(available_passive, p_idx)
-    end
-  end
-
-  local perform_shot = function(wi_a, wi_p, a_side, p_side)
-    -- get attack/defence ration
+function BattleFormula:_perform_shot(a_item, p_item)
+    local wi_a, wi_p = a_item.weapon_instance, p_item.weapon_instance
     local p_target_type = wi_p.weapon.target_type
     local a_taret_type = wi_a.weapon.target_type
     local attack = wi_a.weapon.attacks[p_target_type.id]
@@ -112,46 +55,184 @@ function BattleFormula:perform_battle(pair)
     local defence = wi_p.weapon.defends[attacks_from_layer]
     local attack = wi_a.weapon.attacks[p_target_type.id]
 
-    -- do not simulate shoots
-    print(string.format("performing shot, attack = %s (target = %s)", attack, p_target_type.id))
-    if (attack == 0) then return end
+    if (attack == 0) then return 0 end
     local ad = attack/defence
-    print("ad = " .. ad .. " for " .. wi_a.id.. " vs " .. wi_p.id)
-    print("a = " .. attack .. ", d = " .. defence)
-    local targets = math.modf(ad)
+    local attempts = math.modf(ad)
+    -- at least one attempt
+    if (attempts == 0) then attempts = 1 end
+    local total_attempts = attempts
     local p = _probability(ad)
-    print(wi_a.id .. " hits " .. targets .. " target(s) with probability " .. p)
 
-    -- active shoots to passive
-    local casualities, remained_shots = _perform_shot(
-      p,
-      a_side.shots[wi_a.id],
-      targets,
-      wi_p.data.quantity
-    )
-    p_side.casualities[wi_p.id] = (p_side.casualities[wi_p.id] or 0) + casualities
-    wi_p.data.quantity = wi_p.data.quantity - casualities
-    a_side.shots[wi_a.id] = remained_shots
-  end
+    local hit_points = wi_p.data.quantity - p_item.casualities
 
-  for a_idx, p_idx in select_weapons() do
-    local wi_a = available_active[a_idx]
-    local wi_p = available_passive[p_idx]
-    perform_shot(wi_a, wi_p, pair.a, pair.p)
-
-    -- in case of battle passive side shoots into active too
-    if (pair.action == 'battle') then
-      perform_shot(wi_p, wi_a, pair.p, pair.a)
+    while ((attempts > 0) and (hit_points > 0)) do
+        local dice = math.random()
+        -- print(string.format("p: %f, dice: %f", p, dice))
+        if (dice <= p) then
+            hit_points = hit_points - 1
+        end
+        attempts = attempts - 1
     end
 
-    update_availabiliy(a_idx, p_idx)
-  end
+    local casualities = (wi_p.data.quantity - p_item.casualities) - hit_points
 
-  print("casualities results a:" .. inspect(pair.a.casualities)
-        .. ", p:" .. inspect(pair.p.casualities))
-  print("remaining shots a:" .. inspect(pair.a.shots)
-        .. ", p:" .. inspect(pair.p.shots))
-  print(inspect(pair.a.weapons[1].data))
+    if (_DEBUG_FORMULA) then
+        print(string.format("a/d = %f, p = %f, attempts = %d, casualities = %d, Details %s (attack: %d) shots at %s (defence: %d), target = %s",
+                            ad, p, total_attempts, casualities, wi_a.id, attack, wi_p.id, defence, p_target_type.id))
+    end
+
+    return casualities
+end
+
+--- randomy selects share weapons from list
+function _prepare_participants(item)
+    local list = item.weapons
+    local multiplier = item.multiplier
+    assert((multiplier > 0) and (multiplier <= 1), "multiplier " .. multiplier ..  " should be in range (0; 1]")
+    local cloned_list = _.clone(list, true)
+
+    local participants = {}
+    for idx, wi in pairs(list) do
+        local quantity, remainder = math.modf(wi.data.quantity * multiplier)
+        if (remainder >= 0.5) then quantity = quantity + 1 end
+        local shots = item.shots[wi.id]
+        table.insert(participants, {
+            weapon_instance = wi,
+            quantity        = quantity,
+            shots           = shots,
+            casualities     = 0,
+        })
+        if (_DEBUG_FORMULA) then
+            print(string.format("prepared weapon %s, quantity = %d, shots = %d", wi.id, quantity, shots))
+        end
+    end
+    return participants
+end
+
+function _probability_fn(list)
+    -- 1st pass: select total for normalisation
+    local total = _.reduce(list, function(state, item) return state + (item.quantity - item.casualities) end, 0)
+    -- 2nd pass: calculate probabilities, based on quantities
+    local vector = _.map(list, function(idx, item)
+        return {
+            prob  = (item.quantity - item.casualities) / total,
+            index = idx
+        }
+    end)
+    -- 3rd pass: unstable sort by probabilities
+    table.sort(vector, function(a, b)
+        return a.prob < b.prob
+    end)
+    -- 4th pass: build increasing probability function
+    for idx = 2, #vector do
+        vector[idx].prob = vector[idx].prob + vector[idx - 1].prob
+    end
+    return vector
+end
+
+function _somebody_can_shoot(list)
+    for _, item in pairs(list) do
+        if ( ((item.quantity - item.casualities) > 0)
+            and (item.shots > 0 )) then
+                return true
+        end
+    end
+end
+
+function _somebody_is_alive(list)
+    for _, item in pairs(list) do
+        if ( (item.quantity - item.casualities) > 0 ) then
+            return true
+        end
+    end
+end
+
+function _select_shooting_pair(active, passive)
+    local a_prob = _probability_fn(active)
+    local p_prob = _probability_fn(passive)
+
+    local prob_stringizer = function(vector, list)
+        return table.concat(
+            _.map(vector, function(_, item)
+                local wi = list[item.index].weapon_instance
+                return wi.id .. " -> " .. item.prob
+            end),
+            "\n"
+        )
+    end
+
+    if (_DEBUG_FORMULA) then
+        local a_prob_str = prob_stringizer(a_prob, active)
+        local p_prob_str = prob_stringizer(p_prob, passive)
+        print(string.format("active weapons selector: probabilities:\n%s", a_prob_str))
+        print(string.format("passive weapons selector: probabilities:\n%s",p_prob_str))
+    end
+
+    local random_pick = function(vector)
+        local dice = math.random()
+        local idx = 1
+        while(vector[idx].prob <= dice) do
+            idx = idx + 1
+        end
+        return vector[idx].index
+    end
+
+    local a_idx = random_pick(a_prob)
+    local p_idx = random_pick(p_prob)
+
+    return a_idx, p_idx
+end
+
+function commit_results(from, to)
+    for _, item in pairs(from) do
+        local wi = item.weapon_instance
+        wi.data.quantity = wi.data.quantity - item.casualities
+        to.casualities[wi.id] = to.casualities[wi.id] + item.casualities
+        to.shots[wi.id] = item.shots
+    end
+end
+
+function BattleFormula:perform_battle(pair)
+    print("performing " .. pair.action)
+
+    local active  = _prepare_participants(pair.a)
+    local passive = _prepare_participants(pair.p)
+
+    while(_somebody_can_shoot(active) and _somebody_is_alive(passive)) do
+        local a_idx, p_idx = _select_shooting_pair(active, passive)
+        -- print(string.format("a_idx = %s, p_idx = %s", a_idx, p_idx))
+        local a_item, p_item = active[a_idx], passive[p_idx]
+        local a_shots, a_casualities, p_shots = 1, 0, 0
+        local p_casualities = self:_perform_shot(a_item, p_item)
+
+        -- retalitaion. Computed before casualities applied
+        if ((pair.action == 'battle') and (passive[p_idx].shots > 0)) then
+            a_casualities = self:_perform_shot(a_item, p_item)
+            p_shots = 1
+        end
+
+        -- commit the shot results
+        a_item.casualities = a_item.casualities + a_casualities
+        p_item.casualities = p_item.casualities + p_casualities
+        a_item.shots = math.max(0, a_item.shots - math.max(a_casualities, 1))
+        p_item.shots = math.max(0, p_item.shots - math.max(p_casualities, 0))
+    end
+
+    -- commit summaries
+    commit_results(active, pair.a)
+    commit_results(passive, pair.p)
+
+    if (_DEBUG_FORMULA) then
+        local dump = function(list)
+            local strings = _.map(list, function(idx, item)
+                return item.weapon_instance.id .. " => " .. item.casualities
+            end)
+            return table.concat(strings, "\n")
+        end
+        print("block casualities results a:\n" .. dump(active) .. "\n, for p:\n " .. dump(passive))
+        print("casualities results a:" .. inspect(pair.a.casualities) .. ", p:" .. inspect(pair.p.casualities))
+        print("remaining shots a:" .. inspect(pair.a.shots)  .. ", p:" .. inspect(pair.p.shots))
+    end
 end
 
 return BattleFormula

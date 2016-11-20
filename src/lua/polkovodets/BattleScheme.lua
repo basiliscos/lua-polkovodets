@@ -223,8 +223,9 @@ function _Selector:select_weapons(role, ctx)
   local select_by_selector = function(weapon_instance)
     -- print(string.format("select_by_selector, method %s", self.method))
     if (self.method == 'category') then
-    -- print(string.format("select_by_selector/category = %s, wi.cat = %s", self.specification, weapon_instance.weapon.category.id))
-      return weapon_instance.weapon.category.id == self.specification
+      local result = weapon_instance.weapon.category.id == self.specification
+      -- print(string.format("select_by_selector/category = %s, wi.cat = %s, result = %s", self.specification, weapon_instance.weapon.category.id, result))
+      return result
     elseif ((self.method == 'target') and (self.specification == 'any')) then
       return true
     end
@@ -251,6 +252,7 @@ function _Selector:select_weapons(role, ctx)
         local range_ok = weapon_instance.weapon.range[e_layer] >= ctx.range
         local quantities_ok = weapon_instance.data.quantity > 0
         local shots_ok = o.shots[weapon_instance.id] > 0
+        -- print(string.format("range: %s, quantities_ok = %s, shots = %s", range_ok, quantities_ok, shots_ok))
         return range_ok and quantities_ok and shots_ok
     end
   else
@@ -438,6 +440,8 @@ function _Block:perform_battle(i_unit, p_unit, command)
     local pair = block:select_pair(ctx)
     if (pair) then
       -- print("matching pair = " .. inspect(pair))
+      -- print("shots i = " .. inspect(ctx.i.shots))
+      -- print("shots p = " .. inspect(ctx.p.shots))
       self.battle_scheme.battle_formula:perform_battle(pair)
       print("casualities for I = " .. inspect(ctx.i.casualities))
       print("casualities for P = " .. inspect(ctx.p.casualities))

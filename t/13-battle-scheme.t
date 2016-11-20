@@ -19,7 +19,6 @@ local engine = Engine.create(gear, "en")
 
 local bs = BattleScheme.create()
 
-
 subtest("parse condition", function()
 
   subtest("always true condition", function()
@@ -185,6 +184,5 @@ subtest("initialization", function()
   local bs2 = gear:get("battle_scheme")
   ok(bs2)
 end)
-
 
 done_testing()
