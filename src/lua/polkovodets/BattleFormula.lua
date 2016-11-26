@@ -56,6 +56,7 @@ function BattleFormula:_perform_shot(a_item, p_item)
     local attack = wi_a.weapon.attacks[p_target_type.id]
 
     if (attack == 0) then return 0 end
+    assert(defence > 0, "defence is zero for weapon instance " .. wi_p.id)
     local ad = attack/defence
     local attempts = math.modf(ad)
     -- at least one attempt

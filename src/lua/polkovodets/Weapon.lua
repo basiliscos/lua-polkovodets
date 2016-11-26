@@ -47,6 +47,7 @@ function Weapon:initialize(renderer, weapon_data, classes_for, types_for, catego
   local defends = {}
   for k, v in pairs(weapon_data.defence) do
     defends[k] = tonumber(v)
+    assert(defends[k] > 0,  k .. " defence should be strictly positive for weapon " .. id)
   end
 
   assert(weapon_data.range)
