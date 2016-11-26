@@ -38,7 +38,7 @@ local HIT_PROBABILITY_MAX = 0.98
 local HIT_PROBABILITY_MIN = 0.02
 
 local _probability = function(v)
-  local p = 0.05 * (v^2.2)
+  local p = 0.3 * (v^2.2)
   if (p > HIT_PROBABILITY_MAX) then return HIT_PROBABILITY_MAX end
   if (p < HIT_PROBABILITY_MIN) then return HIT_PROBABILITY_MIN end
   return p

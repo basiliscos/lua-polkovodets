@@ -329,8 +329,8 @@ function _Block.create(battle_scheme, id, command, condition,
         parent_id = string.sub(id, parent_id_start, parent_id_end - parent_id_start)
         active_multiplier = tonumber(active_multiplier)
         passive_multiplier = tonumber(passive_multiplier)
-        assert(active_multiplier > 0)
-        assert(passive_multiplier > 0)
+        assert(active_multiplier and (active_multiplier > 0))
+        assert(passive_multiplier and (passive_multiplier > 0))
         assert(action)
     end
     if (not parent_id) then
