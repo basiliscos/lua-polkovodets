@@ -58,11 +58,12 @@ function BattleFormula:_perform_shot(a_item, p_item)
     if (attack == 0) then return 0 end
     assert(defence > 0, "defence is zero for weapon instance " .. wi_p.id)
     local ad = attack/defence
+    local ad_coef = (1 + unit_a.data.experience) / (1 + unit_p.data.experience)
     local attempts = math.modf(ad)
     -- at least one attempt
     if (attempts == 0) then attempts = 1 end
     local total_attempts = attempts
-    local p = _probability(ad)
+    local p = _probability(ad_coef * ad)
 
     local hit_points = wi_p.data.quantity - p_item.casualities
 
@@ -78,8 +79,8 @@ function BattleFormula:_perform_shot(a_item, p_item)
     local casualities = (wi_p.data.quantity - p_item.casualities) - hit_points
 
     if (_DEBUG_FORMULA) then
-        print(string.format("a/d = %f, p = %f, attempts = %d, casualities = %d, Details %s (attack: %d) shots at %s (defence: %d), target = %s",
-                            ad, p, total_attempts, casualities, wi_a.id, attack, wi_p.id, defence, p_target_type.id))
+        print(string.format("a/d = %f, ad_coef = %f p = %f, attempts = %d, casualities = %d, Details %s (attack: %d) shots at %s (defence: %d), target = %s",
+                            ad, ad_coef, p, total_attempts, casualities, wi_a.id, attack, wi_p.id, defence, p_target_type.id))
     end
 
     return casualities

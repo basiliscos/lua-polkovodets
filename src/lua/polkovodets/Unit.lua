@@ -59,6 +59,8 @@ function Unit:initialize(engine, renderer, map, unit_data, staff, unit_definitio
   assert(unit_data.entr)
   assert(unit_data.exp)
 
+  local experience = tonumber(unit_data.exp) / 100
+  assert((experience >= 0) and (experience <= 0.5))
 
   self.id         = id
   self.name       = assert(unit_data.name)
@@ -70,7 +72,7 @@ function Unit:initialize(engine, renderer, map, unit_data, staff, unit_definitio
   self.staff      = staff
   self.data = {
     entr         = tonumber(unit_data.entr),
-    experience   = tonumber(unit_data.exp),
+    experience   = experience,
     state        = "to-be-defined-later",
     layer        = "to-be-defined-later",
     allow_move   = true,
