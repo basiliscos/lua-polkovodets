@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local inspect = require('inspect')
 local _ = require ("moses")
+local Probability = require 'polkovodets.utils.Probability'
 
 local _DEBUG_FORMULA = true
 
@@ -111,27 +112,6 @@ function _prepare_participants(item)
     return participants
 end
 
-function _probability_fn(list)
-    -- 1st pass: select total for normalisation
-    local total = _.reduce(list, function(state, item) return state + (item.quantity - item.casualities) end, 0)
-    -- 2nd pass: calculate probabilities, based on quantities
-    local vector = _.map(list, function(idx, item)
-        return {
-            prob  = (item.quantity - item.casualities) / total,
-            index = idx
-        }
-    end)
-    -- 3rd pass: unstable sort by probabilities
-    table.sort(vector, function(a, b)
-        return a.prob < b.prob
-    end)
-    -- 4th pass: build increasing probability function
-    for idx = 2, #vector do
-        vector[idx].prob = vector[idx].prob + vector[idx - 1].prob
-    end
-    return vector
-end
-
 function _somebody_can_shoot(list)
     for _, item in pairs(list) do
         if ( ((item.quantity - item.casualities) > 0)
@@ -149,9 +129,11 @@ function _somebody_is_alive(list)
     end
 end
 
+local _accessor = function(item) return item.quantity - item.casualities end
+
 function _select_shooting_pair(active, passive)
-    local a_prob = _probability_fn(active)
-    local p_prob = _probability_fn(passive)
+    local a_prob = Probability.fn(active, _accessor)
+    local p_prob = Probability.fn(passive, _accessor)
 
     local prob_stringizer = function(vector, list)
         return table.concat(
