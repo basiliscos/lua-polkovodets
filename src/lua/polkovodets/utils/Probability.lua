@@ -21,7 +21,7 @@ Probability.__index = Probability
 
 local _ = require ("moses")
 
-function Probability.fn(list, accessor)
+function Probability.density(list, accessor)
     -- 1st pass: select total for normalisation
     local total = _.reduce(list, function(state, item) return state + accessor(item) end, 0)
     -- 2nd pass: calculate probabilities, based on quantities
@@ -31,6 +31,11 @@ function Probability.fn(list, accessor)
             index = idx
         }
     end)
+    return vector
+end
+
+function Probability.fn(list, accessor)
+    local vector = Probability.density(list, accessor)
     -- 3rd pass: unstable sort by probabilities
     table.sort(vector, function(a, b)
         return a.prob < b.prob

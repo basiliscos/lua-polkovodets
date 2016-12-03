@@ -68,7 +68,7 @@ gear:set("data/dirs", {
   themes      = 'data/gfx/themes/'
 })
 
-DataLoader.load(gear, 'Poland')
+DataLoader.load(gear, 'Poland2')
 
 gear:get("battle_scheme")
 

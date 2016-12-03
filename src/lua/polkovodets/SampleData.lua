@@ -581,7 +581,9 @@ function SampleData.generate_scenario(gear)
       range   = {air = 0, surface = 1},
       defence = {air = 5, surface = 6 },
       attack = { air = 0, soft = 4, hard = 7 },
-      flags  = { },
+      flags  = {
+        GRANTS_DEF_ATTACK = "2/1",
+      },
       move_type = "tracked",
       weap_category = "wc_tank",
       target_type = "hard",

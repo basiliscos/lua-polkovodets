@@ -36,6 +36,7 @@ ARG      ← LITERAL
 local inspect = require('inspect')
 local lpeg = require('lpeg')
 local _ = require ("moses")
+local Probability = require 'polkovodets.utils.Probability'
 
 local BattleScheme = {}
 BattleScheme.__index = BattleScheme
@@ -379,30 +380,99 @@ function _Block:matches(command, i_unit, p_unit)
 end
 
 function _Block:select_pair(ctx)
-  assert(self.parent_id)
-  local a_weapons, a_side = self.active:select_weapons('active', ctx)
-  if (#a_weapons > 0) then
-    local p_weapons, p_side = self.passive:select_weapons('passive', ctx)
-    if (#p_weapons > 0) then
-      return {
-        a = {
-          weapons     = a_weapons,
-          shots       = a_side.shots,
-          casualities = a_side.casualities,
-          side        = a_side,
-          multiplier  = self.a_multiplier,
-        },
-        p = {
-          weapons     = p_weapons,
-          shots       = p_side.shots,
-          casualities = p_side.casualities,
-          side        = p_side,
-          multiplier  = self.p_multiplier,
-        },
-        action  = self.action,
-      }
+    assert(self.parent_id)
+
+    local calculate_effective_bonuses = function(role, summary)
+        -- zero bonus with probability 1
+        local defaults = {  }
+        _.each(summary.side.weapon_instances, function(_, wi)
+            defaults[wi.id] =  {
+                values = { { value = 0, quantity = 1 } },
+                fn     = { { index = 1, prob = 1 } },
+            }
+        end)
+        -- print("defaults " .. inspect(defaults))
+        summary.bonus = {
+            attack  = defaults,
+            defence = _.clone(defaults),
+        }
+        if (summary.side == ctx.i) then
+            -- GRANTS_DEF_ATTACK
+            local armor_granting = {} -- k: bonus, v: quantity (number of weapon instances to be applied for)
+            local total_bonuses = 0
+            _.each(ctx.i.weapon_instances, function(_, wi)
+                local _, value = wi:is_capable("GRANTS_DEF_ATTACK")
+                if (value) then
+                    local to, bonus = value:match("(%d+)/(%d+)")
+                    to = tonumber(to)
+                    bonus = tonumber(bonus)
+                    assert(to > 0)
+                    assert(bonus > 0)
+                    local count = wi.data.quantity * to + (armor_granting[bonus] or 0)
+                    total_bonuses = total_bonuses + wi.data.quantity * to
+                    armor_granting[bonus] = count
+                end
+            end)
+            local subjects = _.select(ctx.i.weapon_instances, function(_, wi)
+                return wi.weapon.category.id == 'wc_infant'
+            end)
+            local requirements = _.reduce(subjects, function(state, wi)
+                    return state + wi.data.quantity
+                end,
+                0
+            )
+            -- add zero armor bonus for normalization
+            local zero_bonus = requirements - total_bonuses
+            if (zero_bonus >= 0) then armor_granting[0] = zero_bonus end
+            local armors = {}
+            for bonus, quantity in pairs(armor_granting) do
+                table.insert(armors, {
+                    value = bonus,
+                    quantity = quantity
+                })
+            end
+            local armors_fn = Probability.fn(armors, function(item)
+                return item.quantity
+            end)
+            local subjects_results = {
+                values = armors,
+                fn     = armors_fn,
+            }
+            for _, wi in pairs(subjects) do
+                -- OK, probably we should merge here IF different kinds of armor bonuses
+                summary.bonus.defence[wi.id] = subjects_results
+            end
+        end
     end
-  end
+
+    local a_weapons, a_side = self.active:select_weapons('active', ctx)
+    if (#a_weapons > 0) then
+        local p_weapons, p_side = self.passive:select_weapons('passive', ctx)
+        if (#p_weapons > 0) then
+            local a_summary = {
+                weapons     = a_weapons,
+                shots       = a_side.shots,
+                casualities = a_side.casualities,
+                side        = a_side,
+                multiplier  = self.a_multiplier,
+            }
+            calculate_effective_bonuses('active', a_summary)
+            local p_summary = {
+                weapons     = p_weapons,
+                shots       = p_side.shots,
+                casualities = p_side.casualities,
+                side        = p_side,
+                multiplier  = self.p_multiplier,
+            }
+            calculate_effective_bonuses('passive', p_summary)
+
+            return {
+                a      = a_summary,
+                p      = p_summary,
+                action = self.action,
+            }
+        end
+    end
 end
 
 function _Block:perform_battle(i_unit, p_unit, command)

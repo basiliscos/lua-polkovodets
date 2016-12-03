@@ -45,6 +45,15 @@ local _probability = function(v)
   return p
 end
 
+local _random_pick = function(vector)
+    local dice = math.random()
+    local idx = 1
+    while(vector[idx].prob <= dice) do
+        idx = idx + 1
+    end
+    return vector[idx].index
+end
+
 function BattleFormula:_perform_shot(a_item, p_item)
     local wi_a, wi_p = a_item.weapon_instance, p_item.weapon_instance
     local p_target_type = wi_p.weapon.target_type
@@ -55,6 +64,13 @@ function BattleFormula:_perform_shot(a_item, p_item)
     local attacks_from_layer = unit_a:get_layer()
     local defence = wi_p.weapon.defends[attacks_from_layer]
     local attack = wi_a.weapon.attacks[p_target_type.id]
+
+    local defence_bonus_descriptor = p_item.bonus.defence
+    local defence_bonus = defence_bonus_descriptor.values[_random_pick(defence_bonus_descriptor.fn)].value
+    defence = defence + defence_bonus
+    if (_DEBUG_FORMULA and defence_bonus ~= 0) then
+        print(string.format("defence bonus selected = %f", defence_bonus))
+    end
 
     if (attack == 0) then return 0 end
     assert(defence > 0, "defence is zero for weapon instance " .. wi_p.id)
@@ -104,6 +120,9 @@ function _prepare_participants(item)
             quantity        = quantity,
             shots           = shots,
             casualities     = 0,
+            bonus = {
+                defence = item.bonus.defence[wi.id]
+            },
         })
         if (_DEBUG_FORMULA) then
             print(string.format("prepared weapon %s, quantity = %d, shots = %d", wi.id, quantity, shots))
@@ -131,38 +150,43 @@ end
 
 local _accessor = function(item) return item.quantity - item.casualities end
 
+function _probability_stringizer(vector, interpreter, separator)
+    return table.concat(
+        _.map(vector, function(_, item) return interpreter(item) end), separator
+    )
+end
+
+local _wi_interpreter = function(wi_list)
+    return function(item)
+        local wi = wi_list[item.index].weapon_instance
+        return wi.id .. " -> " .. item.prob
+    end
+end
+
+local _bonus_interpreter = function(title, values)
+    return function(item)
+--[[
+        print("[item] = " .. inspect(item))
+        print("[values] = " .. inspect(values))
+        print("[values2] = " .. inspect(values[item.index]))
+]]
+        return values[item.index].value .. title .. " -> " .. item.prob
+    end
+end
+
 function _select_shooting_pair(active, passive)
     local a_prob = Probability.fn(active, _accessor)
     local p_prob = Probability.fn(passive, _accessor)
 
-    local prob_stringizer = function(vector, list)
-        return table.concat(
-            _.map(vector, function(_, item)
-                local wi = list[item.index].weapon_instance
-                return wi.id .. " -> " .. item.prob
-            end),
-            "\n"
-        )
-    end
-
     if (_DEBUG_FORMULA) then
-        local a_prob_str = prob_stringizer(a_prob, active)
-        local p_prob_str = prob_stringizer(p_prob, passive)
+        local a_prob_str = _probability_stringizer(a_prob, _wi_interpreter(active), "\n")
+        local p_prob_str = _probability_stringizer(p_prob, _wi_interpreter(passive), "\n")
         print(string.format("active weapons selector: probabilities:\n%s", a_prob_str))
         print(string.format("passive weapons selector: probabilities:\n%s",p_prob_str))
     end
 
-    local random_pick = function(vector)
-        local dice = math.random()
-        local idx = 1
-        while(vector[idx].prob <= dice) do
-            idx = idx + 1
-        end
-        return vector[idx].index
-    end
-
-    local a_idx = random_pick(a_prob)
-    local p_idx = random_pick(p_prob)
+    local a_idx = _random_pick(a_prob)
+    local p_idx = _random_pick(p_prob)
 
     return a_idx, p_idx
 end
@@ -182,6 +206,16 @@ function BattleFormula:perform_battle(pair)
     local active  = _prepare_participants(pair.a)
     local passive = _prepare_participants(pair.p)
 
+    if (_DEBUG_FORMULA) then
+        print("===[[ active defence bonuses ]] ===")
+        for idx, wi in pairs(pair.a.side.weapon_instances) do
+            local wi_bonus = pair.a.bonus.defence[wi.id]
+            local prob_string = _probability_stringizer(wi_bonus.fn, _bonus_interpreter(" ", wi_bonus.values), "; ")
+            print(wi.id .. " [ bonus armor value / probability ] " .. prob_string)
+        end
+        print("===[[ end of  defence bonuses ]] ===")
+    end
+
     while(_somebody_can_shoot(active) and _somebody_is_alive(passive)) do
         local a_idx, p_idx = _select_shooting_pair(active, passive)
         -- print(string.format("a_idx = %s, p_idx = %s", a_idx, p_idx))
@@ -191,7 +225,7 @@ function BattleFormula:perform_battle(pair)
 
         -- retalitaion. Computed before casualities applied
         if ((pair.action == 'battle') and (passive[p_idx].shots > 0)) then
-            a_casualities = self:_perform_shot(a_item, p_item)
+            a_casualities = self:_perform_shot(p_item, a_item)
             p_shots = 1
         end
 
