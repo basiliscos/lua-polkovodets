@@ -431,7 +431,8 @@ function DataLoader.load(gear, scenario_path)
       entr               = assert(data.entr, units_path .. " should have entr in unit " .. idx),
       state              = assert(data.state, units_path .. " should have state in unit " .. idx),
       exp                = assert(data.exp, units_path .. " should have exp in unit " .. idx),
-      managed_by         = data.managed_by, -- optional?
+      managed_by         = data.managed_by,  -- optional
+      attached_to        = data.attached_to, -- optional
       orientation        = assert(data.orientation, units_path .. " should have orientation in unit " .. idx),
       staff              = data.staff,
     })

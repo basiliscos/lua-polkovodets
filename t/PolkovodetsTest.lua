@@ -9,7 +9,7 @@ local Engine = require 'polkovodets.Engine'
 local SampleData = require 'polkovodets.SampleData'
 
 
-function PolkovodetsTest.get_fresh_data()
+function PolkovodetsTest.get_fresh_data(interceptor)
   local gear = Gear.create()
   gear:declare("renderer", { constructor = function() return DummyRenderer.create(640, 480) end})
   local engine = Engine.create(gear, "en")
@@ -20,6 +20,7 @@ function PolkovodetsTest.get_fresh_data()
   SampleData.generate_scenario(gear)
   SampleData.generate_terrain(gear)
 
+  if (interceptor) then interceptor(gear) end
   gear:get("validator").fn()
   local scenario = gear:get("scenario")
   local map = gear:get("map")

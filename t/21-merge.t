@@ -7,6 +7,28 @@ local _ = require ("moses")
 local inspect = require('inspect')
 local PT = require('t.PolkovodetsTest')
 
+subtest("attach-on-load", function()
+    local engine = PT.get_fresh_data(function(gear)
+        local units = gear:get("data/armies")
+        local ru_tank
+        local ru_inf
+        for _, unit in pairs(units) do
+            if (unit.id == 'rus_unit_5') then ru_tank = unit end
+            if (unit.id == 'rus_unit_1') then ru_inf = unit end
+        end
+        ok(ru_tank)
+        ok(ru_inf)
+        ru_tank.attached_to = ru_inf.id
+        ru_tank.x = 3
+        ru_tank.y = 3
+    end)
+
+    local map = engine.gear:get("map")
+    local ru_inf = map.tiles[3][3]:get_unit('surface')
+    ok(ru_inf)
+    local ru_tank = map.tiles[4][2]:get_unit('surface')
+    ok(not ru_tank, "tank has been attached")
+end)
 
 subtest("mergability", function()
   local engine = PT.get_fresh_data()

@@ -92,7 +92,6 @@ function Unit:initialize(engine, renderer, map, unit_data, staff, unit_definitio
   -- affects on weapon instances
   self:_update_state(state)
   self:_update_layer()
-  tile:set_unit(self, self.data.layer)
   self:refresh()
   table.insert(player.units, o)
 end
@@ -122,6 +121,16 @@ function Unit:get_movement_layer()
 end
 
 function Unit:get_layer() return self.data.layer end
+
+function Unit:get_tile()
+    if (self.tile) then
+        return self.tile
+    elseif (self.data.attached_to) then
+        return self.data.attached_to.tile
+    else
+        error("unit is located nowhere?")
+    end
+end
 
 function Unit:bind_ctx(context)
   local SDL = require "SDL"
@@ -486,28 +495,29 @@ function Unit:_post_action_trigger(action, context)
   local staff = self:_united_staff()
   local all_seaplane = _.all(staff, function(_, wi) return wi.weapon.movement_type.id == 'seaplane' end)
   local all_air = _.all(staff, function(_, wi) return wi.weapon.movement_type.id == 'air' end)
+  local tile = self:get_tile()
 
   local stash_candidate =
     -- auto-land aircaft to airport
         ((self.definition.unit_type.id == 'ut_air')
-        and (self.tile.data.terrain_id == 'a')
+        and (tile.data.terrain_id == 'a')
         and all_air)
     -- auto-land sea-planes to haven
     or ((self.definition.unit_type.id == 'ut_air')
-        and (self.tile.data.terrain_id == 'h')
+        and (tile.data.terrain_id == 'h')
         and all_seaplane)
     -- auto-dock naval units to haven
     or (
         (self.definition.unit_type.id == 'ut_naval')
-        and (self.tile.data.terrain_id == 'h'))
+        and (tile.data.terrain_id == 'h'))
   if (stash_candidate
         and (#self.tile.stash < 5)
         and (action == 'move')
         -- might be enough to move, but not enough to refuel
         and self.engine.gear:get("transition_scheme"):is_action_allowed('refuel', self)
     ) then
-      self.tile:set_unit(nil, self.data.layer)
-      self.tile:stash_unit(self)
+      tile:set_unit(nil, self.data.layer)
+      tile:stash_unit(self)
       self:perform_action('refuel')
   end
 end
@@ -569,7 +579,7 @@ end
 function Unit:_bridge(dst_tile)
   -- we cannot use _move_to as it checks movement costs, here we ignore it
   dst_tile:set_unit(self, self.data.layer)
-  local src_tile = self.tile
+  local src_tile = self:get_tile()
   src_tile:set_unit(nil, self.data.layer)
   self.tile = dst_tile
   self:_update_layer()
@@ -594,7 +604,7 @@ function Unit:_move_to(dst_tile)
   local costs = assert(self.data.actions_map.move[dst_tile.id],
     string.format("unit %s cannot be moved to %s", self.id, dst_tile.id))
   local being_attached = self:_detach()
-  local src_tile = self.tile
+  local src_tile = self:get_tile()
 
   -- calculate back route from dst_tile to src_tile
   -- print(inspect(self.data.actions_map.move))
@@ -676,11 +686,7 @@ function Unit:_move_to(dst_tile)
   self:_update_orientation(dst_tile, src_tile)
 end
 
-function Unit:_merge_at(dst_tile)
-   local layer = self.data.layer
-   local other_unit = assert(dst_tile:get_unit(layer))
-   self:_move_to(dst_tile)
-
+function Unit:attach(other_unit)
    local weight_for = {
       L = 100,
       M = 10,
@@ -694,7 +700,6 @@ function Unit:_merge_at(dst_tile)
    else
       core_unit, aux_unit = other_unit, self
    end
-
    for idx, unit in pairs(aux_unit.data.attached) do
       table.remove(aux_unit.data.attached)
       table.insert(core_unit.data.attached, unit)
@@ -702,9 +707,21 @@ function Unit:_merge_at(dst_tile)
    table.insert(core_unit.data.attached, aux_unit)
 
    -- aux unit is now attached, remove from map
-   aux_unit.tile:set_unit(nil, layer)
-   aux_unit.tile = nil
-   aux_unit.data.attached_to = core_unit
+   if (aux_unit.tile) then
+       aux_unit.tile:set_unit(nil, self.data.layer)
+       aux_unit.tile = nil
+       aux_unit.data.attached_to = core_unit
+   end
+
+   return core_unit, aux_unit
+end
+
+function Unit:_merge_at(dst_tile)
+   local layer = self.data.layer
+   local other_unit = assert(dst_tile:get_unit(layer))
+   self:_move_to(dst_tile)
+
+   local core_unit, aux_unit = self:attach(other_unit)
    dst_tile:set_unit(core_unit, layer)
 
    self.engine.state:set_selected_unit(core_unit)
@@ -822,6 +839,7 @@ function Unit:update_spotting_map()
   local map = engine.gear:get("map")
   local terrain = engine.gear:get("terrain")
   local weather = self.engine:current_weather()
+  local my_tile = self.tile
 
   local spotting_map = {}
 
@@ -858,7 +876,7 @@ function Unit:update_spotting_map()
   end
 
   local add_to_queue = function(tile, cost) table.insert(queue, {tile, cost}) end
-  add_to_queue( self.tile, available_spotting + 1)
+  add_to_queue(my_tile, available_spotting + 1)
 
   for tile, remained_spot_cost in get_nearest_tile() do
     if (remained_spot_cost > 0) then
@@ -886,7 +904,7 @@ function Unit:update_actions_map()
   local map = engine.gear:get("map")
   -- determine, what the current user can do at the visible area
   local actions_map = {}
-  local start_tile = self.tile or self.data.attached_to.tile
+  local start_tile = self:get_tile()
   assert(start_tile)
 
 
@@ -1583,6 +1601,7 @@ function Unit:is_action_possible(action, context)
   local allowed = transition_scheme:is_action_allowed(action, self)
 
   -- print(string.format("action '%s' allowed = %s", action, allowed))
+  -- print(self.id  .. " " .. (self.tile and self.tile.id  or "n/a"))
 
   local action_with_move = function(ignore_others)
     local tile = context
@@ -1607,7 +1626,7 @@ function Unit:is_action_possible(action, context)
   end
 
   local action_in_self_tile = function()
-    return context and (self.tile.id == context.id)
+    return context and self.tile and (self.tile.id == context.id)
   end
 
 
@@ -1666,7 +1685,7 @@ function Unit:is_action_possible(action, context)
       result = self.data.actions_map.attack[tile_id]
         and self.data.actions_map.attack[tile_id][layer]
         and self.data.actions_map.attack[tile_id][layer][kind]
-    elseif (action == 'counter-attack') then
+    elseif (action == 'counter-attack' and self.tile) then
       result = false
       local tile_id = context[1].id
       local layer   = context[2]

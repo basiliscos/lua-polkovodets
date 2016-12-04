@@ -79,7 +79,7 @@ function Scenario:initialize(scenario_data, objectives_data, armies_data,
     table.insert(units, unit)
   end
 
-  -- 2nd pass: bind hq
+  -- 2nd pass: bind hq & atatchments
   for idx, data in pairs(armies_data) do
     local id = data.id
     local managed_by = data.managed_by
@@ -88,7 +88,24 @@ function Scenario:initialize(scenario_data, objectives_data, armies_data,
       local unit = unit_for[id]
       manager_unit:subordinate(unit)
     end
+    local attached_to = data.attached_to
+    if (attached_to) then
+      local core_unit = assert(unit_for[attached_to], "no core unit " .. attached_to .. ", to which should be attached unit " .. id)
+      local unit = unit_for[id]
+      core_unit:attach(unit)
+      -- print("attaching " .. unit.id .. " to " .. core_unit.id)
+    end
   end
+
+  -- 3nd pass: bind units to tiles
+    for _, unit in pairs(unit_for) do
+        if (unit.tile) then
+            -- print("set tile " .. unit.tile.id .. " for unit " .. unit.id)
+            unit.tile:set_unit(unit, unit.data.layer)
+        end
+        unit:refresh()
+    end
+
 
   self.units = units
 
