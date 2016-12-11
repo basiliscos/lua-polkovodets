@@ -213,7 +213,13 @@ function BattleFormula:perform_battle(pair)
             local prob_string = _probability_stringizer(wi_bonus.fn, _bonus_interpreter(" ", wi_bonus.values), "; ")
             print(wi.id .. " [ bonus armor value / probability ] " .. prob_string)
         end
-        print("===[[ end of  defence bonuses ]] ===")
+        print("===[[ passive defence bonuses ]] ===")
+        for idx, wi in pairs(pair.p.side.weapon_instances) do
+            local wi_bonus = pair.p.bonus.defence[wi.id]
+            local prob_string = _probability_stringizer(wi_bonus.fn, _bonus_interpreter(" ", wi_bonus.values), "; ")
+            print(wi.id .. " [ bonus armor value / probability ] " .. prob_string)
+        end
+        print("===[[ end of defence bonuses ]] ===")
     end
 
     while(_somebody_can_shoot(active) and _somebody_is_alive(passive)) do

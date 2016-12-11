@@ -442,6 +442,12 @@ function _Block:select_pair(ctx)
                 -- OK, probably we should merge here IF different kinds of armor bonuses
                 summary.bonus.defence[wi.id] = subjects_results
             end
+        else
+            local unit = ctx.p.unit
+            local unit_entr = unit.data.entr
+            for _, item in pairs(summary.bonus.defence) do
+                item.values[1].value = unit_entr
+            end
         end
     end
 
@@ -492,12 +498,14 @@ function _Block:perform_battle(i_unit, p_unit, command)
   local ctx = {
     range              = range,
     i = {
+      unit               = i_unit,
       layer              = i_unit.data.layer,
       weapon_instances   = i_weapon_instances,
       shots              = i_shots,
       casualities        = _.map(i_shots, function(k, v) return 0 end),
     },
     p = {
+      unit               = p_unit,
       layer              = p_unit.data.layer,
       weapon_instances   = p_weapon_instances,
       shots              = p_shots,

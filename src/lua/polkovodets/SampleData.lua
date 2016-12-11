@@ -1194,7 +1194,7 @@ function SampleData.generate_scenario(gear)
       unit_definition_id = "ger_ud_1",
       x = 5, y = 3,
       exp = 0,
-      entr = 0,
+      entr = 1,
       orientation = "left",
       staff = {
         ger_weapon_1 = "30",
