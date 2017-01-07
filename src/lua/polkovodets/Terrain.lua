@@ -76,6 +76,10 @@ function Terrain:initialize(renderer, hex_geometry, terrain_data, dirs_data)
       assert(data.image)
       assert(data.spot_cost)
       assert(data.flags)
+      assert(data.min_entr)
+      assert(data.min_entr >= 0)
+      assert(data.max_entr)
+      assert(data.max_entr >= 0)
 
       local image_for = {}
       for weather_id, image_path in pairs(data.image) do

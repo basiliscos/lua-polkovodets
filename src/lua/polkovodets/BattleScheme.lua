@@ -444,9 +444,13 @@ function _Block:select_pair(ctx)
             end
         else
             local unit = ctx.p.unit
+            local tile = unit:get_tile()
+            local terrain_min_entr = tile.data.terrain_type.min_entr
+            local terrain_max_entr = tile.data.terrain_type.max_entr
             local unit_entr = unit.data.entr
+            local entr = math.min(terrain_max_entr, unit_entr + terrain_min_entr)
             for _, item in pairs(summary.bonus.defence) do
-                item.values[1].value = unit_entr
+                item.values[1].value = entr
             end
         end
     end

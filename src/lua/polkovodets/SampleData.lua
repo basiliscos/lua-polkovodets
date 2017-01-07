@@ -113,7 +113,7 @@ function SampleData.generate_terrain(gear)
     },
     {
       id         = "f",
-      min_entr   = 0,
+      min_entr   = 1,
       max_entr   = 99,
       name       = "road",
       flags      = {},
